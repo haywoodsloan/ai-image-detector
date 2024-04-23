@@ -1,0 +1,21 @@
+{
+  "name": "ai-image-detector",
+  "version": "0.0.1",
+  "description": "Analyzes an input image and guesses if it is AI generated.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ai",
+    "image",
+    "detector",
+    "generated"
+  ],
+  "author": "haywoodsloan",
+  "license": "ISC",
+  "dependencies": {
+    "@huggingface/inference": "^2.6.7"
+  }
+}
