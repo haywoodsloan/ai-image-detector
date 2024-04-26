@@ -1,7 +1,6 @@
 import { HfInference } from '@huggingface/inference';
 import { getImageAsBlob } from '../utilities/image.js';
-
-const aiLabel = 'artificial';
+import { AiClassLabel, AiClassThresh, DetectorModels } from '../constants.js';
 
 /**
  * @type {HfInference}
@@ -14,20 +13,19 @@ const hfInterface = () => (_hfInterface ||= new HfInference(process.env.hfKey));
  * @param {string} url
  */
 export async function checkIfAI(url) {
+  const data = await getImageAsBlob(url);
+
   // Check several AI related classifications
-  const classifications = await Promise.all([
-    hfInterface().imageClassification({
-      model: 'umm-maybe/AI-image-detector',
-      data: await getImageAsBlob(url),
-    }),
-    // hfInterface().imageClassification({
-    //   model: 'Organika/sdxl-detector',
-    //   data: await getImageAsBlob(url),
-    // }),
-  ]);
+  const classifications = await Promise.all(
+    DetectorModels.map((model) =>
+      hfInterface().imageClassification({ model, data })
+    )
+  );
 
   // Return true if any classify as an AI
   return classifications
     .flat()
-    .some(({ label, score }) => label === aiLabel && score >= 0.9);
+    .some(
+      ({ label, score }) => label === AiClassLabel && score >= AiClassThresh
+    );
 }

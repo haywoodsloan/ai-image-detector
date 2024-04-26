@@ -32,8 +32,10 @@ console.log('done!');
 async function checkAndPrint(url) {
   const { origin, pathname } = new URL(url);
   const endOfPath = /\/([^\/]+)$/.exec(pathname)[1];
-  console.log(`Checking if the image at this URL is AI generated: ${origin}/.../${endOfPath}`);
-  
+  console.log(
+    `Checking if the image at this URL is AI generated: ${origin}/.../${endOfPath}`
+  );
+
   const result = await checkIfAI(url);
   console.log(result ? 'This image is AI generated' : 'This image is real');
 }
