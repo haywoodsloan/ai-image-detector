@@ -1,11 +1,11 @@
 import { openAsBlob } from 'fs';
+import { isHttpUrl } from './url.js';
 
 /**
  * @param {string} url
  */
 export async function getImageAsBlob(url) {
-  const { protocol } = new URL(url);
-  if (['http:', 'https:'].includes(protocol)) {
+  if (isHttpUrl(url)) {
     const response = await fetch(url, {
       headers: {
         Accept: 'image/*',
