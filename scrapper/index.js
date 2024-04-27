@@ -167,13 +167,15 @@ async function uploadWithRetry(files) {
   try {
     await uploadFiles({ repo: DatasetRepo, credentials, files });
   } catch (error) {
-    // If not a rate-limit error re-throw
-    if (error.statusCode !== 429) throw error;
-
-    // If a rate-limit error wait and retry
-    console.warn(RateDelayWarning);
-    await new Promise((res) => setTimeout(res, RateLimitDelay));
-    await uploadWithRetry(files);
+    if (error.statusCode === 412) {
+      await uploadWithRetry(files);
+    } else if (error.statusCode === 429) {
+      await new Promise((res) => setTimeout(res, RateLimitDelay));
+      await uploadWithRetry(files);
+    } else {
+      // If not a known error re-throw
+      throw error;
+    }
   }
 }
 // #endregion
