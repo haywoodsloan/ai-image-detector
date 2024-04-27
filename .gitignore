@@ -398,4 +398,4 @@ FodyWeavers.xsd
 *.sln.iml
 
 # Local settings
-local.*.json
+*.local.json
