@@ -5,8 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start:ai": "node index.js",
-    "start:real": "node index.js --real",
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -19,7 +18,9 @@
   "license": "ISC",
   "dependencies": {
     "@huggingface/hub": "^0.14.10",
+    "cli-color": "^2.0.4",
     "puppeteer": "^22.7.1",
+    "user-agents": "^1.1.187",
     "yargs": "^17.7.2"
   }
 }

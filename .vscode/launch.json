@@ -7,16 +7,40 @@
     {
       "name": "Run Data Scrapper (AI)",
       "request": "launch",
-      "runtimeArgs": ["run-script", "start:ai", "--", "--count", "100000"],
+      "runtimeArgs": ["run-script", "start", "--", "--count", "1000000"],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
       "cwd": "${workspaceFolder}/scrapper"
     },
     {
-      "name": "Run Data Scrapper (Real)",
+      "name": "Run Data Scrapper (Real Art)",
       "request": "launch",
-      "runtimeArgs": ["run-script", "start:real", "--", "--count", "100000"],
+      "runtimeArgs": [
+        "run-script",
+        "start",
+        "--",
+        "--count",
+        "1000000",
+        "--real"
+      ],
+      "runtimeExecutable": "npm",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "node",
+      "cwd": "${workspaceFolder}/scrapper"
+    },
+    {
+      "name": "Run Data Scrapper (Real Pics)",
+      "request": "launch",
+      "runtimeArgs": [
+        "run-script",
+        "start",
+        "--",
+        "--count",
+        "1000000",
+        "--real",
+        "--pics"
+      ],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",

@@ -1,104 +1,171 @@
 import puppeteer from 'puppeteer';
-import { writeFile, mkdir, readFile } from 'fs/promises';
-import { listFiles, uploadFile } from '@huggingface/hub';
+import { readFile } from 'fs/promises';
+import { listFiles, uploadFiles } from '@huggingface/hub';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { basename } from 'path';
+import UserAgent from 'user-agents';
+import colors from 'cli-color';
 
+// #region Command Arguments
 const args = yargs(hideBin(process.argv))
   .option('count', {
     type: 'number',
-    description: 'The maximum number of images to download',
-    demandOption: 'Must specify a maxmium number of images to scrape',
+    description: 'The maximum number of images to scrape',
+    demandOption: 'Must specify a maximum number of images to scrape',
   })
+  .group(['real', 'pics'], 'Real Image Scrapping')
   .option('real', {
     type: 'boolean',
-    description: 'If real (non-AI) images should be downloaded',
+    description: 'If real (non-AI) images should be scrapped',
+    default: false,
+  })
+  .option('pics', {
+    type: 'boolean',
+    description: 'If real pictures should be scrapped',
     default: false,
   }).argv;
+// #endregion
 
+// #region Types
+/**
+ * @typedef {{
+ *  path: string,
+ *  content: import('@huggingface/hub').ContentSource
+ * }} Upload
+ */
+// #endregion
+
+// #region Constants
+const AiSubReddit = 'https://www.reddit.com/r/aiArt';
+const RealArtSubReddit = 'https://www.reddit.com/r/Art/';
+const RealPicsSubReddit = 'https://www.reddit.com/r/pics/';
+
+const ChromeUA = new UserAgent(/Chrome/).toString();
+const ImageSelector = 'article img[src^="https://preview.redd.it"]';
+const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
+const CleanupRemainder = 3;
+
+const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
+const RealPathPrefix = 'human';
+const AiPathPrefix = 'artificial';
+
+const UploadBatchSize = 10;
+const RateLimitDelay = 70 * 60 * 1000;
+const RateDelayWarning = colors.red(
+  `Got rate-limited, waiting ${RateLimitDelay / 60 / 1000} minutes before retry`
+);
+// #endregion
+
+// Parse local settings for HuggingFace credentials
 const { hfKey } = JSON.parse(
   await readFile(new URL('./settings.local.json', import.meta.url))
 );
+const credentials = { accessToken: hfKey };
 
+// Get a set of the existing images
+const pathPrefix = args.real ? RealPathPrefix : AiPathPrefix;
 const files = listFiles({
-  repo: { name: 'haywoodsloan/ai-images', type: 'dataset' },
-  path: args.real ? 'human' : 'artificial',
-  credentials: { accessToken: hfKey },
+  repo: DatasetRepo,
+  path: pathPrefix,
+  credentials,
 });
 
+// Track existing files by the file name
 const existing = new Set();
 for await (const file of files) {
   existing.add(basename(file.path));
 }
 
+// Launch Puppeteer
 const browser = await puppeteer.launch();
 const page = await browser.newPage();
 
 await page.setViewport({ width: 1920, height: 1080 });
-await page.setUserAgent(
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-);
+await page.setUserAgent(ChromeUA);
 
+// Browse to Reddit
 const redditUrl = args.real
-  ? 'https://www.reddit.com/r/Art/'
-  : 'https://www.reddit.com/r/aiArt';
+  ? args.pics
+    ? RealPicsSubReddit
+    : RealArtSubReddit
+  : AiSubReddit;
 
 await page.goto(redditUrl, {
   waitUntil: 'networkidle0',
 });
 
+/** @type {Promise<Upload>[]} */
+const fileRequests = [];
 let count = 0;
+
+// Start scrapping images and scrolling through the page
 while (count < args.count) {
-  const newUrls = await page.evaluate(() => {
-    window.downloaded = window.downloaded ||= new Set();
-    const images = document.querySelectorAll(
-      'article img[src^="https://preview.redd.it"]'
-    );
+  // Get just the new URLs that haven't been downloaded yet
+  const urls = await page.evaluate((selector) => {
+    const images = document.querySelectorAll(selector);
+    return [...images].map((image) => image.src);
+  }, ImageSelector);
 
-    const newSet = new Set(
-      [...images]
-        .map((image) => image.src)
-        .filter((url) => !window.downloaded.has(url))
-    );
-
-    return Array.from(newSet);
-  });
-
-  for (const url of newUrls) {
+  // Fetch the file blobs and prepare to bulk upload to HuggingFace
+  for (const url of urls) {
     const { pathname } = new URL(url);
+    const fileName = basename(pathname);
 
-    const fileName = pathname.replace(/.*[\\\/]([^\\\/]+)/, '$1');
-    if (existing.has(fileName)) {
-      continue;
-    }
+    if (existing.has(fileName)) continue;
+    console.log(colors.green(`Downloading: ${fileName}`));
 
-    console.log(`Downloading: ${fileName}`);
-    const result = await fetch(url);
-
-    await uploadFile({
-      file: {
-        path: `${args.real ? 'human' : 'artificial'}/${fileName}`,
+    existing.add(fileName);
+    fileRequests.push(
+      fetch(url).then(async (result) => ({
+        path: `${pathPrefix}/${fileName}`,
         content: await result.blob(),
-      },
-      repo: { name: 'haywoodsloan/ai-images', type: 'dataset' },
-      credentials: { accessToken: hfKey },
-    });
+      }))
+    );
 
     count++;
-    if (count >= args.count) {
-      break;
-    }
+    if (count >= args.count || fileRequests.length >= UploadBatchSize) break;
   }
 
+  // Upload a batch of files to HuggingFace, if enough are ready
+  if (fileRequests.length >= UploadBatchSize || count >= args.count) {
+    const files = await Promise.all(fileRequests);
+    console.log(colors.green(`Uploading ${files.length} files to HuggingFace`));
+    await uploadWithRetry(files);
+    fileRequests.length = 0;
+  }
+
+  // Clean up the downloaded images from the page to save memory
+  // Scroll to load more images
   await page.evaluate(
-    (height, newUrls) => {
-      newUrls.forEach((url) => window.downloaded.add(url));
-      window.scrollBy(0, height);
+    (height, selector, remainder) => {
+      const elements = [...document.querySelectorAll(selector)];
+      elements.slice(0, -remainder).forEach((element) => element.remove);
+      window.scrollBy(0, 3 * height);
     },
     page.viewport().height,
-    newUrls
+    CleanupSelector,
+    CleanupRemainder
   );
 }
 
-console.log('Done!');
+console.log(colors.yellow('Done!'));
+
+// #region Functions
+/**
+ * @param {Upload[]} files
+ */
+async function uploadWithRetry(files) {
+  try {
+    await uploadFiles({ repo: DatasetRepo, credentials, files });
+  } catch (error) {
+    // If not a rate-limit error re-throw
+    if (error.statusCode !== 429) throw error;
+
+    // If a rate-limit error wait and retry
+    console.warn(RateDelayWarning);
+    await new Promise((res) => setTimeout(res, RateLimitDelay));
+    await uploadWithRetry(files);
+  }
+}
+// #endregion
