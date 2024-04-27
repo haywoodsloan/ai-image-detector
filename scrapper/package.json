@@ -1,0 +1,25 @@
+{
+  "name": "ai-image-data-scrapper",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start:ai": "node index.js",
+    "start:real": "node index.js --real",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ai",
+    "image",
+    "data",
+    "scrapper"
+  ],
+  "author": "haywoodsloan",
+  "license": "ISC",
+  "dependencies": {
+    "@huggingface/hub": "^0.14.10",
+    "puppeteer": "^22.7.1",
+    "yargs": "^17.7.2"
+  }
+}
