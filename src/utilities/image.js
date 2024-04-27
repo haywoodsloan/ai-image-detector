@@ -1,20 +1,20 @@
-import { openAsBlob } from 'fs';
-import { isHttpUrl } from './url.js';
+import { openAsBlob } from "fs";
+import { isHttpUrl } from "./url.js";
 
 /**
- * @param {string} url
+ * @param {string} uri
  */
-export async function getImageAsBlob(url) {
-  if (isHttpUrl(url)) {
-    const response = await fetch(url, {
+export async function getImageAsBlob(uri) {
+  if (isHttpUrl(uri)) {
+    const response = await fetch(uri, {
       headers: {
-        Accept: 'image/*',
+        Accept: "image/*",
       },
     });
 
     return await response.blob();
   }
 
-  const blob = await openAsBlob(url);
+  const blob = await openAsBlob(uri);
   return blob;
 }
