@@ -41,7 +41,13 @@ const AiSubReddit = 'https://www.reddit.com/r/aiArt';
 const RealArtSubReddit = 'https://www.reddit.com/r/Art/';
 const RealPicsSubReddit = 'https://www.reddit.com/r/pics/';
 
-const ChromeUA = new UserAgent(/Chrome/).toString();
+const WindowHeight = 1080;
+const WindowWidth = 1920;
+const ChromeUA = new UserAgent([
+  /Chrome/,
+  { deviceCategory: 'desktop' },
+]).toString();
+
 const ImageSelector = 'article img[src^="https://preview.redd.it"]';
 const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
 const CleanupRemainder = 3;
@@ -78,10 +84,12 @@ for await (const file of files) {
 }
 
 // Launch Puppeteer
-const browser = await puppeteer.launch();
-const page = await browser.newPage();
+const browser = await puppeteer.launch({
+  defaultViewport: { width: WindowWidth, height: WindowHeight },
+  args: [`--window-size=${WindowWidth},${WindowHeight}`],
+});
 
-await page.setViewport({ width: 1920, height: 1080 });
+const page = await browser.newPage();
 await page.setUserAgent(ChromeUA);
 
 // Browse to Reddit
