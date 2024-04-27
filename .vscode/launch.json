@@ -5,12 +5,13 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Demo",
+      "name": "Run Service Demo",
       "request": "launch",
       "runtimeArgs": ["run-script", "demo"],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
-      "type": "node"
+      "type": "node",
+      "cwd": "${workspaceFolder}/service"
     }
   ]
 }
