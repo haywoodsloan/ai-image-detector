@@ -15,13 +15,8 @@ const args = yargs(hideBin(process.argv))
     type: 'boolean',
     description: 'If real (non-AI) images should be downloaded',
     default: false,
-  })
-  .option('output', {
-    type: 'string',
-    description: 'The output path',
   }).argv;
 
-args.output ||= args.real ? './data/real' : './data/artificial';
 const { hfKey } = JSON.parse(
   await readFile(new URL('./settings.local.json', import.meta.url))
 );
@@ -45,7 +40,6 @@ await page.setUserAgent(
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
 );
 
-await mkdir(args.output, { recursive: true });
 const redditUrl = args.real
   ? 'https://www.reddit.com/r/Art/'
   : 'https://www.reddit.com/r/aiArt';
