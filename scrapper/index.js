@@ -187,21 +187,17 @@ while (count < args.count) {
 
   // Clean up the downloaded images from the page to save memory
   // Scroll to load more images
-  await page.evaluate(
-    (selector, remainder) => {
-      window.scrollBy(0, document.body.scrollHeight);
-      const elements = [...document.querySelectorAll(selector)];
-      elements.slice(0, -remainder).forEach((element) => element.remove());
-    },
-    CleanupSelector,
-    CleanupRemainder
-  );
+  await page.evaluate((selector, remainder) => {
+    window.scrollBy(0, document.body.scrollHeight);
+    const elements = [...document.querySelectorAll(selector)];
+    elements.slice(0, -remainder).forEach((element) => element.remove());
+  }, ...[CleanupSelector, CleanupRemainder]);
 
   // Click the retry button if an errors has occurred
-  const retryButton = await page.$(RetrySelector);
-  if (retryButton) {
+  if (await page.$(RetrySelector)) {
     await wait(LoadErrorDelay);
-    await retryButton.click();
+    const retryButton = await page.$(RetrySelector);
+    await retryButton?.click();
   }
 }
 
