@@ -56,6 +56,7 @@ const ChromeUA = new UserAgent([
 const LoaderSelector = 'main faceplate-partial[id^="partial-more-posts"]';
 const ImageSelector = 'article img[src^="https://preview.redd.it"]';
 const RetrySelector = '>>> button ::-p-text(Retry)';
+const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
 
 const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
 const RealPathPrefix = 'human';
@@ -63,6 +64,7 @@ const AiPathPrefix = 'artificial';
 
 const RetryLimit = 3;
 const UploadBatchSize = 10;
+const CleanupRemainder = 15;
 
 const RequestErrorDelay = 1000;
 const LoadErrorDelay = 30 * 1000;
@@ -156,6 +158,7 @@ while (count < args.count) {
     if (count >= args.count || fileRequests.length >= UploadBatchSize) break;
   }
 
+  // Check if the post loader is gone
   const loader = await page.$(LoaderSelector);
 
   // Upload a batch of files to HuggingFace, if enough are ready
@@ -184,9 +187,15 @@ while (count < args.count) {
 
   // Clean up the downloaded images from the page to save memory
   // Scroll to load more images
-  await page.evaluate(() => {
-    window.scrollBy(0, document.body.scrollHeight);
-  });
+  await page.evaluate(
+    (selector, remainder) => {
+      window.scrollBy(0, document.body.scrollHeight);
+      const elements = [...document.querySelectorAll(selector)];
+      elements.slice(0, -remainder).forEach((element) => element.remove());
+    },
+    CleanupSelector,
+    CleanupRemainder
+  );
 
   // Click the retry button if an errors has occurred
   const retryButton = await page.$(RetrySelector);
