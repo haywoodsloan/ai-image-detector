@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import { launch } from 'puppeteer';
 import { readFile } from 'fs/promises';
 import { listFiles, uploadFiles } from '@huggingface/hub';
 import yargs from 'yargs';
@@ -13,6 +13,11 @@ const args = yargs(hideBin(process.argv))
     type: 'number',
     description: 'The maximum number of images to scrape',
     demandOption: 'Must specify a maximum number of images to scrape',
+  })
+  .option('debug', {
+    type: 'boolean',
+    description: 'Show the browser for debugging',
+    default: false,
   })
   .group(['real', 'pics'], 'Real Image Scrapping')
   .option('real', {
@@ -41,26 +46,33 @@ const AiSubReddit = 'https://www.reddit.com/r/aiArt';
 const RealArtSubReddit = 'https://www.reddit.com/r/Art/';
 const RealPicsSubReddit = 'https://www.reddit.com/r/pics/';
 
-const WindowHeight = 1080;
-const WindowWidth = 1920;
+const WindowHeight = 1250;
+const WindowWidth = 1650;
 const ChromeUA = new UserAgent([
   /Chrome/,
   { deviceCategory: 'desktop' },
 ]).toString();
 
+const LoaderSelector = 'main faceplate-partial[id^="partial-more-posts"]';
 const ImageSelector = 'article img[src^="https://preview.redd.it"]';
-const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
-const CleanupRemainder = 3;
+const RetrySelector = '>>> button ::-p-text(Retry)';
 
 const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
 const RealPathPrefix = 'human';
 const AiPathPrefix = 'artificial';
 
+const RetryLimit = 3;
 const UploadBatchSize = 10;
-const RateLimitDelay = 70 * 60 * 1000;
+
+const RequestErrorDelay = 1000;
+const LoadErrorDelay = 30 * 1000;
+const RateLimitDelay = 10 * 60 * 1000;
+
 const RateDelayWarning = colors.red(
-  `Got rate-limited, waiting ${RateLimitDelay / 60 / 1000} minutes before retry`
+  `Rate-limited, waiting ${RateLimitDelay / 60 / 1000} minutes to retry`
 );
+const RequestErrorWarning = (/** @type {Error} */ error) =>
+  colors.red(`Retrying after error: ${error.message}`);
 // #endregion
 
 // Parse local settings for HuggingFace credentials
@@ -84,13 +96,22 @@ for await (const file of files) {
 }
 
 // Launch Puppeteer
-const browser = await puppeteer.launch({
+const browser = await launch({
+  headless: !args.debug,
   defaultViewport: { width: WindowWidth, height: WindowHeight },
   args: [`--window-size=${WindowWidth},${WindowHeight}`],
 });
 
 const page = await browser.newPage();
 await page.setUserAgent(ChromeUA);
+
+page.on('error', (error) => {
+  console.error('Error from puppeteer:', error);
+});
+
+page.on('pageerror', (error) => {
+  console.error('PageError from puppeteer:', error);
+});
 
 // Browse to Reddit
 const redditUrl = args.real
@@ -135,47 +156,78 @@ while (count < args.count) {
     if (count >= args.count || fileRequests.length >= UploadBatchSize) break;
   }
 
+  const loader = await page.$(LoaderSelector);
+
   // Upload a batch of files to HuggingFace, if enough are ready
-  if (fileRequests.length >= UploadBatchSize || count >= args.count) {
+  if (
+    fileRequests.length >= UploadBatchSize ||
+    count >= args.count ||
+    !loader
+  ) {
     const files = await Promise.all(fileRequests);
     console.log(colors.green(`Uploading ${files.length} files to HuggingFace`));
     await uploadWithRetry(files);
     fileRequests.length = 0;
   }
 
+  // Break if we've reached the maximum number of images
+  if (count >= args.count) {
+    console.log(colors.yellow('Reached maximum image count'));
+    break;
+  }
+
+  // Break if we've reached the end of the subreddit
+  if (!loader) {
+    console.log(colors.yellow('Reached end of Subreddit'));
+    break;
+  }
+
   // Clean up the downloaded images from the page to save memory
   // Scroll to load more images
-  await page.evaluate(
-    (height, selector, remainder) => {
-      const elements = [...document.querySelectorAll(selector)];
-      elements.slice(0, -remainder).forEach((element) => element.remove);
-      window.scrollBy(0, 3 * height);
-    },
-    page.viewport().height,
-    CleanupSelector,
-    CleanupRemainder
-  );
+  await page.evaluate(() => {
+    window.scrollBy(0, document.body.scrollHeight);
+  });
+
+  // Click the retry button if an errors has occurred
+  const retryButton = await page.$(RetrySelector);
+  if (retryButton) {
+    await wait(LoadErrorDelay);
+    await retryButton.click();
+  }
 }
 
+await browser.close();
 console.log(colors.yellow('Done!'));
 
 // #region Functions
 /**
  * @param {Upload[]} files
  */
-async function uploadWithRetry(files) {
+async function uploadWithRetry(files, retryCount = 0) {
   try {
     await uploadFiles({ repo: DatasetRepo, credentials, files });
   } catch (error) {
-    if (error.statusCode === 412) {
-      await uploadWithRetry(files);
-    } else if (error.statusCode === 429) {
-      await new Promise((res) => setTimeout(res, RateLimitDelay));
-      await uploadWithRetry(files);
+    if (error.statusCode === 429) {
+      // Warn about rate limiting and wait a few minutes
+      console.warn(RateDelayWarning);
+      await wait(RateLimitDelay);
+      await uploadWithRetry(files, retryCount);
+    } else if (retryCount < RetryLimit) {
+      // Retry after a few seconds for other errors
+      console.warn(RequestErrorWarning(error));
+      await wait(RequestErrorDelay);
+      await uploadWithRetry(files, retryCount + 1);
     } else {
       // If not a known error re-throw
       throw error;
     }
   }
+}
+
+/**
+ * @param {number} delay
+ */
+async function wait(delay) {
+  await new Promise((res) => setTimeout(res, delay));
 }
 // #endregion

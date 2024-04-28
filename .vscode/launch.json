@@ -7,7 +7,14 @@
     {
       "name": "Run Data Scrapper (AI)",
       "request": "launch",
-      "runtimeArgs": ["run-script", "start", "--", "--count", "1000000"],
+      "runtimeArgs": [
+        "run-script",
+        "start",
+        "--",
+        "--count",
+        "1000000",
+        "--debug"
+      ],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
@@ -22,7 +29,8 @@
         "--",
         "--count",
         "1000000",
-        "--real"
+        "--real",
+        "--debug"
       ],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
@@ -39,7 +47,8 @@
         "--count",
         "1000000",
         "--real",
-        "--pics"
+        "--pics",
+        "--debug"
       ],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
