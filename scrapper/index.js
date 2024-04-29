@@ -202,7 +202,7 @@ while (count < args.count) {
       await waitForHidden(loading, LoadTimeout);
     } catch {
       console.warn(colors.red('Post loading failed, refreshing the page'));
-      await page.reload();
+      await page.reload({ waitUntil: 'networkidle0' });
     }
   }
 }
