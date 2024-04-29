@@ -61,8 +61,9 @@ const RetrySelector = '>>> button ::-p-text(Retry)';
 const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
 
 const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
-const RealPathPrefix = 'human';
-const AiPathPrefix = 'artificial';
+const RawImageBranch = 'raw';
+const RealPathPrefix = 'images/human';
+const AiPathPrefix = 'images/artificial';
 
 const RetryLimit = 3;
 const UploadBatchSize = 10;
@@ -218,7 +219,12 @@ console.log(colors.yellow('Done!'));
 async function uploadWithRetry(files, retryCount = 0) {
   try {
     console.log(colors.green(`Uploading ${files.length} files to HuggingFace`));
-    await uploadFiles({ repo: DatasetRepo, credentials, files });
+    await uploadFiles({
+      repo: DatasetRepo,
+      branch: RawImageBranch,
+      credentials,
+      files,
+    });
   } catch (error) {
     if (error.statusCode === 429) {
       // Warn about rate limiting and wait a few minutes
