@@ -53,7 +53,8 @@ const ChromeUA = new UserAgent([
   { deviceCategory: 'desktop' },
 ]).toString();
 
-const LoaderSelector = 'main faceplate-partial[id^="partial-more-posts"]';
+const LoaderSelector = 'main >>> shreddit-post-loading';
+const LoadingSelector = 'main >>> shreddit-loading';
 const ImageSelector = 'article img[src^="https://preview.redd.it"]';
 const RetrySelector = '>>> button ::-p-text(Retry)';
 const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
@@ -67,11 +68,15 @@ const UploadBatchSize = 10;
 const CleanupRemainder = 15;
 
 const RequestErrorDelay = 1000;
+const LoadTimeout = 30 * 1000;
 const LoadErrorDelay = 30 * 1000;
 const RateLimitDelay = 10 * 60 * 1000;
 
 const RateDelayWarning = colors.red(
   `Rate-limited, waiting ${RateLimitDelay / 60 / 1000} minutes to retry`
+);
+const LoadTimeoutWarning = colors.red(
+  'Failed to load more posts, refreshing the page'
 );
 const RequestErrorWarning = (/** @type {Error} */ error) =>
   colors.red(`Retrying after error: ${error.message}`);
@@ -188,9 +193,9 @@ while (count < args.count) {
   // Clean up the downloaded images from the page to save memory
   // Scroll to load more images
   await page.evaluate((selector, remainder) => {
-    window.scrollBy(0, document.body.scrollHeight);
     const elements = [...document.querySelectorAll(selector)];
     elements.slice(0, -remainder).forEach((element) => element.remove());
+    window.scrollBy(0, document.body.scrollHeight);
   }, ...[CleanupSelector, CleanupRemainder]);
 
   // Click the retry button if an errors has occurred
@@ -198,6 +203,17 @@ while (count < args.count) {
     await wait(LoadErrorDelay);
     const retryButton = await page.$(RetrySelector);
     await retryButton?.click();
+  }
+
+  // Wait for the loader to disappear and the posts to finish loading
+  let loading = await page.$(LoadingSelector);
+  if (await loading?.isVisible()) {
+    try {
+      await waitForHidden(loading, LoadTimeout);
+    } catch {
+      console.warn(LoadTimeoutWarning);
+      await page.reload();
+    }
   }
 }
 
@@ -230,9 +246,34 @@ async function uploadWithRetry(files, retryCount = 0) {
 }
 
 /**
- * @param {number} delay
+ * @param {Number} delay
  */
 async function wait(delay) {
   await new Promise((res) => setTimeout(res, delay));
+}
+
+/**
+ *
+ * @param {import('puppeteer').ElementHandle<Element>} element
+ * @param {Number} timeout
+ */
+async function waitForHidden(element, timeout) {
+  await new Promise((res, rej) => {
+    let intervalId, timeoutId;
+
+    intervalId = setInterval(async () => {
+      if (await element.isHidden()) {
+        clearTimeout(timeoutId);
+        clearInterval(intervalId);
+        res();
+      }
+    }, 100);
+
+    timeoutId = setTimeout(() => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+      rej(new Error("Element didn't become hidden before the timeout"));
+    }, timeout);
+  });
 }
 // #endregion
