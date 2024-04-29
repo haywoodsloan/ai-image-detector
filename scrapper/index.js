@@ -71,15 +71,6 @@ const RequestErrorDelay = 1000;
 const LoadTimeout = 30 * 1000;
 const LoadErrorDelay = 30 * 1000;
 const RateLimitDelay = 10 * 60 * 1000;
-
-const RateDelayWarning = colors.red(
-  `Rate-limited, waiting ${RateLimitDelay / 60 / 1000} minutes to retry`
-);
-const LoadTimeoutWarning = colors.red(
-  'Failed to load more posts, refreshing the page'
-);
-const RequestErrorWarning = (/** @type {Error} */ error) =>
-  colors.red(`Retrying after error: ${error.message}`);
 // #endregion
 
 // Parse local settings for HuggingFace credentials
@@ -173,7 +164,6 @@ while (count < args.count) {
     !loader
   ) {
     const files = await Promise.all(fileRequests);
-    console.log(colors.green(`Uploading ${files.length} files to HuggingFace`));
     await uploadWithRetry(files);
     fileRequests.length = 0;
   }
@@ -211,7 +201,7 @@ while (count < args.count) {
     try {
       await waitForHidden(loading, LoadTimeout);
     } catch {
-      console.warn(LoadTimeoutWarning);
+      console.warn(colors.red('Post loading failed, refreshing the page'));
       await page.reload();
     }
   }
@@ -226,16 +216,18 @@ console.log(colors.yellow('Done!'));
  */
 async function uploadWithRetry(files, retryCount = 0) {
   try {
+    console.log(colors.green(`Uploading ${files.length} files to HuggingFace`));
     await uploadFiles({ repo: DatasetRepo, credentials, files });
   } catch (error) {
     if (error.statusCode === 429) {
       // Warn about rate limiting and wait a few minutes
-      console.warn(RateDelayWarning);
+      const delay = RateLimitDelay / 60 / 1000;
+      console.warn(colors.red(`Rate-limited, waiting ${delay} mins to retry`));
       await wait(RateLimitDelay);
       await uploadWithRetry(files, retryCount);
     } else if (retryCount < RetryLimit) {
       // Retry after a few seconds for other errors
-      console.warn(RequestErrorWarning(error));
+      console.warn(colors.red(`Retrying after error: ${error.message}`));
       await wait(RequestErrorDelay);
       await uploadWithRetry(files, retryCount + 1);
     } else {
