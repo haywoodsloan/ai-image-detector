@@ -6,6 +6,7 @@ import { hideBin } from 'yargs/helpers';
 import { basename } from 'path';
 import UserAgent from 'user-agents';
 import colors from 'cli-color';
+import sanitize from 'sanitize-filename';
 
 // #region Command Arguments
 const args = yargs(hideBin(process.argv))
@@ -137,7 +138,7 @@ while (count < args.count) {
   // Fetch the file blobs and prepare to bulk upload to HuggingFace
   for (const url of urls) {
     const { pathname } = new URL(url);
-    const fileName = basename(pathname);
+    const fileName = sanitize(basename(pathname));
 
     if (existing.has(fileName)) continue;
     console.log(colors.green(`Downloading: ${fileName}`));
