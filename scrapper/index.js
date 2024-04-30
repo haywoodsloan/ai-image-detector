@@ -13,7 +13,7 @@ const args = yargs(hideBin(process.argv))
   .option('count', {
     type: 'number',
     description: 'The maximum number of images to scrape',
-    default: Infinity
+    default: Infinity,
   })
   .option('debug', {
     type: 'boolean',
@@ -68,9 +68,9 @@ const RetryLimit = 3;
 const UploadBatchSize = 10;
 const CleanupRemainder = 15;
 
-const RequestErrorDelay = 1000;
+const RequestErrorDelay = 10 * 1000;
 const LoadTimeout = 30 * 1000;
-const LoadErrorDelay = 30 * 1000;
+const LoadErrorDelay = 15 * 1000;
 const RateLimitDelay = 10 * 60 * 1000;
 // #endregion
 
@@ -160,9 +160,8 @@ while (count < args.count) {
 
   // Upload a batch of files to HuggingFace, if enough are ready
   if (
-    fileRequests.length >= UploadBatchSize ||
-    count >= args.count ||
-    !loader
+    fileRequests.length &&
+    (fileRequests.length >= UploadBatchSize || count >= args.count || !loader)
   ) {
     const files = await Promise.all(fileRequests);
     await uploadWithRetry(files);
@@ -229,7 +228,7 @@ async function uploadWithRetry(files, retryCount = 0) {
     } else if (retryCount < RetryLimit) {
       // Retry after a few seconds for other errors
       console.warn(colors.red(`Retrying after error: ${error.message}`));
-      await wait(RequestErrorDelay);
+      await wait(RequestErrorDelay * (retryCount + 1));
       await uploadWithRetry(files, retryCount + 1);
     } else {
       // If not a known error re-throw
