@@ -63,7 +63,7 @@ const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
 const RealPathPrefix = 'raw/human';
 const AiPathPrefix = 'raw/artificial';
 
-const RetryLimit = 3;
+const RetryLimit = 5;
 const UploadBatchSize = 10;
 const CleanupRemainder = 15;
 
