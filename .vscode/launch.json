@@ -5,16 +5,16 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Run Image Processor",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/processor/process_images.py",
+      "console": "integratedTerminal"
+    },
+    {
       "name": "Run Data Scrapper (AI)",
       "request": "launch",
-      "runtimeArgs": [
-        "run-script",
-        "start",
-        "--",
-        "--count",
-        "1000000",
-        "--debug"
-      ],
+      "runtimeArgs": ["run-script", "start", "--", "--debug"],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
@@ -23,15 +23,7 @@
     {
       "name": "Run Data Scrapper (Real Art)",
       "request": "launch",
-      "runtimeArgs": [
-        "run-script",
-        "start",
-        "--",
-        "--count",
-        "1000000",
-        "--real",
-        "--debug"
-      ],
+      "runtimeArgs": ["run-script", "start", "--", "--real", "--debug"],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
@@ -44,8 +36,6 @@
         "run-script",
         "start",
         "--",
-        "--count",
-        "1000000",
         "--real",
         "--pics",
         "--debug"

@@ -397,5 +397,19 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
 # Local settings
-*.local.json
+local.*
+*.local
+*.local.*
+
+# HuggingFace cache
+.cache/

@@ -13,7 +13,7 @@ const args = yargs(hideBin(process.argv))
   .option('count', {
     type: 'number',
     description: 'The maximum number of images to scrape',
-    demandOption: 'Must specify a maximum number of images to scrape',
+    default: Infinity
   })
   .option('debug', {
     type: 'boolean',
