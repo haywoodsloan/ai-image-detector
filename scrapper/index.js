@@ -119,17 +119,16 @@ let count = 0;
 // Browse to multiple subreddits and scrape files
 const redditUrls = args.real ? RealSubReddits : AiSubReddits;
 for (let i = 0; i < redditUrls.length && count < args.count; i++) {
-  const redditUrl = redditUrls[i];
-  console.log(colors.yellow(`Navigating to ${redditUrl}`));
-
   // Wait before loading additional subreddits
+  const redditUrl = redditUrls[i];
   if (i > 0) {
     const delay = NextSubredditDelay / 1000;
-    console.log(`Waiting ${NextSubredditDelay} secs before next subreddit`);
+    console.log(colors.yellow(`Waiting ${delay} secs before next subreddit`));
     await wait(NextSubredditDelay);
   }
 
   // Navigate to the page and wait for network traffic to settle
+  console.log(colors.yellow(`Navigating to ${redditUrl}`));
   await page.goto(redditUrl, {
     waitUntil: 'networkidle0',
   });
