@@ -1,0 +1,45 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Process Images",
+      "type": "shell",
+      "command": "python ${workspaceFolder}/processor/process_images.py",
+      "problemMatcher": []
+    },
+    {
+      "label": "Scrape AI Images",
+      "type": "npm",
+      "script": "start",
+      "path": "scrapper",
+      "problemMatcher": []
+    },
+    {
+      "label": "Scrape Real Art",
+      "type": "npm",
+      "script": "start -- --real",
+      "path": "scrapper",
+      "problemMatcher": []
+    },
+    {
+      "label": "Scrape Real Pics",
+      "type": "npm",
+      "script": "start -- --real --pics",
+      "path": "scrapper",
+      "problemMatcher": []
+    },
+    {
+      "label": "Scrape All and Reprocess",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Scrape AI Images",
+        "Scrape Real Art",
+        "Scrape Real Pics",
+        "Process Images"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
