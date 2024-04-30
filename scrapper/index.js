@@ -136,6 +136,7 @@ for (let i = 0; i < redditUrls.length && count < args.count; i++) {
 
   // Wait for the loader to appear so we know the posts will load.
   await page.waitForSelector(LoaderSelector);
+  console.log(colors.yellow(`Successfully loaded ${redditUrl}`));
 
   // Start scrapping images and scrolling through the page
   while (count < args.count) {
