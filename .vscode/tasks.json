@@ -17,16 +17,9 @@
       "problemMatcher": []
     },
     {
-      "label": "Scrape Real Art",
+      "label": "Scrape Real Images",
       "type": "npm",
       "script": "start -- --real",
-      "path": "scrapper",
-      "problemMatcher": []
-    },
-    {
-      "label": "Scrape Real Pics",
-      "type": "npm",
-      "script": "start -- --real --pics",
       "path": "scrapper",
       "problemMatcher": []
     },
@@ -35,8 +28,7 @@
       "dependsOrder": "sequence",
       "dependsOn": [
         "Scrape AI Images",
-        "Scrape Real Art",
-        "Scrape Real Pics",
+        "Scrape Real Images",
         "Process Images"
       ],
       "problemMatcher": []

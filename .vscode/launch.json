@@ -21,25 +21,9 @@
       "cwd": "${workspaceFolder}/scrapper"
     },
     {
-      "name": "Run Data Scrapper (Real Art)",
+      "name": "Run Data Scrapper (Real)",
       "request": "launch",
       "runtimeArgs": ["run-script", "start", "--", "--real", "--debug"],
-      "runtimeExecutable": "npm",
-      "skipFiles": ["<node_internals>/**"],
-      "type": "node",
-      "cwd": "${workspaceFolder}/scrapper"
-    },
-    {
-      "name": "Run Data Scrapper (Real Pics)",
-      "request": "launch",
-      "runtimeArgs": [
-        "run-script",
-        "start",
-        "--",
-        "--real",
-        "--pics",
-        "--debug"
-      ],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",

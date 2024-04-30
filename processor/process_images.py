@@ -14,7 +14,7 @@ def with_retry(func, retry_count=0):
     except Exception as ex:
         if retry_count < RETRY_LIMIT:
             print(colored(f"Retrying after error: {str(ex)}", "red"))
-            sleep(REQUEST_ERROR_DELAY)
+            sleep(REQUEST_ERROR_DELAY * (retry_count + 1))
             return with_retry(func, retry_count + 1)
         else:
             raise

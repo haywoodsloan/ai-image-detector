@@ -20,15 +20,9 @@ const args = yargs(hideBin(process.argv))
     description: 'Show the browser for debugging',
     default: false,
   })
-  .group(['real', 'pics'], 'Real Image Scrapping')
   .option('real', {
     type: 'boolean',
     description: 'If real (non-AI) images should be scrapped',
-    default: false,
-  })
-  .option('pics', {
-    type: 'boolean',
-    description: 'If real pictures should be scrapped',
     default: false,
   }).argv;
 // #endregion
@@ -43,9 +37,14 @@ const args = yargs(hideBin(process.argv))
 // #endregion
 
 // #region Constants
-const AiSubReddit = 'https://www.reddit.com/r/aiArt';
-const RealArtSubReddit = 'https://www.reddit.com/r/Art/';
-const RealPicsSubReddit = 'https://www.reddit.com/r/pics/';
+const AiSubReddits = [
+  'https://www.reddit.com/r/aiArt',
+  'https://www.reddit.com/r/deepdream',
+];
+const RealSubReddits = [
+  'https://www.reddit.com/r/Art/',
+  'https://www.reddit.com/r/pics/',
+];
 
 const WindowHeight = 1250;
 const WindowWidth = 1650;
@@ -68,10 +67,11 @@ const RetryLimit = 3;
 const UploadBatchSize = 10;
 const CleanupRemainder = 15;
 
+const LoadStuckTimeout = 30 * 1000;
 const RequestErrorDelay = 10 * 1000;
-const LoadTimeout = 30 * 1000;
-const LoadErrorDelay = 15 * 1000;
+const RetryDelay = 15 * 1000;
 const RateLimitDelay = 10 * 60 * 1000;
+const NextSubredditDelay = 10 * 1000;
 // #endregion
 
 // Parse local settings for HuggingFace credentials
@@ -112,97 +112,108 @@ page.on('pageerror', (error) => {
   console.error('PageError from puppeteer:', error);
 });
 
-// Browse to Reddit
-const redditUrl = args.real
-  ? args.pics
-    ? RealPicsSubReddit
-    : RealArtSubReddit
-  : AiSubReddit;
-
-await page.goto(redditUrl, {
-  waitUntil: 'networkidle0',
-});
-
 /** @type {Promise<Upload>[]} */
 const fileRequests = [];
 let count = 0;
 
-// Start scrapping images and scrolling through the page
-while (count < args.count) {
-  // Get just the new URLs that haven't been downloaded yet
-  const urls = await page.evaluate((selector) => {
-    const images = document.querySelectorAll(selector);
-    return [...images].map((image) => image.src);
-  }, ImageSelector);
+// Browse to multiple subreddits and scrape files
+const redditUrls = args.real ? RealSubReddits : AiSubReddits;
+for (let i = 0; i < redditUrls.length && count < args.count; i++) {
+  const redditUrl = redditUrls[i];
+  console.log(colors.yellow(`Navigating to ${redditUrl}`));
 
-  // Fetch the file blobs and prepare to bulk upload to HuggingFace
-  for (const url of urls) {
-    const { pathname } = new URL(url);
-    const fileName = sanitize(basename(pathname));
-
-    if (existing.has(fileName)) continue;
-    console.log(colors.green(`Downloading: ${fileName}`));
-
-    existing.add(fileName);
-    fileRequests.push(
-      fetch(url).then(async (result) => ({
-        path: `${pathPrefix}/${fileName}`,
-        content: await result.blob(),
-      }))
-    );
-
-    count++;
-    if (count >= args.count || fileRequests.length >= UploadBatchSize) break;
+  // Wait before loading additional subreddits
+  if (i > 0) {
+    const delay = NextSubredditDelay / 1000;
+    console.log(`Waiting ${NextSubredditDelay} secs before next subreddit`);
+    await wait(NextSubredditDelay);
   }
 
-  // Check if the post loader is gone
-  const loader = await page.$(LoaderSelector);
+  // Navigate to the page and wait for network traffic to settle
+  await page.goto(redditUrl, {
+    waitUntil: 'networkidle0',
+  });
 
-  // Upload a batch of files to HuggingFace, if enough are ready
-  if (
-    fileRequests.length &&
-    (fileRequests.length >= UploadBatchSize || count >= args.count || !loader)
-  ) {
-    const files = await Promise.all(fileRequests);
-    await uploadWithRetry(files);
-    fileRequests.length = 0;
-  }
+  // Wait for the loader to appear so we know the posts will load.
+  await page.waitForSelector(LoaderSelector);
 
-  // Break if we've reached the maximum number of images
-  if (count >= args.count) {
-    console.log(colors.yellow('Reached maximum image count'));
-    break;
-  }
+  // Start scrapping images and scrolling through the page
+  while (count < args.count) {
+    // Get just the new URLs that haven't been downloaded yet
+    const urls = await page.evaluate((selector) => {
+      const images = document.querySelectorAll(selector);
+      return [...images].map((image) => image.src);
+    }, ImageSelector);
 
-  // Break if we've reached the end of the subreddit
-  if (!loader) {
-    console.log(colors.yellow('Reached end of Subreddit'));
-    break;
-  }
+    // Fetch the file blobs and prepare to bulk upload to HuggingFace
+    for (const url of urls) {
+      const { pathname } = new URL(url);
+      const fileName = sanitize(basename(pathname));
 
-  // Clean up the downloaded images from the page to save memory
-  // Scroll to load more images
-  await page.evaluate((selector, remainder) => {
-    const elements = [...document.querySelectorAll(selector)];
-    elements.slice(0, -remainder).forEach((element) => element.remove());
-    window.scrollBy(0, document.body.scrollHeight);
-  }, ...[CleanupSelector, CleanupRemainder]);
+      if (existing.has(fileName)) continue;
+      console.log(colors.green(`Downloading: ${fileName}`));
 
-  // Click the retry button if an errors has occurred
-  if (await page.$(RetrySelector)) {
-    await wait(LoadErrorDelay);
-    const retryButton = await page.$(RetrySelector);
-    await retryButton?.click();
-  }
+      existing.add(fileName);
+      fileRequests.push(
+        fetch(url).then(async (result) => ({
+          path: `${pathPrefix}/${fileName}`,
+          content: await result.blob(),
+        }))
+      );
 
-  // Wait for the loader to disappear and the posts to finish loading
-  let loading = await page.$(LoadingSelector);
-  if (await loading?.isVisible()) {
-    try {
-      await waitForHidden(loading, LoadTimeout);
-    } catch {
-      console.warn(colors.red('Post loading failed, refreshing the page'));
-      await page.reload({ waitUntil: 'networkidle0' });
+      count++;
+      if (count >= args.count || fileRequests.length >= UploadBatchSize) break;
+    }
+
+    // Check if the post loader is gone
+    const loader = await page.$(LoaderSelector);
+
+    // Upload a batch of files to HuggingFace, if enough are ready
+    if (
+      fileRequests.length &&
+      (fileRequests.length >= UploadBatchSize || count >= args.count || !loader)
+    ) {
+      const files = await Promise.all(fileRequests);
+      await uploadWithRetry(files);
+      fileRequests.length = 0;
+    }
+
+    // Break if we've reached the maximum number of images
+    if (count >= args.count) {
+      console.log(colors.yellow('Reached maximum image count'));
+      break;
+    }
+
+    // Break if we've reached the end of the subreddit
+    if (!loader) {
+      console.log(colors.yellow('Reached end of Subreddit'));
+      break;
+    }
+
+    // Clean up the downloaded images from the page to save memory
+    // Scroll to load more images
+    await page.evaluate((selector, remainder) => {
+      const elements = [...document.querySelectorAll(selector)];
+      elements.slice(0, -remainder).forEach((element) => element.remove());
+      window.scrollBy(0, document.body.scrollHeight);
+    }, ...[CleanupSelector, CleanupRemainder]);
+
+    // Click the retry button if an errors has occurred
+    if (await page.$(RetrySelector)) {
+      await wait(RetryDelay);
+      const retryButton = await page.$(RetrySelector);
+      await retryButton?.click();
+    }
+
+    // Wait for the loader to disappear and the posts to finish loading
+    let loading = await page.$(LoadingSelector);
+    if (await loading?.isVisible()) {
+      try {
+        await waitForHidden(loading, LoadStuckTimeout);
+      } catch {
+        console.warn(colors.red('Post loading failed, refreshing the page'));
+        await page.reload({ waitUntil: 'networkidle0' });
+      }
     }
   }
 }
