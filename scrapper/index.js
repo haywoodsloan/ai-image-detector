@@ -76,7 +76,7 @@ const CleanupRemainder = 15;
 
 const LoadStuckTimeout = 30 * 1000;
 const RequestErrorDelay = 10 * 1000;
-const RetryDelay = 15 * 1000;
+const RetryDelay = 30 * 1000;
 const RateLimitDelay = 10 * 60 * 1000;
 const NextSubredditDelay = 30 * 1000;
 // #endregion
