@@ -4,12 +4,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Process Images",
-      "type": "shell",
-      "command": "python ${workspaceFolder}/processor/process_images.py",
-      "problemMatcher": []
-    },
-    {
       "label": "Scrape AI Images",
       "type": "npm",
       "script": "start",
@@ -24,13 +18,9 @@
       "problemMatcher": []
     },
     {
-      "label": "Scrape All and Reprocess",
+      "label": "Scrape All",
       "dependsOrder": "sequence",
-      "dependsOn": [
-        "Scrape AI Images",
-        "Scrape Real Images",
-        "Process Images"
-      ],
+      "dependsOn": ["Scrape AI Images", "Scrape Real Images"],
       "problemMatcher": []
     }
   ]

@@ -5,13 +5,6 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Image Processor",
-      "type": "debugpy",
-      "request": "launch",
-      "program": "${workspaceFolder}/processor/process_images.py",
-      "console": "integratedTerminal"
-    },
-    {
       "name": "Run Data Scrapper (AI)",
       "request": "launch",
       "runtimeArgs": ["run-script", "start", "--", "--debug"],
