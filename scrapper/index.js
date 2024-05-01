@@ -60,11 +60,15 @@ const RetrySelector = '>>> button ::-p-text(Retry)';
 const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
 
 const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
-const RealPathPrefix = 'raw/human';
-const AiPathPrefix = 'raw/artificial';
+const TestSplit = 0.1;
 
-const RetryLimit = 5;
-const UploadBatchSize = 10;
+const RealClass = 'human';
+const AiClass = 'artificial';
+const TrainPathPrefix = 'data/train';
+const TestPathPrefix = 'data/test';
+
+const RetryLimit = 10;
+const UploadBatchSize = 30;
 const CleanupRemainder = 15;
 
 const LoadStuckTimeout = 30 * 1000;
@@ -80,19 +84,16 @@ const { hfKey } = JSON.parse(
 );
 const credentials = { accessToken: hfKey };
 
-// Get a set of the existing images
-const pathPrefix = args.real ? RealPathPrefix : AiPathPrefix;
-const files = listFiles({
-  repo: DatasetRepo,
-  path: pathPrefix,
-  credentials,
-});
-
 // Track existing files by the file name
 const existing = new Set();
-for await (const file of files) {
-  existing.add(basename(file.path));
-}
+
+// Determine the train and test paths
+const classPart = args.real ? RealClass : AiClass;
+const trainPath = `${TrainPathPrefix}/${classPart}`;
+const testPath = `${TestPathPrefix}/${classPart}`;
+
+// Get the existing image names
+await addHfFileNames(existing, [trainPath, testPath]);
 
 // Launch Puppeteer
 const browser = await launch({
@@ -152,8 +153,9 @@ for (let i = 0; i < redditUrls.length && count < args.count; i++) {
 
       if (existing.has(fileName)) continue;
       console.log(colors.green(`Downloading: ${fileName}`));
-
       existing.add(fileName);
+
+      const pathPrefix = Math.random() < TestSplit ? testPath : trainPath;
       fileRequests.push(
         fetch(url).then(async (result) => ({
           path: `${pathPrefix}/${fileName}`,
@@ -278,5 +280,21 @@ async function waitForHidden(element, timeout) {
       rej(new Error("Element didn't become hidden before the timeout"));
     }, timeout);
   });
+}
+
+/**
+ *
+ * @param {Set<string>} set
+ * @param {string[]} paths
+ */
+async function addHfFileNames(set, paths) {
+  await Promise.all(
+    paths.map(async (path) => {
+      const files = listFiles({ path, credentials, repo: DatasetRepo });
+      for await (const file of files) {
+        set.add(basename(file.path));
+      }
+    })
+  );
 }
 // #endregion

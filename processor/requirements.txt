@@ -1,4 +1,0 @@
-datasets
-datasets[vision]
-python-dotenv
-termcolor
