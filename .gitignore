@@ -400,6 +400,7 @@ FodyWeavers.xsd
 # Environments
 .env
 .venv
+.conda/
 env/
 venv/
 ENV/
@@ -407,6 +408,7 @@ env.bak/
 venv.bak/
 
 # Local settings
+.huggingface
 local.*
 *.local
 *.local.*

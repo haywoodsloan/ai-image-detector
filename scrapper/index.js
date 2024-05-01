@@ -75,10 +75,11 @@ const UploadBatchSize = 30;
 const CleanupRemainder = 15;
 
 const LoadStuckTimeout = 30 * 1000;
-const RequestErrorDelay = 10 * 1000;
-const RetryDelay = 30 * 1000;
+const HuggingFaceErrorDelay = 10 * 1000;
+const RedditErrorDelay = 30 * 1000;
 const RateLimitDelay = 10 * 60 * 1000;
 const NextSubredditDelay = 30 * 1000;
+const ScrollDelay = 500;
 // #endregion
 
 // Parse local settings for HuggingFace credentials
@@ -189,6 +190,9 @@ try {
         break;
       }
 
+      // Delay a bit before scrolling to avoid rate-limiting
+      await wait(ScrollDelay);
+
       // Clean up the downloaded images from the page to save memory
       // Scroll to load more images
       await page.evaluate((selector, remainder) => {
@@ -199,7 +203,7 @@ try {
 
       // Click the retry button if an errors has occurred
       if (await page.$(RetrySelector)) {
-        await wait(RetryDelay);
+        await wait(RedditErrorDelay);
         const retryButton = await page.$(RetrySelector);
         await retryButton?.click();
       }
@@ -242,6 +246,7 @@ async function uploadWithRetry(files, retryCount = 0) {
   try {
     console.log(colors.green(`Uploading ${files.length} files to HuggingFace`));
     await uploadFiles({ repo: DatasetRepo, credentials, files });
+    console.log(colors.green('Upload to HuggingFace succeeded'));
   } catch (error) {
     if (error.statusCode === 429) {
       // Warn about rate limiting and wait a few minutes
@@ -252,7 +257,7 @@ async function uploadWithRetry(files, retryCount = 0) {
     } else if (retryCount < RetryLimit) {
       // Retry after a few seconds for other errors
       console.warn(colors.red(`Retrying after error: ${error.message}`));
-      await wait(RequestErrorDelay * (retryCount + 1));
+      await wait(HuggingFaceErrorDelay * (retryCount + 1));
       await uploadWithRetry(files, retryCount + 1);
     } else {
       // If not a known error re-throw
