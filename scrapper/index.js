@@ -218,7 +218,7 @@ try {
   }
 } catch (error) {
   // Make sure the log directory exists
-  mkdir(LogPath, { recursive: true });
+  await mkdir(LogPath, { recursive: true });
 
   // Log the last stack trace
   const errorLog = new URL('error.log', LogPath);
