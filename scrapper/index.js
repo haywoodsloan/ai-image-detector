@@ -71,7 +71,7 @@ const LogPath = new URL('.log', import.meta.url);
 const SettingsPath = new URL('./settings.local.json', import.meta.url);
 
 const RetryLimit = 10;
-const UploadBatchSize = 30;
+const UploadBatchSize = 50;
 const CleanupRemainder = 15;
 
 const LoadStuckTimeout = 30 * 1000;
