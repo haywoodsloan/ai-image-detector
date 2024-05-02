@@ -41,6 +41,9 @@
       "label": "Stop Autotrain",
       "type": "shell",
       "command": "docker compose -f ${workspaceFolder}/autotrain/compose-dev.yml stop",
+      "presentation": {
+        "close": true
+      },
       "problemMatcher": []
     },
     {
@@ -50,8 +53,6 @@
       "presentation": {
         "echo": false,
         "reveal": "silent",
-        "clear": true,
-        "showReuseMessage": false,
         "close": true
       },
       "hide": true,
