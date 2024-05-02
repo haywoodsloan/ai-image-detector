@@ -22,6 +22,40 @@
       "dependsOrder": "sequence",
       "dependsOn": ["Scrape AI Images", "Scrape Real Images"],
       "problemMatcher": []
+    },
+    {
+      "label": "Docker Compose Autotrain",
+      "type": "docker-compose",
+      "dockerCompose": {
+        "up": {
+          "detached": false,
+          "build": true,
+          "customOptions": "--force-recreate"
+        },
+        "files": ["${workspaceFolder}/autotrain/compose-dev.yml"]
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Launch Browser",
+      "hide": true,
+      "type": "shell",
+      "command": "node ${workspaceFolder}/autotrain/launch.mjs",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": false,
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true,
+        "showReuseMessage": false,
+        "close": true
+      }
+    },
+    {
+      "label": "Open Autotrain UI",
+      "dependsOn": ["Docker Compose Autotrain", "Launch Browser"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
     }
   ]
 }

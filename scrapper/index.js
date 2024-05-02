@@ -79,7 +79,7 @@ const HuggingFaceErrorDelay = 10 * 1000;
 const RedditErrorDelay = 30 * 1000;
 const RateLimitDelay = 10 * 60 * 1000;
 const NextSubredditDelay = 30 * 1000;
-const ScrollDelay = 500;
+const ScrollDelay = 1000;
 // #endregion
 
 // Parse local settings for HuggingFace credentials
