@@ -24,7 +24,7 @@
       "problemMatcher": []
     },
     {
-      "label": "Docker Compose Autotrain",
+      "label": "Rebuild Autotrain",
       "type": "docker-compose",
       "dockerCompose": {
         "up": {
@@ -34,26 +34,32 @@
         },
         "files": ["${workspaceFolder}/autotrain/compose-dev.yml"]
       },
+      "hide": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Stop Autotrain",
+      "type": "shell",
+      "command": "docker compose -f ${workspaceFolder}/autotrain/compose-dev.yml stop",
       "problemMatcher": []
     },
     {
       "label": "Launch Browser",
-      "hide": true,
       "type": "shell",
       "command": "node ${workspaceFolder}/autotrain/launch.mjs",
-      "problemMatcher": [],
       "presentation": {
         "echo": false,
         "reveal": "silent",
-        "panel": "shared",
         "clear": true,
         "showReuseMessage": false,
         "close": true
-      }
+      },
+      "hide": true,
+      "problemMatcher": []
     },
     {
       "label": "Open Autotrain UI",
-      "dependsOn": ["Docker Compose Autotrain", "Launch Browser"],
+      "dependsOn": ["Rebuild Autotrain", "Launch Browser"],
       "dependsOrder": "parallel",
       "problemMatcher": []
     }
