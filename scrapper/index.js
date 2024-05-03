@@ -83,11 +83,6 @@ const NextSubredditDelay = 20 * 1000;
 const ScrollDelay = 2000;
 // #endregion
 
-const check = await fetch(
-  'https://preview.redd.it/a-new-spell-v0-s8x6s2jgrzic1.jpeg?width=640&crop=smart&auto=webp&s=5eb1eec28b568211bfdb5d94692903e260900d7c',
-  { method: 'HEAD' }
-);
-
 // Parse local settings for HuggingFace credentials
 const { hfKey } = JSON.parse(await readFile(SettingsPath));
 const credentials = { accessToken: hfKey };
@@ -139,7 +134,7 @@ try {
 
     // Start scrapping images and scrolling through the page
     while (count < args.count) {
-      // Get the image sources
+      // Get the image sources, remove any that have failed to load
       const sources = await page.$$eval(ImageSelector, (images) =>
         images.map(({ src }) => src)
       );
@@ -198,7 +193,7 @@ try {
           elements.slice(0, -remainder).forEach((element) => element.remove());
           window.scrollBy(0, document.body.scrollHeight);
         },
-        ...[CleanupSelector, CleanupRemainder],
+        ...[CleanupSelector, CleanupRemainder]
       );
 
       // Click the retry button if an errors has occurred
@@ -246,6 +241,7 @@ async function uploadWithRetry(files, retryCount = 0) {
   try {
     if (!files.length) return;
     console.log(colors.yellow(`Uploading ${files.length} files to HF`));
+    files = await filterValidImages(files);
     await uploadFiles({ repo: DatasetRepo, credentials, files });
     console.log(colors.green('Upload to HF succeeded'));
   } catch (error) {
@@ -311,5 +307,30 @@ async function addHfFileNames(set, paths) {
       }
     })
   );
+}
+
+/**
+ * @param {Upload[]} files
+ */
+async function filterValidImages(files) {
+  const validFiles = [];
+  const validations = files.map(async (file) => {
+    try {
+      const test = await fetch(file.content, { method: 'HEAD' });
+      if (!test.ok) throw new Error(`HEAD request failed: ${test.statusText}`);
+
+      const contentType = test.headers.get('Content-Type');
+      const validHeader = contentType.startsWith('image/');
+      if (!validHeader) throw new Error(`Invalid MIME type: ${contentType}`);
+
+      validFiles.push(file);
+    } catch (error) {
+      const name = basename(file.path);
+      console.log(colors.red(`Skipping: ${name}\n  ${error.stack}`));
+    }
+  });
+
+  await Promise.all(validations);
+  return validFiles;
 }
 // #endregion
