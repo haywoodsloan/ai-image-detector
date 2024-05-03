@@ -1,4 +1,4 @@
-import { resolve } from "path";
+import { resolve } from 'path';
 
 /**
  * @param {string} path
@@ -6,6 +6,6 @@ import { resolve } from "path";
 export function shortenPath(path) {
   return path.replace(
     /(^(?:[^\/\\]*[\/\\]){1,3}).*?([\/\\][^\/\\]*$)/,
-    "$1...$2",
+    '$1...$2'
   );
 }

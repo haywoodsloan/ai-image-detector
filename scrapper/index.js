@@ -1,29 +1,29 @@
-import { launch } from "puppeteer";
-import { fileURLToPath } from "url";
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { listFiles, uploadFiles } from "@huggingface/hub";
-import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
-import { basename } from "path";
-import UserAgent from "user-agents";
-import colors from "cli-color";
-import sanitize from "sanitize-filename";
+import { launch } from 'puppeteer';
+import { fileURLToPath } from 'url';
+import { readFile, writeFile, mkdir } from 'fs/promises';
+import { listFiles, uploadFiles } from '@huggingface/hub';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import { basename } from 'path';
+import UserAgent from 'user-agents';
+import colors from 'cli-color';
+import sanitize from 'sanitize-filename';
 
 // #region Command Arguments
 const args = yargs(hideBin(process.argv))
-  .option("count", {
-    type: "number",
-    description: "The maximum number of images to scrape",
+  .option('count', {
+    type: 'number',
+    description: 'The maximum number of images to scrape',
     default: Infinity,
   })
-  .option("debug", {
-    type: "boolean",
-    description: "Show the browser for debugging",
+  .option('debug', {
+    type: 'boolean',
+    description: 'Show the browser for debugging',
     default: false,
   })
-  .option("real", {
-    type: "boolean",
-    description: "If real (non-AI) images should be scrapped",
+  .option('real', {
+    type: 'boolean',
+    description: 'If real (non-AI) images should be scrapped',
     default: false,
   }).argv;
 // #endregion
@@ -38,38 +38,29 @@ const args = yargs(hideBin(process.argv))
 // #endregion
 
 // #region Constants
-const AiSubReddits = [
-  "https://www.reddit.com/r/aiArt",
-  "https://www.reddit.com/r/deepdream",
-];
-const RealSubReddits = [
-  "https://www.reddit.com/r/Art/",
-  "https://www.reddit.com/r/pics/",
-];
+const AiSubReddits = ['https://www.reddit.com/r/aiArt', 'https://www.reddit.com/r/deepdream'];
+const RealSubReddits = ['https://www.reddit.com/r/Art/', 'https://www.reddit.com/r/pics/'];
 
 const WindowHeight = 1250;
 const WindowWidth = 1650;
-const ChromeUA = new UserAgent([
-  /Chrome/,
-  { deviceCategory: "desktop" },
-]).toString();
+const ChromeUA = new UserAgent([/Chrome/, { deviceCategory: 'desktop' }]).toString();
 
-const LoaderSelector = "main >>> shreddit-post-loading";
-const LoadingSelector = "main >>> shreddit-loading";
+const LoaderSelector = 'main >>> shreddit-post-loading';
+const LoadingSelector = 'main >>> shreddit-loading';
 const ImageSelector = 'article img[src^="https://preview.redd.it"]';
-const RetrySelector = ">>> button ::-p-text(Retry)";
-const CleanupSelector = "main article, main shreddit-ad-post, main hr";
+const RetrySelector = '>>> button ::-p-text(Retry)';
+const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
 
-const DatasetRepo = { name: "haywoodsloan/ai-images", type: "dataset" };
+const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
 const TestSplit = 0.1;
 
-const RealClass = "human";
-const AiClass = "artificial";
-const TrainPathPrefix = "data/train";
-const TestPathPrefix = "data/test";
+const RealClass = 'human';
+const AiClass = 'artificial';
+const TrainPathPrefix = 'data/train';
+const TestPathPrefix = 'data/test';
 
-const LogPath = new URL(".log/", import.meta.url);
-const SettingsPath = new URL("settings.local.json", import.meta.url);
+const LogPath = new URL('.log/', import.meta.url);
+const SettingsPath = new URL('settings.local.json', import.meta.url);
 
 const RetryLimit = 10;
 const UploadBatchSize = 50;
@@ -82,6 +73,11 @@ const RateLimitDelay = 10 * 60 * 1000;
 const NextSubredditDelay = 20 * 1000;
 const ScrollDelay = 2000;
 // #endregion
+
+const check = await fetch(
+  'https://preview.redd.it/a-new-spell-v0-s8x6s2jgrzic1.jpeg?width=640&crop=smart&auto=webp&s=5eb1eec28b568211bfdb5d94692903e260900d7c',
+  { method: 'HEAD' }
+);
 
 // Parse local settings for HuggingFace credentials
 const { hfKey } = JSON.parse(await readFile(SettingsPath));
@@ -126,7 +122,7 @@ try {
 
     // Navigate to the page and wait for network traffic to settle
     console.log(colors.yellow(`Navigating to ${redditUrl}`));
-    await page.goto(redditUrl, { waitUntil: "networkidle2" });
+    await page.goto(redditUrl, { waitUntil: 'networkidle2' });
 
     // Wait for the loader to appear so we know the posts will load.
     await page.waitForSelector(LoaderSelector);
@@ -135,9 +131,7 @@ try {
     // Start scrapping images and scrolling through the page
     while (count < args.count) {
       // Get the image sources
-      const sources = await page.$$eval(ImageSelector, (images) =>
-        images.map(({ src }) => src),
-      );
+      const sources = await page.$$eval(ImageSelector, (images) => images.map(({ src }) => src));
 
       // Queue image uploads to bulk upload to HuggingFace, skip existing files
       const urls = sources.map((src) => new URL(src));
@@ -172,13 +166,13 @@ try {
 
       // Break if we've reached the maximum number of images
       if (count >= args.count) {
-        console.log(colors.yellow("Reached maximum image count"));
+        console.log(colors.yellow('Reached maximum image count'));
         break;
       }
 
       // Break if we've reached the end of the subreddit
       if (!loader) {
-        console.log(colors.yellow("Reached end of Subreddit"));
+        console.log(colors.yellow('Reached end of Subreddit'));
         break;
       }
 
@@ -193,7 +187,7 @@ try {
           elements.slice(0, -remainder).forEach((element) => element.remove());
           window.scrollBy(0, document.body.scrollHeight);
         },
-        ...[CleanupSelector, CleanupRemainder],
+        ...[CleanupSelector, CleanupRemainder]
       );
 
       // Click the retry button if an errors has occurred
@@ -209,8 +203,8 @@ try {
         try {
           await waitForHidden(loading, LoadStuckTimeout);
         } catch {
-          console.warn(colors.red("Post loading failed, refreshing the page"));
-          await page.reload({ waitUntil: "networkidle2" });
+          console.warn(colors.red('Post loading failed, refreshing the page'));
+          await page.reload({ waitUntil: 'networkidle2' });
         }
       }
     }
@@ -220,18 +214,18 @@ try {
   await mkdir(LogPath, { recursive: true });
 
   // Log the last stack trace
-  const errorLog = new URL("error.log", LogPath);
+  const errorLog = new URL('error.log', LogPath);
   await writeFile(errorLog, error.stack);
 
   // Log the last screenshot
-  const errorPng = new URL("error.png", LogPath);
+  const errorPng = new URL('error.png', LogPath);
   await page.screenshot({ path: fileURLToPath(errorPng) });
 
   throw error;
 }
 
 await browser.close();
-console.log(colors.green("Done!"));
+console.log(colors.green('Done!'));
 
 // #region Functions
 /**
@@ -242,7 +236,7 @@ async function uploadWithRetry(files, retryCount = 0) {
     if (!files.length) return;
     console.log(colors.yellow(`Uploading ${files.length} files to HF`));
     await uploadFiles({ repo: DatasetRepo, credentials, files });
-    console.log(colors.green("Upload to HF succeeded"));
+    console.log(colors.green('Upload to HF succeeded'));
   } catch (error) {
     if (error.statusCode === 429) {
       // Warn about rate limiting and wait a few minutes
@@ -304,7 +298,7 @@ async function addHfFileNames(set, paths) {
       for await (const file of files) {
         set.add(basename(file.path));
       }
-    }),
+    })
   );
 }
 // #endregion

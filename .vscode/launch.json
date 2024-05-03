@@ -11,7 +11,8 @@
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
-      "cwd": "${workspaceFolder}/scrapper"
+      "cwd": "${workspaceFolder}/scrapper",
+      "internalConsoleOptions": "openOnSessionStart"
     },
     {
       "name": "Run Data Scrapper (Real)",
@@ -20,7 +21,8 @@
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
-      "cwd": "${workspaceFolder}/scrapper"
+      "cwd": "${workspaceFolder}/scrapper",
+      "internalConsoleOptions": "openOnSessionStart"
     },
     {
       "name": "Run Service Demo",
@@ -29,7 +31,8 @@
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",
-      "cwd": "${workspaceFolder}/service"
+      "cwd": "${workspaceFolder}/service",
+      "internalConsoleOptions": "openOnSessionStart"
     }
   ]
 }

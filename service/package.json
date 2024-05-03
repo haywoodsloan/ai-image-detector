@@ -27,5 +27,9 @@
   },
   "pre-commit": [
     "format"
-  ]
+  ],
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "es5"
+  }
 }
