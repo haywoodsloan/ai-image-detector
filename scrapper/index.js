@@ -198,7 +198,7 @@ try {
           elements.slice(0, -remainder).forEach((element) => element.remove());
           window.scrollBy(0, document.body.scrollHeight);
         },
-        ...[CleanupSelector, CleanupRemainder]
+        ...[CleanupSelector, CleanupRemainder],
       );
 
       // Click the retry button if an errors has occurred

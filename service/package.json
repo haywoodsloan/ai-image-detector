@@ -7,7 +7,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "demo": "node src/demo.js",
-    "format": "prettier -w ./src"
+    "format": "prettier -w ./src",
+    "prepare": "cd .. && husky service/.husky"
   },
   "keywords": [
     "ai",
@@ -23,12 +24,9 @@
   "devDependencies": {
     "cli-color": "^2.0.4",
     "glob": "^10.3.12",
-    "pre-commit": "^1.2.2",
+    "husky": "^9.0.11",
     "prettier": "^3.2.5"
   },
-  "pre-commit": [
-    "format"
-  ],
   "prettier": {
     "singleQuote": true,
     "trailingComma": "es5"

@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "prettier -w ./index.js"
+    "format": "prettier -w ./index.js",
+    "prepare": "cd .. && husky scrapper/.husky"
   },
   "keywords": [
     "ai",
@@ -26,12 +27,9 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "pre-commit": "^1.2.2",
+    "husky": "^9.0.11",
     "prettier": "^3.2.5"
   },
-  "pre-commit": [
-    "format"
-  ],
   "prettier": {
     "singleQuote": true,
     "trailingComma": "es5"
