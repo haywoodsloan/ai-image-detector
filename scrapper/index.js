@@ -326,7 +326,7 @@ async function filterValidImages(files) {
       validFiles.push(file);
     } catch (error) {
       const name = basename(file.path);
-      console.log(colors.red(`Skipping: ${name}\n  ${error.stack}`));
+      console.log(colors.red(`Skipping: ${name} [${error}]`));
     }
   });
 
