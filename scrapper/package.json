@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "npx prettier -w ./index.js"
+    "format": "prettier -w ./index.js"
   },
   "keywords": [
     "ai",
@@ -26,7 +26,8 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "pre-commit": "^1.2.2"
+    "pre-commit": "^1.2.2",
+    "prettier": "^3.2.5"
   },
   "pre-commit": [
     "format"

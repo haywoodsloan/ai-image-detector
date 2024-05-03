@@ -38,12 +38,21 @@ const args = yargs(hideBin(process.argv))
 // #endregion
 
 // #region Constants
-const AiSubReddits = ['https://www.reddit.com/r/aiArt', 'https://www.reddit.com/r/deepdream'];
-const RealSubReddits = ['https://www.reddit.com/r/Art/', 'https://www.reddit.com/r/pics/'];
+const AiSubReddits = [
+  'https://www.reddit.com/r/aiArt',
+  'https://www.reddit.com/r/deepdream',
+];
+const RealSubReddits = [
+  'https://www.reddit.com/r/Art/',
+  'https://www.reddit.com/r/pics/',
+];
 
 const WindowHeight = 1250;
 const WindowWidth = 1650;
-const ChromeUA = new UserAgent([/Chrome/, { deviceCategory: 'desktop' }]).toString();
+const ChromeUA = new UserAgent([
+  /Chrome/,
+  { deviceCategory: 'desktop' },
+]).toString();
 
 const LoaderSelector = 'main >>> shreddit-post-loading';
 const LoadingSelector = 'main >>> shreddit-loading';
@@ -131,7 +140,9 @@ try {
     // Start scrapping images and scrolling through the page
     while (count < args.count) {
       // Get the image sources
-      const sources = await page.$$eval(ImageSelector, (images) => images.map(({ src }) => src));
+      const sources = await page.$$eval(ImageSelector, (images) =>
+        images.map(({ src }) => src)
+      );
 
       // Queue image uploads to bulk upload to HuggingFace, skip existing files
       const urls = sources.map((src) => new URL(src));
