@@ -71,8 +71,8 @@ async function checkAndPrint({ uri, isAI }) {
 
 /**
  *
- * @param {Number} num
- * @param {Number} places
+ * @param {number} num
+ * @param {number} places
  */
 function round(num, places = 2) {
   const multiplier = Math.pow(10, places);

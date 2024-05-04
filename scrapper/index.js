@@ -35,6 +35,13 @@ const args = yargs(hideBin(process.argv))
  *  content: URL
  * }} Upload
  */
+
+/**
+ * @typedef {{
+ *  isValid: boolean,
+ *  error?: any
+ * }} ValidationResult
+ */
 // #endregion
 
 // #region Constants
@@ -87,15 +94,13 @@ const ScrollDelay = 2000;
 const { hfKey } = JSON.parse(await readFile(SettingsPath));
 const credentials = { accessToken: hfKey };
 
-// Track existing files by the file name
-const existing = new Set();
-
 // Determine the train and test paths
 const classPart = args.real ? RealClass : AiClass;
 const trainPath = `${TrainPathPrefix}/${classPart}`;
 const testPath = `${TestPathPrefix}/${classPart}`;
 
-// Get the existing image names
+// Track existing files by the file name
+const existing = new Set();
 await addHfFileNames(existing, [trainPath, testPath]);
 
 // Launch Puppeteer
@@ -110,21 +115,24 @@ await page.setUserAgent(ChromeUA);
 
 /** @type {Upload[]} */
 const uploadQueue = [];
-let count = 0;
 
+/** @type {Promise[]} */
+const validations = [];
+
+let count = 0;
 try {
-  // Browse to multiple subreddits and scrape files
+  // Browse to multiple Subreddits and scrape files
   const redditUrls = args.real ? RealSubReddits : AiSubReddits;
   for (let i = 0; i < redditUrls.length && count < args.count; i++) {
-    // Wait before loading additional subreddits
-    const redditUrl = redditUrls[i];
+    // Wait before loading additional Subreddits
     if (i > 0) {
       const delay = NextSubredditDelay / 1000;
-      console.log(colors.yellow(`Waiting ${delay} secs before next subreddit`));
+      console.log(colors.yellow(`Waiting ${delay} secs before next Subreddit`));
       await wait(NextSubredditDelay);
     }
 
     // Navigate to the page and wait for network traffic to settle
+    const redditUrl = redditUrls[i];
     console.log(colors.yellow(`Navigating to ${redditUrl}`));
     await page.goto(redditUrl, { waitUntil: 'networkidle2' });
 
@@ -133,7 +141,7 @@ try {
     console.log(colors.green(`Successfully loaded ${redditUrl}`));
 
     // Start scrapping images and scrolling through the page
-    while (count < args.count) {
+    while (true) {
       // Get the image sources, remove any that have failed to load
       const sources = await page.$$eval(ImageSelector, (images) =>
         images.map(({ src }) => src)
@@ -145,29 +153,38 @@ try {
         const url = urls[i];
         const fileName = sanitize(basename(url.pathname));
 
+        // Skip existing files
         if (existing.has(fileName)) continue;
-        console.log(colors.blue(`Found: ${fileName}`));
-
         const pathPrefix = Math.random() < TestSplit ? testPath : trainPath;
-        uploadQueue.push({ path: `${pathPrefix}/${fileName}`, content: url });
 
-        count++;
+        // Track new file
+        console.log(colors.blue(`Found: ${fileName}`));
         existing.add(fileName);
 
-        if (uploadQueue.length >= UploadBatchSize) {
+        // Start a validation request and add to the upload queue if it passes
+        validations.push(
+          validateImageUrl(url).then(({ isValid, error }) => {
+            if (!isValid) {
+              console.log(colors.red(`Skipping: ${fileName} [${error}]`));
+              return;
+            }
+
+            count++;
+            uploadQueue.push({
+              path: `${pathPrefix}/${fileName}`,
+              content: url,
+            });
+          })
+        );
+
+        // If the batch has reached the upload size go ahead and upload it
+        if (validations.length >= UploadBatchSize) {
+          await Promise.all(validations);
           await uploadWithRetry(uploadQueue);
+
+          validations.length = 0;
           uploadQueue.length = 0;
         }
-      }
-
-      // Check if the post loader is gone
-      const loader = await page.$(LoaderSelector);
-
-      // Upload the remaining files to HuggingFace
-      // if at count or end of Subreddit
-      if (count >= args.count || !loader) {
-        await uploadWithRetry(uploadQueue);
-        uploadQueue.length = 0;
       }
 
       // Break if we've reached the maximum number of images
@@ -176,7 +193,9 @@ try {
         break;
       }
 
-      // Break if we've reached the end of the subreddit
+      // Check if the post loader is gone
+      // If so break, we've reached the end of the Subreddit
+      const loader = await page.$(LoaderSelector);
       if (!loader) {
         console.log(colors.yellow('Reached end of Subreddit'));
         break;
@@ -230,6 +249,13 @@ try {
   throw error;
 }
 
+// Upload the remaining files to HuggingFace
+if (validations.length) {
+  await Promise.all(validations);
+  await uploadWithRetry(uploadQueue);
+}
+
+// Close browser and finish
 await browser.close();
 console.log(colors.green('Done!'));
 
@@ -237,34 +263,39 @@ console.log(colors.green('Done!'));
 /**
  * @param {Upload[]} files
  */
-async function uploadWithRetry(files, retryCount = 0) {
-  try {
-    if (!files.length) return;
-    console.log(colors.yellow(`Uploading ${files.length} files to HF`));
-    files = await filterValidImages(files);
-    await uploadFiles({ repo: DatasetRepo, credentials, files });
-    console.log(colors.green('Upload to HF succeeded'));
-  } catch (error) {
-    if (error.statusCode === 429) {
-      // Warn about rate limiting and wait a few minutes
-      const delay = RateLimitDelay / 60 / 1000;
-      console.warn(colors.red(`Rate-limited, waiting ${delay} mins to retry`));
-      await wait(RateLimitDelay);
-      await uploadWithRetry(files, retryCount);
-    } else if (retryCount < RetryLimit) {
-      // Retry after a few seconds for other errors
-      console.warn(colors.red(`Retrying after error: ${error.message}`));
-      await wait(HuggingFaceErrorDelay * (retryCount + 1));
-      await uploadWithRetry(files, retryCount + 1);
-    } else {
-      // If not a known error re-throw
-      throw error;
+async function uploadWithRetry(files) {
+  // Filter out invalid images
+  if (!files.length) return;
+  console.log(colors.yellow(`Uploading ${files.length} files to HF`));
+
+  // Start a retry loop
+  let retryCount = 0;
+  while (true) {
+    try {
+      await uploadFiles({ repo: DatasetRepo, credentials, files });
+      console.log(colors.green('Upload to HF succeeded'));
+      break;
+    } catch (error) {
+      if (error.statusCode === 429) {
+        // Warn about rate limiting and wait a few minutes
+        const delay = RateLimitDelay / 60 / 1000;
+        console.warn(colors.red(`Rate-limited, waiting ${delay} mins`));
+        await wait(RateLimitDelay);
+      } else if (retryCount < RetryLimit) {
+        // Retry after a few seconds for other errors
+        retryCount++;
+        console.warn(colors.red(`Retrying after error: ${error.message}`));
+        await wait(HuggingFaceErrorDelay * retryCount);
+      } else {
+        // If not a known error re-throw
+        throw error;
+      }
     }
   }
 }
 
 /**
- * @param {Number} delay
+ * @param {number} delay
  */
 async function wait(delay) {
   await new Promise((res) => setTimeout(res, delay));
@@ -272,7 +303,7 @@ async function wait(delay) {
 
 /**
  * @param {import('puppeteer').ElementHandle<Element>} element
- * @param {Number} timeout
+ * @param {number} timeout
  */
 async function waitForHidden(element, timeout) {
   await new Promise((res, rej) => {
@@ -310,27 +341,21 @@ async function addHfFileNames(set, paths) {
 }
 
 /**
- * @param {Upload[]} files
+ * @param {URL} url
+ * @returns {Promise<ValidationResult>}
  */
-async function filterValidImages(files) {
-  const validFiles = [];
-  const validations = files.map(async (file) => {
-    try {
-      const test = await fetch(file.content, { method: 'HEAD' });
-      if (!test.ok) throw new Error(`HEAD request failed: ${test.statusText}`);
+async function validateImageUrl(url) {
+  try {
+    const test = await fetch(url, { method: 'HEAD' });
+    if (!test.ok) throw new Error(`HEAD request failed: ${test.statusText}`);
 
-      const contentType = test.headers.get('Content-Type');
-      const validHeader = contentType.startsWith('image/');
-      if (!validHeader) throw new Error(`Invalid MIME type: ${contentType}`);
+    const contentType = test.headers.get('Content-Type');
+    const validHeader = contentType.startsWith('image/');
+    if (!validHeader) throw new Error(`Invalid MIME type: ${contentType}`);
 
-      validFiles.push(file);
-    } catch (error) {
-      const name = basename(file.path);
-      console.log(colors.red(`Skipping: ${name} [${error}]`));
-    }
-  });
-
-  await Promise.all(validations);
-  return validFiles;
+    return { isValid: true };
+  } catch (error) {
+    return { isValid: false, error };
+  }
 }
 // #endregion
