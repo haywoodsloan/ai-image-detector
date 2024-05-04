@@ -67,7 +67,7 @@ const AiClass = 'artificial';
 const TrainPathPrefix = 'data/train';
 const TestPathPrefix = 'data/test';
 
-const LogPath = new URL('.log/', import.meta.url);
+const LogPath = new URL('../.log/', import.meta.url);
 const ConfigPath = new URL('../config/', import.meta.url);
 
 const UploadBatchSize = 50;
