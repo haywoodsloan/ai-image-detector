@@ -1,20 +1,19 @@
-import { isDev } from './utilities/environment.js';
-import { loadLocalSettings } from './utilities/settings.js';
+import { loadSettings } from 'common/utilities/settings.js';
 import { checkIfAI } from './services/detector.js';
 import { isHttpUrl, shortenUrl } from './utilities/url.js';
 import { shortenPath } from './utilities/path.js';
 import color from 'cli-color';
 import { glob } from 'glob';
+import { ConfigPath } from './constants.js';
 
-// Load local settings for Hugging Face key
-if (isDev) {
-  await loadLocalSettings();
-}
+// Load settings for Hugging Face key
+await loadSettings(ConfigPath);
 
+// Track stats
 let total = 0;
 let correct = 0;
 
-// Test for each local demo file
+// Test each local demo file
 const artificialFiles = await glob('data/images/artificial/**/*');
 for (const uri of artificialFiles) {
   total++;

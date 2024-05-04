@@ -1,13 +1,21 @@
 import { launch } from 'puppeteer';
 import { fileURLToPath } from 'url';
-import { readFile, writeFile, mkdir } from 'fs/promises';
-import { listFiles, uploadFiles } from '@huggingface/hub';
+import { writeFile, mkdir } from 'fs/promises';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { basename } from 'path';
 import UserAgent from 'user-agents';
 import colors from 'cli-color';
 import sanitize from 'sanitize-filename';
+import { waitForHidden } from './utilities/puppeteer.js';
+import { loadSettings } from 'common/utilities/settings.js';
+import {
+  getHfFileNames,
+  setHfAccessToken,
+  uploadWithRetry,
+} from './utilities/huggingface.js';
+import { wait } from 'common/utilities/sleep.js';
+import { ImageValidationQueue } from './utilities/ImageValidationQueue.js';
 
 // #region Command Arguments
 const args = yargs(hideBin(process.argv))
@@ -28,22 +36,6 @@ const args = yargs(hideBin(process.argv))
   }).argv;
 // #endregion
 
-// #region Types
-/**
- * @typedef {{
- *  path: string,
- *  content: URL
- * }} Upload
- */
-
-/**
- * @typedef {{
- *  isValid: boolean,
- *  error?: any
- * }} ValidationResult
- */
-// #endregion
-
 // #region Constants
 const AiSubReddits = [
   'https://www.reddit.com/r/aiArt',
@@ -56,6 +48,7 @@ const RealSubReddits = [
 
 const WindowHeight = 1250;
 const WindowWidth = 1650;
+
 const ChromeUA = new UserAgent([
   /Chrome/,
   { deviceCategory: 'desktop' },
@@ -67,7 +60,6 @@ const ImageSelector = 'article img[src^="https://preview.redd.it"]';
 const RetrySelector = '>>> button ::-p-text(Retry)';
 const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
 
-const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
 const TestSplit = 0.1;
 
 const RealClass = 'human';
@@ -76,23 +68,20 @@ const TrainPathPrefix = 'data/train';
 const TestPathPrefix = 'data/test';
 
 const LogPath = new URL('.log/', import.meta.url);
-const SettingsPath = new URL('settings.local.json', import.meta.url);
+const ConfigPath = new URL('../config/', import.meta.url);
 
-const RetryLimit = 10;
 const UploadBatchSize = 50;
 const CleanupRemainder = 9;
 
 const LoadStuckTimeout = 20 * 1000;
-const HuggingFaceErrorDelay = 10 * 1000;
 const RedditErrorDelay = 20 * 1000;
-const RateLimitDelay = 10 * 60 * 1000;
 const NextSubredditDelay = 20 * 1000;
 const ScrollDelay = 2000;
 // #endregion
 
 // Parse local settings for HuggingFace credentials
-const { hfKey } = JSON.parse(await readFile(SettingsPath));
-const credentials = { accessToken: hfKey };
+const { hfKey } = await loadSettings(ConfigPath);
+setHfAccessToken(hfKey);
 
 // Determine the train and test paths
 const classPart = args.real ? RealClass : AiClass;
@@ -100,8 +89,7 @@ const trainPath = `${TrainPathPrefix}/${classPart}`;
 const testPath = `${TestPathPrefix}/${classPart}`;
 
 // Track existing files by the file name
-const existing = new Set();
-await addHfFileNames(existing, [trainPath, testPath]);
+const existing = await getHfFileNames([trainPath, testPath]);
 
 // Launch Puppeteer
 const browser = await launch({
@@ -113,13 +101,9 @@ const browser = await launch({
 const page = await browser.newPage();
 await page.setUserAgent(ChromeUA);
 
-/** @type {Upload[]} */
-const uploadQueue = [];
-
-/** @type {Promise[]} */
-const validations = [];
-
+const validationQueue = new ImageValidationQueue();
 let count = 0;
+
 try {
   // Browse to multiple Subreddits and scrape files
   const redditUrls = args.real ? RealSubReddits : AiSubReddits;
@@ -161,29 +145,19 @@ try {
         console.log(colors.blue(`Found: ${fileName}`));
         existing.add(fileName);
 
-        // Start a validation request and add to the upload queue if it passes
-        validations.push(
-          validateImageUrl(url).then(({ isValid, error }) => {
-            if (!isValid) {
-              console.log(colors.red(`Skipping: ${fileName} [${error}]`));
-              return;
-            }
-
-            count++;
-            uploadQueue.push({
-              path: `${pathPrefix}/${fileName}`,
-              content: url,
-            });
+        // Start a validation request and add to the count if it passes
+        validationQueue
+          .addToQueue({
+            path: `${pathPrefix}/${fileName}`,
+            content: url,
           })
-        );
+          .then(({ isValid }) => isValid && count++);
 
         // If the batch has reached the upload size go ahead and upload it
-        if (validations.length >= UploadBatchSize) {
-          await Promise.all(validations);
-          await uploadWithRetry(uploadQueue);
-
-          validations.length = 0;
-          uploadQueue.length = 0;
+        if (validationQueue.getPotentialCount() >= UploadBatchSize) {
+          const uploads = await validationQueue.getValidated();
+          await uploadWithRetry(uploads);
+          validationQueue.clearQueue();
         }
       }
 
@@ -258,104 +232,3 @@ if (validations.length) {
 // Close browser and finish
 await browser.close();
 console.log(colors.green('Done!'));
-
-// #region Functions
-/**
- * @param {Upload[]} files
- */
-async function uploadWithRetry(files) {
-  // Filter out invalid images
-  if (!files.length) return;
-  console.log(colors.yellow(`Uploading ${files.length} files to HF`));
-
-  // Start a retry loop
-  let retryCount = 0;
-  while (true) {
-    try {
-      await uploadFiles({ repo: DatasetRepo, credentials, files });
-      console.log(colors.green('Upload to HF succeeded'));
-      break;
-    } catch (error) {
-      if (error.statusCode === 429) {
-        // Warn about rate limiting and wait a few minutes
-        const delay = RateLimitDelay / 60 / 1000;
-        console.warn(colors.red(`Rate-limited, waiting ${delay} mins`));
-        await wait(RateLimitDelay);
-      } else if (retryCount < RetryLimit) {
-        // Retry after a few seconds for other errors
-        retryCount++;
-        console.warn(colors.red(`Retrying after error: ${error.message}`));
-        await wait(HuggingFaceErrorDelay * retryCount);
-      } else {
-        // If not a known error re-throw
-        throw error;
-      }
-    }
-  }
-}
-
-/**
- * @param {number} delay
- */
-async function wait(delay) {
-  await new Promise((res) => setTimeout(res, delay));
-}
-
-/**
- * @param {import('puppeteer').ElementHandle<Element>} element
- * @param {number} timeout
- */
-async function waitForHidden(element, timeout) {
-  await new Promise((res, rej) => {
-    let intervalId, timeoutId;
-
-    intervalId = setInterval(async () => {
-      if (await element.isHidden()) {
-        clearTimeout(timeoutId);
-        clearInterval(intervalId);
-        res();
-      }
-    }, 100);
-
-    timeoutId = setTimeout(() => {
-      clearTimeout(timeoutId);
-      clearInterval(intervalId);
-      rej(new Error("Element didn't become hidden before the timeout"));
-    }, timeout);
-  });
-}
-
-/**
- * @param {Set<string>} set
- * @param {string[]} paths
- */
-async function addHfFileNames(set, paths) {
-  await Promise.all(
-    paths.map(async (path) => {
-      const files = listFiles({ path, credentials, repo: DatasetRepo });
-      for await (const file of files) {
-        set.add(basename(file.path));
-      }
-    })
-  );
-}
-
-/**
- * @param {URL} url
- * @returns {Promise<ValidationResult>}
- */
-async function validateImageUrl(url) {
-  try {
-    const test = await fetch(url, { method: 'HEAD' });
-    if (!test.ok) throw new Error(`HEAD request failed: ${test.statusText}`);
-
-    const contentType = test.headers.get('Content-Type');
-    const validHeader = contentType.startsWith('image/');
-    if (!validHeader) throw new Error(`Invalid MIME type: ${contentType}`);
-
-    return { isValid: true };
-  } catch (error) {
-    return { isValid: false, error };
-  }
-}
-// #endregion

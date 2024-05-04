@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "demo": "node src/demo.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier -w ./src"
   },
   "keywords": [
@@ -18,7 +18,8 @@
   "author": "haywoodsloan",
   "license": "ISC",
   "dependencies": {
-    "@huggingface/inference": "^2.6.7"
+    "@huggingface/inference": "^2.6.7",
+    "common": "file:../common"
   },
   "devDependencies": {
     "cli-color": "^2.0.4",
