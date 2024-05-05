@@ -37,6 +37,10 @@ export class ImageValidationQueue {
     return [...this.#validated];
   }
 
+  /**
+   * @returns The maximum possible valid images,
+   * combines validated and pending images
+   */
   get size() {
     return this.#validations.size;
   }

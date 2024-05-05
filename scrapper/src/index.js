@@ -49,6 +49,7 @@ const RealSubReddits = [
 const WindowHeight = 1250;
 const WindowWidth = 1650;
 
+const ImageUrlRegex = /.*\/[^/]+-([^.-]+\.[^?]+).*/;
 const ChromeUA = new UserAgent([
   /Chrome/,
   { deviceCategory: 'desktop' },
@@ -56,9 +57,10 @@ const ChromeUA = new UserAgent([
 
 const LoaderSelector = 'main >>> shreddit-post-loading';
 const LoadingSelector = 'main >>> shreddit-loading';
-const ImageSelector = 'article img[src^="https://preview.redd.it"]';
-const RetrySelector = '>>> button ::-p-text(Retry)';
+const RetrySelector = 'main >>> button ::-p-text(Retry)';
 const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
+const ImageSelector =
+  'shreddit-post img[src^="https://preview.redd.it"]:not([alt=""])';
 
 const TestSplit = 0.1;
 
@@ -126,13 +128,17 @@ try {
 
     // Start scrapping images and scrolling through the page
     while (true) {
-      // Get the image sources, remove any that have failed to load
+      // Get the image sources
       const sources = await page.$$eval(ImageSelector, (images) =>
         images.map(({ src }) => src)
       );
 
+      // Replace the preview urls with full image urls
+      const urls = sources.map(
+        (src) => new URL(src.replace(ImageUrlRegex, 'https://i.redd.it/$1'))
+      );
+
       // Queue image uploads to bulk upload to HuggingFace, skip existing files
-      const urls = sources.map((src) => new URL(src));
       for (let i = 0; i < urls.length && count < args.count; i++) {
         const url = urls[i];
         const fileName = sanitize(basename(url.pathname));
@@ -221,7 +227,7 @@ try {
 }
 
 // Upload the remaining files to HuggingFace
-if (validationQueue.getPotentialCount) {
+if (validationQueue.size) {
   const uploads = await validationQueue.getValidated();
   await uploadWithRetry(uploads);
 }

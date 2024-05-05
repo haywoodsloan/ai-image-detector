@@ -50,7 +50,12 @@ export async function uploadWithRetry(files) {
   let retryCount = 0;
   while (true) {
     try {
-      await uploadFiles({ repo: DatasetRepo, credentials, files });
+      await uploadFiles({
+        useWebWorkers: true,
+        repo: DatasetRepo,
+        credentials,
+        files,
+      });
       console.log(colors.green('Upload to HF succeeded'));
       break;
     } catch (error) {
