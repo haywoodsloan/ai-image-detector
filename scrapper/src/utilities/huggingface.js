@@ -1,6 +1,7 @@
-import { listFiles } from '@huggingface/hub';
-import { basename } from 'path';
+import { listFiles, uploadFiles } from '@huggingface/hub';
 import colors from 'cli-color';
+import { wait } from 'common/utilities/sleep.js';
+import { basename } from 'path';
 
 /**
  * @typedef {{

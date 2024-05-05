@@ -41,26 +41,50 @@
       "label": "Stop Autotrain",
       "type": "shell",
       "command": "docker compose -f ${workspaceFolder}/autotrain/compose-dev.yml stop",
-      "presentation": {
-        "close": true
-      },
+      "presentation": { "reveal": "silent" },
       "problemMatcher": []
     },
     {
       "label": "Launch Browser",
       "type": "shell",
       "command": "node ${workspaceFolder}/autotrain/launch.mjs",
-      "presentation": {
-        "echo": false,
-        "reveal": "silent",
-        "close": true
-      },
+      "presentation": { "reveal": "silent" },
       "hide": true,
       "problemMatcher": []
     },
     {
       "label": "Open Autotrain UI",
       "dependsOn": ["Rebuild Autotrain", "Launch Browser"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Format Common",
+      "type": "npm",
+      "script": "format",
+      "path": "common",
+      "presentation": { "reveal": "silent" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Format Scrapper",
+      "type": "npm",
+      "script": "format",
+      "path": "scrapper",
+      "presentation": { "reveal": "silent" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Format Service",
+      "type": "npm",
+      "script": "format",
+      "path": "service",
+      "presentation": { "reveal": "silent" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Format All",
+      "dependsOn": ["Format Common", "Format Scrapper", "Format Service"],
       "dependsOrder": "parallel",
       "problemMatcher": []
     }

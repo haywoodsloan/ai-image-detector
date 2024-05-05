@@ -1,10 +1,10 @@
-import { loadSettings } from 'common/utilities/settings.js';
-import { checkIfAI } from './services/detector.js';
-import { isHttpUrl, shortenUrl } from './utilities/url.js';
-import { shortenPath } from './utilities/path.js';
-import color from 'cli-color';
-import { glob } from 'glob';
 import { ConfigPath } from './constants.js';
+import { checkIfAI } from './services/detector.js';
+import { shortenPath } from './utilities/path.js';
+import { isHttpUrl, shortenUrl } from './utilities/url.js';
+import color from 'cli-color';
+import { loadSettings } from 'common/utilities/settings.js';
+import { glob } from 'glob';
 
 // Load settings for Hugging Face key
 await loadSettings(ConfigPath);

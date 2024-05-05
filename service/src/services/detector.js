@@ -1,6 +1,6 @@
-import { HfInference } from '@huggingface/inference';
-import { getImageAsBlob } from '../utilities/image.js';
 import { AiClassLabel, AiClassThresh, DetectorModels } from '../constants.js';
+import { getImageAsBlob } from '../utilities/image.js';
+import { HfInference } from '@huggingface/inference';
 
 /**
  * @type {HfInference}

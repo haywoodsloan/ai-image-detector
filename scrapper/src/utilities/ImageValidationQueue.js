@@ -1,6 +1,6 @@
+import { validateImageUrl } from './validate.js';
 import colors from 'cli-color';
 import { basename } from 'path';
-import { validateImageUrl } from './validate.js';
 
 export class ImageValidationQueue {
   // Track validations and validated files
@@ -13,7 +13,7 @@ export class ImageValidationQueue {
   /**
    * @param {import('./huggingface.js').Upload} upload
    */
-  async addToQueue(upload) {
+  async queueValidation(upload) {
     const validation = validateImageUrl(upload.content).then((result) => {
       if (!result.isValid) {
         const fileName = basename(upload.path);
@@ -37,11 +37,11 @@ export class ImageValidationQueue {
     return [...this.#validated];
   }
 
-  getPotentialCount() {
+  get size() {
     return this.#validations.size;
   }
 
-  clearQueue() {
+  clear() {
     this.#validated.length = 0;
     this.#validations.clear();
   }

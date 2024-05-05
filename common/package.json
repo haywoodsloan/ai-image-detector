@@ -2,14 +2,25 @@
   "name": "common",
   "version": "0.0.1",
   "description": "Common utilities, services, and configs for the other projects in this repo",
-  "main": "index.js",
   "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "eslint --fix ./src && prettier -w ./src"
   },
   "keywords": [
     "common"
   ],
   "author": "haywoodsloan",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/js": "^9.2.0",
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+    "eslint": "^9.2.0",
+    "eslint-config-prettier": "^9.1.0",
+    "globals": "^15.1.0",
+    "prettier": "^3.2.5"
+  }
 }

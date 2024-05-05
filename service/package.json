@@ -7,7 +7,7 @@
   "scripts": {
     "demo": "node src/demo.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "prettier -w ./src"
+    "format": "eslint --fix ./src && prettier -w ./src"
   },
   "keywords": [
     "ai",
@@ -22,12 +22,11 @@
     "common": "file:../common"
   },
   "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "cli-color": "^2.0.4",
+    "eslint": "^9.2.0",
+    "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.12",
     "prettier": "^3.2.5"
-  },
-  "prettier": {
-    "singleQuote": true,
-    "trailingComma": "es5"
   }
 }

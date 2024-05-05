@@ -1,8 +1,8 @@
-import { readFile } from 'fs/promises';
 import { isProd } from './environment.js';
+import { readFile } from 'fs/promises';
 
 /**
- * @param {string | URL} configPath 
+ * @param {string | URL} configPath
  */
 export async function loadSettings(configPath) {
   // Track the accumulated settings

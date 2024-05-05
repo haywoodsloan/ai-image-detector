@@ -1,21 +1,21 @@
-import { launch } from 'puppeteer';
-import { fileURLToPath } from 'url';
-import { writeFile, mkdir } from 'fs/promises';
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-import { basename } from 'path';
-import UserAgent from 'user-agents';
-import colors from 'cli-color';
-import sanitize from 'sanitize-filename';
-import { waitForHidden } from './utilities/puppeteer.js';
-import { loadSettings } from 'common/utilities/settings.js';
+import { ImageValidationQueue } from './utilities/ImageValidationQueue.js';
 import {
   getHfFileNames,
   setHfAccessToken,
   uploadWithRetry,
 } from './utilities/huggingface.js';
+import { waitForHidden } from './utilities/puppeteer.js';
+import colors from 'cli-color';
+import { loadSettings } from 'common/utilities/settings.js';
 import { wait } from 'common/utilities/sleep.js';
-import { ImageValidationQueue } from './utilities/ImageValidationQueue.js';
+import { mkdir, writeFile } from 'fs/promises';
+import { basename } from 'path';
+import { launch } from 'puppeteer';
+import sanitize from 'sanitize-filename';
+import { fileURLToPath } from 'url';
+import UserAgent from 'user-agents';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
 // #region Command Arguments
 const args = yargs(hideBin(process.argv))
@@ -147,17 +147,14 @@ try {
 
         // Start a validation request and add to the count if it passes
         validationQueue
-          .addToQueue({
-            path: `${pathPrefix}/${fileName}`,
-            content: url,
-          })
+          .queueValidation({ path: `${pathPrefix}/${fileName}`, content: url })
           .then(({ isValid }) => isValid && count++);
 
         // If the batch has reached the upload size go ahead and upload it
-        if (validationQueue.getPotentialCount() >= UploadBatchSize) {
+        if (validationQueue.size >= UploadBatchSize) {
           const uploads = await validationQueue.getValidated();
           await uploadWithRetry(uploads);
-          validationQueue.clearQueue();
+          validationQueue.clear();
         }
       }
 
@@ -224,9 +221,9 @@ try {
 }
 
 // Upload the remaining files to HuggingFace
-if (validations.length) {
-  await Promise.all(validations);
-  await uploadWithRetry(uploadQueue);
+if (validationQueue.getPotentialCount) {
+  const uploads = await validationQueue.getValidated();
+  await uploadWithRetry(uploads);
 }
 
 // Close browser and finish

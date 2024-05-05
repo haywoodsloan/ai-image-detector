@@ -1,5 +1,5 @@
-import { openAsBlob } from 'fs';
 import { isHttpUrl } from './url.js';
+import { openAsBlob } from 'fs';
 
 /**
  * @param {string} uri
