@@ -3,5 +3,6 @@ export default {
   trailingComma: 'es5',
   importOrderSeparation: true,
   importOrderSortSpecifiers: true,
+  importOrder: ['^[./]'],
   plugins: ['@trivago/prettier-plugin-sort-imports'],
 };

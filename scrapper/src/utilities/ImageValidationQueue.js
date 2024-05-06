@@ -1,6 +1,7 @@
-import { validateImageUrl } from './validate.js';
 import colors from 'cli-color';
 import { basename } from 'path';
+
+import { validateImageUrl } from './validate.js';
 
 export class ImageValidationQueue {
   // Track validations and validated files

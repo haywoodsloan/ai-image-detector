@@ -10,6 +10,13 @@ import { basename } from 'path';
  * }} Upload
  */
 
+export const DataPathPrefix = 'data';
+export const TrainPathPrefix = `${DataPathPrefix}/train`;
+export const TestPathPrefix = `${DataPathPrefix}/test`;
+
+export const RealClass = 'human';
+export const AiClass = 'artificial';
+
 const RetryLimit = 10;
 
 const HuggingFaceErrorDelay = 10 * 1000;
@@ -18,24 +25,43 @@ const RateLimitDelay = 10 * 60 * 1000;
 const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
 
 /** @type {{accessToken: string}} */
-let credentials = {};
+const credentials = {};
+
+/** @type {Set<string>} */
+const existingImages = new Set();
+
+/** @type {Promise?} */
+let imageLoadRequest;
+
+export async function preloadExistingImages() {
+  return (imageLoadRequest ||= (async () => {
+    const files = listFiles({
+      path: DataPathPrefix,
+      repo: DatasetRepo,
+      recursive: true,
+      credentials,
+    });
+
+    for await (const file of files) {
+      if (file.type !== 'file') continue;
+      existingImages.add(basename(file.path));
+    }
+  })());
+}
 
 /**
- * @param {string[]} paths
+ * @param {string} fileName
  */
-export async function getHfFileNames(paths) {
-  const names = new Set();
+export async function isExistingImage(fileName) {
+  await preloadExistingImages();
+  return existingImages.has(fileName);
+}
 
-  await Promise.all(
-    paths.map(async (path) => {
-      const files = listFiles({ path, credentials, repo: DatasetRepo });
-      for await (const file of files) {
-        names.add(basename(file.path));
-      }
-    })
-  );
-
-  return names;
+/**
+ * @param {string} fileName
+ */
+export function addFoundImage(fileName) {
+  existingImages.add(fileName);
 }
 
 /**
@@ -56,6 +82,7 @@ export async function uploadWithRetry(files) {
         credentials,
         files,
       });
+
       console.log(colors.green('Upload to HF succeeded'));
       break;
     } catch (error) {
@@ -81,5 +108,5 @@ export async function uploadWithRetry(files) {
  * @param {string} hfToken
  */
 export function setHfAccessToken(hfToken) {
-  credentials = { accessToken: hfToken };
+  credentials.accessToken = hfToken;
 }

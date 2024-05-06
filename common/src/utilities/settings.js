@@ -1,5 +1,6 @@
-import { isProd } from './environment.js';
 import { readFile } from 'fs/promises';
+
+import { isProd } from './environment.js';
 
 /**
  * @param {string | URL} configPath

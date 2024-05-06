@@ -1,10 +1,3 @@
-import { ImageValidationQueue } from './utilities/ImageValidationQueue.js';
-import {
-  getHfFileNames,
-  setHfAccessToken,
-  uploadWithRetry,
-} from './utilities/huggingface.js';
-import { waitForHidden } from './utilities/puppeteer.js';
 import colors from 'cli-color';
 import { loadSettings } from 'common/utilities/settings.js';
 import { wait } from 'common/utilities/sleep.js';
@@ -16,6 +9,20 @@ import { fileURLToPath } from 'url';
 import UserAgent from 'user-agents';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+
+import { ImageValidationQueue } from './utilities/ImageValidationQueue.js';
+import {
+  AiClass,
+  RealClass,
+  TestPathPrefix,
+  TrainPathPrefix,
+  addFoundImage,
+  isExistingImage,
+  preloadExistingImages,
+  setHfAccessToken,
+  uploadWithRetry,
+} from './utilities/huggingface.js';
+import { waitForHidden } from './utilities/puppeteer.js';
 
 // #region Command Arguments
 const args = yargs(hideBin(process.argv))
@@ -62,16 +69,10 @@ const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
 const ImageSelector =
   'shreddit-post img[src^="https://preview.redd.it"]:not([alt=""])';
 
-const TestSplit = 0.1;
-
-const RealClass = 'human';
-const AiClass = 'artificial';
-const TrainPathPrefix = 'data/train';
-const TestPathPrefix = 'data/test';
-
 const LogPath = new URL('../.log/', import.meta.url);
 const ConfigPath = new URL('../config/', import.meta.url);
 
+const TestSplit = 0.1;
 const UploadBatchSize = 50;
 const CleanupRemainder = 9;
 
@@ -85,13 +86,13 @@ const ScrollDelay = 2000;
 const { hfKey } = await loadSettings(ConfigPath);
 setHfAccessToken(hfKey);
 
+// Start preloading the existing image names
+preloadExistingImages();
+
 // Determine the train and test paths
 const classPart = args.real ? RealClass : AiClass;
 const trainPath = `${TrainPathPrefix}/${classPart}`;
 const testPath = `${TestPathPrefix}/${classPart}`;
-
-// Track existing files by the file name
-const existing = await getHfFileNames([trainPath, testPath]);
 
 // Launch Puppeteer
 const browser = await launch({
@@ -144,12 +145,12 @@ try {
         const fileName = sanitize(basename(url.pathname));
 
         // Skip existing files
-        if (existing.has(fileName)) continue;
+        if (await isExistingImage(fileName)) continue;
         const pathPrefix = Math.random() < TestSplit ? testPath : trainPath;
 
         // Track new file
         console.log(colors.blue(`Found: ${fileName}`));
-        existing.add(fileName);
+        addFoundImage(fileName);
 
         // Start a validation request and add to the count if it passes
         validationQueue

@@ -1,6 +1,13 @@
-import { AiClassLabel, AiClassThresh, DetectorModels } from '../constants.js';
-import { getImageAsBlob } from '../utilities/image.js';
 import { HfInference } from '@huggingface/inference';
+
+import { getImageAsBlob } from '../utilities/image.js';
+
+export const AiClassLabel = 'artificial';
+export const AiClassThresh = 0.95;
+
+export const DetectorModels = Object.freeze([
+  'haywoodsloan/autotrain-ai-image-detect',
+]);
 
 /**
  * @type {HfInference}
