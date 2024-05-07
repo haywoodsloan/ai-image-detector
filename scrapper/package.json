@@ -21,6 +21,7 @@
     "@huggingface/hub": "^0.14.10",
     "cli-color": "^2.0.4",
     "common": "file:../common",
+    "looks-same": "^9.0.0",
     "puppeteer": "^22.7.1",
     "sanitize-filename": "^1.6.3",
     "user-agents": "^1.1.187",

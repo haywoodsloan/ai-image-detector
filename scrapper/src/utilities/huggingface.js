@@ -3,13 +3,6 @@ import colors from 'cli-color';
 import { wait } from 'common/utilities/sleep.js';
 import { basename } from 'path';
 
-/**
- * @typedef {{
- *  path: string,
- *  content: URL
- * }} Upload
- */
-
 export const DataPathPrefix = 'data';
 export const TrainPathPrefix = `${DataPathPrefix}/train`;
 export const TestPathPrefix = `${DataPathPrefix}/test`;
@@ -65,7 +58,7 @@ export function addFoundImage(fileName) {
 }
 
 /**
- * @param {Upload[]} files
+ * @param {ValidatedUpload[]} files
  */
 export async function uploadWithRetry(files) {
   // Filter out invalid images

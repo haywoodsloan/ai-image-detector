@@ -1,5 +1,5 @@
 /**
- * @param {import('puppeteer').ElementHandle<Element>} element
+ * @param {ElementHandle<Element>} element
  * @param {number} timeout
  */
 export async function waitForHidden(element, timeout) {

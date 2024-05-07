@@ -104,7 +104,7 @@ const browser = await launch({
 const page = await browser.newPage();
 await page.setUserAgent(ChromeUA);
 
-const validationQueue = new ImageValidationQueue();
+const validationQueue = await ImageValidationQueue.createQueue();
 let count = 0;
 
 try {
@@ -155,7 +155,7 @@ try {
         // Start a validation request and add to the count if it passes
         validationQueue
           .queueValidation({ path: `${pathPrefix}/${fileName}`, content: url })
-          .then(({ isValid }) => isValid && count++);
+          .then((isValid) => isValid && count++);
 
         // If the batch has reached the upload size go ahead and upload it
         if (validationQueue.size >= UploadBatchSize) {
