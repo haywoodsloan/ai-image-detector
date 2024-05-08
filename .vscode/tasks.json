@@ -28,34 +28,58 @@
       "type": "docker-compose",
       "dockerCompose": {
         "up": {
-          "detached": false,
+          "detached": true,
           "build": true,
           "customOptions": "--force-recreate"
         },
         "files": ["${workspaceFolder}/autotrain/compose-dev.yml"]
       },
-      "hide": true,
+      "presentation": {
+        "showReuseMessage": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Attach to Autotrain",
+      "type": "shell",
+      "command": "docker attach --no-stdin --sig-proxy=false autotrain-app",
+      "problemMatcher": []
+    },
+    {
+      "label": "Rebuild Autotrain with Logs",
+      "dependsOn": ["Rebuild Autotrain", "Attach to Autotrain"],
+      "dependsOrder": "sequence",
       "problemMatcher": []
     },
     {
       "label": "Stop Autotrain",
       "type": "shell",
       "command": "docker compose -f ${workspaceFolder}/autotrain/compose-dev.yml stop",
-      "presentation": { "reveal": "silent" },
+      "presentation": {
+        "reveal": "silent"
+      },
       "problemMatcher": []
     },
     {
-      "label": "Launch Browser",
+      "label": "Open Autotrain App",
       "type": "shell",
       "command": "node ${workspaceFolder}/autotrain/launch.mjs",
-      "presentation": { "reveal": "silent" },
-      "hide": true,
+      "presentation": {
+        "reveal": "silent",
+        "showReuseMessage": false
+      },
       "problemMatcher": []
     },
     {
-      "label": "Open Autotrain UI",
-      "dependsOn": ["Rebuild Autotrain", "Launch Browser"],
+      "label": "Open Autotrain App with Logs",
+      "dependsOn": ["Attach to Autotrain", "Open Autotrain App"],
       "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Rebuild and Open Autotrain",
+      "dependsOn": ["Rebuild Autotrain", "Open Autotrain App with Logs"],
+      "dependsOrder": "sequence",
       "problemMatcher": []
     },
     {
@@ -63,7 +87,9 @@
       "type": "npm",
       "script": "format",
       "path": "common",
-      "presentation": { "reveal": "silent" },
+      "presentation": {
+        "reveal": "silent"
+      },
       "problemMatcher": []
     },
     {
@@ -71,7 +97,9 @@
       "type": "npm",
       "script": "format",
       "path": "scrapper",
-      "presentation": { "reveal": "silent" },
+      "presentation": {
+        "reveal": "silent"
+      },
       "problemMatcher": []
     },
     {
@@ -79,7 +107,9 @@
       "type": "npm",
       "script": "format",
       "path": "service",
-      "presentation": { "reveal": "silent" },
+      "presentation": {
+        "reveal": "silent"
+      },
       "problemMatcher": []
     },
     {

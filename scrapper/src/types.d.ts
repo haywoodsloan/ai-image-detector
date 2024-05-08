@@ -1,4 +1,4 @@
-declare type ElementHandle<T> = import('puppeteer').ElementHandle<T>;
+declare type ElementHandle<T extends Node = Element> = import('puppeteer').ElementHandle<T>;
 
 declare interface ValidationResult {
   isValid: boolean;

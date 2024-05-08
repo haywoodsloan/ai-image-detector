@@ -3,6 +3,7 @@ name: 'autotrain-advanced'
 services:
   app:
     build: .
+    container_name: 'autotrain-app'
     secrets:
       - hf_key
     environment:

@@ -1,15 +1,18 @@
 import { exec } from 'child_process';
 
-const SleepDuration = 500;
-const MaximumRetryCount = 90 * (1000 / SleepDuration);
+const SleepDuration = 1000;
+const TimeoutMinutes = 5;
+const AutotrainUrl = 'http://localhost:7860';
 
 let retryCount = 0;
+const maxRetryCount = (TimeoutMinutes * 60 * 1000) / SleepDuration;
+
 while (true) {
   try {
-    await fetch('http://localhost:7860');
+    await fetch(AutotrainUrl);
     break;
   } catch (error) {
-    if (retryCount >= MaximumRetryCount) {
+    if (retryCount >= maxRetryCount) {
       throw `Autotrain is not available after 90 seconds:\n  ${error}`;
     }
 
@@ -18,4 +21,4 @@ while (true) {
   }
 }
 
-exec('start http://localhost:7860');
+exec(`start ${AutotrainUrl}`);
