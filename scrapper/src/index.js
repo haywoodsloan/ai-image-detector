@@ -75,6 +75,7 @@ const ConfigPath = new URL('../config/', import.meta.url);
 const TestSplit = 0.1;
 const UploadBatchSize = 50;
 const CleanupRemainder = 9;
+const RetryLimit = 10;
 
 const LoadStuckTimeout = 20 * 1000;
 const RedditErrorDelay = 20 * 1000;
@@ -124,8 +125,21 @@ try {
     await page.goto(redditUrl, { waitUntil: 'networkidle2' });
 
     // Wait for the loader to appear so we know the posts will load.
-    await page.waitForSelector(LoaderSelector);
-    console.log(colors.green(`Successfully loaded ${redditUrl}`));
+    let retryCount = 0;
+    while (true) {
+      try {
+        await page.waitForSelector(LoaderSelector);
+        console.log(colors.green(`Successfully loaded ${redditUrl}`));
+        break;
+      } catch (error) {
+        if (retryCount >= RetryLimit) throw error;
+        console.log(colors.red(`Subreddit loading failed, refreshing`));
+        await wait(RedditErrorDelay);
+        
+        await page.reload({ waitUntil: 'networkidle2' });
+        retryCount++;
+      }
+    }
 
     // Start scrapping images and scrolling through the page
     while (true) {
@@ -206,7 +220,7 @@ try {
         try {
           await waitForHidden(loading, LoadStuckTimeout);
         } catch {
-          console.warn(colors.red('Post loading failed, refreshing the page'));
+          console.warn(colors.red('Post loading failed, refreshing'));
           await page.reload({ waitUntil: 'networkidle2' });
         }
       }
