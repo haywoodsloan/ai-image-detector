@@ -61,6 +61,15 @@
       "problemMatcher": []
     },
     {
+      "label": "Restart Autotrain",
+      "type": "shell",
+      "command": "docker compose -f ${workspaceFolder}/autotrain/compose-dev.yml restart",
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Open Autotrain App",
       "type": "shell",
       "command": "node ${workspaceFolder}/autotrain/launch.mjs",
