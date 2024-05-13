@@ -2,6 +2,10 @@ import colors from 'cli-color';
 import { readFile, readdir } from 'fs/promises';
 import looksSame from 'looks-same';
 import { basename, join } from 'path';
+import sharp from 'sharp';
+
+// Maximum number of pixels Autotrain will handle
+const MaxPixels = 178_956_970;
 
 export class ImageValidationQueue {
   // Track validations and validated files
@@ -11,7 +15,7 @@ export class ImageValidationQueue {
   /** @type {ValidatedUpload[]} */
   #validated = [];
 
-  /** @type {Array<{name: string, buffer: Buffer}>}*/
+  /** @type {{name: string, buffer: Buffer}[]}*/
   static #excludedBuffers;
 
   static async createQueue() {
@@ -90,12 +94,26 @@ export class ImageValidationQueue {
     const validHeader = contentType.startsWith('image/');
     if (!validHeader) throw new Error(`Invalid MIME type: ${contentType}`);
 
-    const imageBuffer = Buffer.from(await image.arrayBuffer());
+    let imageBuffer = Buffer.from(await image.arrayBuffer());
     for (const { name, buffer } of ImageValidationQueue.#excludedBuffers) {
       const { equal } = await looksSame(buffer, imageBuffer, {
         stopOnFirstFail: true,
       });
       if (equal) throw new Error(`Matches an excluded image: ${name}`);
+    }
+
+    const { height, width } = await sharp(imageBuffer).metadata();
+    const pixelCount = height * width;
+
+    if (pixelCount > MaxPixels) {
+      const scale = Math.sqrt(MaxPixels / pixelCount);
+
+      const scaledWidth = Math.floor(width * scale);
+      const scaledHeight = Math.floor(height * scale);
+
+      imageBuffer = await sharp(imageBuffer)
+        .resize(scaledWidth, scaledHeight, { fit: 'inside' })
+        .toBuffer();
     }
 
     return new Blob([imageBuffer]);

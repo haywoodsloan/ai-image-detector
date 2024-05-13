@@ -1,8 +1,8 @@
 {
   "name": "ai-image-data-scrapper",
   "version": "0.0.1",
-  "description": "",
-  "main": "index.js",
+  "description": "Image scrapper",
+  "main": "src/index.js",
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
@@ -18,13 +18,14 @@
   "author": "haywoodsloan",
   "license": "ISC",
   "dependencies": {
-    "@huggingface/hub": "^0.14.10",
+    "@huggingface/hub": "^0.15.0",
     "cli-color": "^2.0.4",
     "common": "file:../common",
     "looks-same": "^9.0.0",
-    "puppeteer": "^22.7.1",
+    "puppeteer": "^22.8.0",
     "sanitize-filename": "^1.6.3",
-    "user-agents": "^1.1.187",
+    "sharp": "^0.32.6",
+    "user-agents": "^1.1.203",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
@@ -32,7 +33,7 @@
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "eslint": "^9.2.0",
     "eslint-config-prettier": "^9.1.0",
-    "globals": "^15.1.0",
+    "globals": "^15.2.0",
     "prettier": "^3.2.5"
   }
 }

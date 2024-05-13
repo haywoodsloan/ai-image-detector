@@ -135,7 +135,7 @@ try {
         if (retryCount >= RetryLimit) throw error;
         console.log(colors.red(`Subreddit loading failed, refreshing`));
         await wait(RedditErrorDelay);
-        
+
         await page.reload({ waitUntil: 'networkidle2' });
         retryCount++;
       }
