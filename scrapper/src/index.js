@@ -12,13 +12,15 @@ import { hideBin } from 'yargs/helpers';
 
 import { ImageValidationQueue } from './utilities/ImageValidationQueue.js';
 import {
-  AiClass,
-  RealClass,
-  TestPathPrefix,
-  TrainPathPrefix,
+  AiLabel,
+  RealLabel,
+  TestSplit,
+  TrainSplit,
   addFoundImage,
+  getPathForImage,
   isExistingImage,
   preloadExistingImages,
+  releaseImagePath,
   setHfAccessToken,
   uploadWithRetry,
 } from './utilities/huggingface.js';
@@ -55,8 +57,6 @@ const RealSubReddits = [
 
 const WindowHeight = 1250;
 const WindowWidth = 1650;
-
-const ImageUrlRegex = /.*\/[^/]+-([^.-]+\.[^?]+).*/;
 const ChromeUA = new UserAgent([
   /Chrome/,
   { deviceCategory: 'desktop' },
@@ -72,7 +72,7 @@ const ImageSelector =
 const LogPath = new URL('../.log/', import.meta.url);
 const ConfigPath = new URL('../config/', import.meta.url);
 
-const TestSplit = 0.1;
+const TestRatio = 0.1;
 const UploadBatchSize = 50;
 const CleanupRemainder = 9;
 const RetryLimit = 10;
@@ -91,9 +91,7 @@ setHfAccessToken(hfKey);
 preloadExistingImages();
 
 // Determine the train and test paths
-const classPart = args.real ? RealClass : AiClass;
-const trainPath = `${TrainPathPrefix}/${classPart}`;
-const testPath = `${TestPathPrefix}/${classPart}`;
+const label = args.real ? RealLabel : AiLabel;
 
 // Launch Puppeteer
 const browser = await launch({
@@ -149,9 +147,12 @@ try {
       );
 
       // Replace the preview urls with full image urls
-      const urls = sources.map(
-        (src) => new URL(src.replace(ImageUrlRegex, 'https://i.redd.it/$1'))
-      );
+      const urls = sources.map((src) => {
+        const { pathname } = new URL(src);
+        const fileName = basename(pathname);
+        const shortFileName = fileName.substring(fileName.lastIndexOf('-') + 1);
+        return new URL(`https://i.redd.it/${shortFileName}`);
+      });
 
       // Queue image uploads to bulk upload to HuggingFace, skip existing files
       for (let i = 0; i < urls.length && count < args.count; i++) {
@@ -160,16 +161,20 @@ try {
 
         // Skip existing files
         if (await isExistingImage(fileName)) continue;
-        const pathPrefix = Math.random() < TestSplit ? testPath : trainPath;
+        const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
 
         // Track new file
         console.log(colors.blue(`Found: ${fileName}`));
         addFoundImage(fileName);
 
         // Start a validation request and add to the count if it passes
+        const path = getPathForImage(split, label, fileName);
         validationQueue
-          .queueValidation({ path: `${pathPrefix}/${fileName}`, content: url })
-          .then((isValid) => isValid && count++);
+          .queueValidation({ path, content: url })
+          .then((isValid) => {
+            if (isValid) count++;
+            else releaseImagePath(path);
+          });
 
         // If the batch has reached the upload size go ahead and upload it
         if (validationQueue.size >= UploadBatchSize) {

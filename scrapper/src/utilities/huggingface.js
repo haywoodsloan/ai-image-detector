@@ -1,16 +1,17 @@
 import { listFiles, uploadFiles } from '@huggingface/hub';
 import colors from 'cli-color';
 import { wait } from 'common/utilities/sleep.js';
-import { basename } from 'path';
+import { basename, dirname } from 'path';
 
-export const DataPathPrefix = 'data';
-export const TrainPathPrefix = `${DataPathPrefix}/train`;
-export const TestPathPrefix = `${DataPathPrefix}/test`;
+export const DataPath = 'data';
+export const TrainSplit = 'train';
+export const TestSplit = 'test';
 
-export const RealClass = 'human';
-export const AiClass = 'artificial';
+export const RealLabel = 'human';
+export const AiLabel = 'artificial';
 
 const RetryLimit = 10;
+const MaxSubsetSize = 10_000;
 
 const HuggingFaceErrorDelay = 10 * 1000;
 const RateLimitDelay = 10 * 60 * 1000;
@@ -23,13 +24,25 @@ const credentials = {};
 /** @type {Set<string>} */
 const existingImages = new Set();
 
+/** @type {{[key: string]: {[key: string]: number[]}}} */
+const subsetCounts = {
+  [TrainSplit]: {
+    [RealLabel]: [0],
+    [AiLabel]: [0],
+  },
+  [TestSplit]: {
+    [RealLabel]: [0],
+    [AiLabel]: [0],
+  },
+};
+
 /** @type {Promise?} */
 let imageLoadRequest;
 
 export async function preloadExistingImages() {
   return (imageLoadRequest ||= (async () => {
     const files = listFiles({
-      path: DataPathPrefix,
+      path: DataPath,
       repo: DatasetRepo,
       recursive: true,
       credentials,
@@ -38,6 +51,9 @@ export async function preloadExistingImages() {
     for await (const file of files) {
       if (file.type !== 'file') continue;
       existingImages.add(basename(file.path));
+
+      const { split, label, subsetIdx } = parseImagePath(file.path);
+      incrementSubsetCount(split, label, subsetIdx);
     }
   })());
 }
@@ -55,6 +71,31 @@ export async function isExistingImage(fileName) {
  */
 export function addFoundImage(fileName) {
   existingImages.add(fileName);
+}
+
+/**
+ *
+ * @param {string} split
+ * @param {string} label
+ * @param {string} fileName
+ */
+export function getPathForImage(split, label, fileName) {
+  const subsets = subsetCounts[split][label];
+  let subsetIdx = subsets.findIndex((size) => size < MaxSubsetSize);
+
+  if (subsetIdx === -1) subsetIdx = subsets.length;
+  const subset = `set-${String(subsetIdx).padStart(3, '0')}`;
+
+  incrementSubsetCount(split, label, subsetIdx);
+  return `${DataPath}/${split}/${subset}/${label}/${fileName}`;
+}
+
+/**
+ * @param {string} path
+ */
+export function releaseImagePath(path) {
+  const { split, label, subsetIdx } = parseImagePath(path);
+  decrementSubsetCount(split, label, subsetIdx);
 }
 
 /**
@@ -102,4 +143,45 @@ export async function uploadWithRetry(files) {
  */
 export function setHfAccessToken(hfToken) {
   credentials.accessToken = hfToken;
+}
+
+/**
+ * @param {string} split
+ * @param {string} label
+ * @param {number} subsetIdx
+ */
+function incrementSubsetCount(split, label, subsetIdx, increment = 1) {
+  const subsets = subsetCounts[split][label];
+  if (subsets[subsetIdx]) {
+    subsets[subsetIdx] += increment;
+  } else {
+    subsets[subsetIdx] = increment;
+  }
+}
+
+/**
+ * @param {string} split
+ * @param {string} label
+ * @param {number} subsetIdx
+ */
+function decrementSubsetCount(split, label, subsetIdx, decrement = 1) {
+  const subsets = subsetCounts[split][label];
+  if (subsets[subsetIdx]) subsets[subsetIdx] -= decrement;
+}
+
+/**
+ * @param {string} path
+ */
+function parseImagePath(path) {
+  const labelDir = dirname(path);
+  const label = basename(labelDir);
+
+  const subsetDir = dirname(labelDir);
+  const subset = basename(subsetDir);
+  const subsetIdx = Number(subset.substring(subset.indexOf('-') + 1));
+
+  const splitDir = dirname(subsetDir);
+  const split = basename(splitDir);
+
+  return { split, label, subsetIdx };
 }

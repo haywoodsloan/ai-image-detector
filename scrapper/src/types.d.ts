@@ -1,17 +1,17 @@
 declare type ElementHandle<T extends Node = Element> =
   import('puppeteer').ElementHandle<T>;
 
-declare interface ValidationResult {
+declare type ValidationResult = {
   isValid: boolean;
   error?: any;
-}
+};
 
-declare interface ValidatedUpload {
+declare type ValidatedUpload = {
   path: string;
   content: Blob;
-}
+};
 
-declare interface Upload {
+declare type Upload = {
   path: string;
   content: URL;
-}
+};
