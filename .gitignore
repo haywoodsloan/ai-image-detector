@@ -417,4 +417,4 @@ local.*
 .log/
 
 # Complied configs
-.complied/
+.compiled/

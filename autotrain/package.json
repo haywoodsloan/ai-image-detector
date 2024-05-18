@@ -7,11 +7,10 @@
   "scripts": {
     "format": "eslint --fix launch.js && prettier -w launch.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "compile-configs": "node scripts/compile-configs.js",
     "stop-autotrain": "docker compose stop",
     "restart-autotrain-app": "docker compose restart app",
     "attach-autotrain-app": "docker compose attach --no-stdin --sig-proxy=false app",
-    "open-autotrain-cli": "docker compose up --build --force-recreate --detach cli && docker compose attach cli",
+    "open-autotrain-cli": "node scripts/compile-configs.js && docker compose up --build --force-recreate --detach cli && docker compose attach cli",
     "open-autotrain-app": "node scripts/launch-app.js",
     "open-autotrain-app-logs": "run-p attach-autotrain-app open-autotrain-app",
     "rebuild-autotrain-app": "docker compose up --build --force-recreate --detach app",
