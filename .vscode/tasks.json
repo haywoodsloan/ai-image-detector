@@ -80,7 +80,7 @@
     {
       "label": "Open Autotrain App",
       "type": "shell",
-      "command": "node ${workspaceFolder}/autotrain/launch.mjs",
+      "command": "node ${workspaceFolder}/autotrain/launch.js",
       "presentation": {
         "reveal": "silent",
         "showReuseMessage": false

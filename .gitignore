@@ -415,3 +415,6 @@ local.*
 
 # Scrapper log
 .log/
+
+# Complied configs
+.complied/

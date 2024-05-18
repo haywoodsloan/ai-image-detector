@@ -1,1 +1,6 @@
-{ /* Only needed for type detection with IDE */ }
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
+  }
+}

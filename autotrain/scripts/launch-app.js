@@ -13,7 +13,9 @@ while (true) {
     break;
   } catch (error) {
     if (retryCount >= maxRetryCount) {
-      throw new Error(`Autotrain is not available after 90 seconds:\n  ${error}`);
+      throw new Error(
+        `Autotrain is not available after 90 seconds:\n  ${error}`
+      );
     }
 
     await new Promise((res) => setTimeout(res, SleepDuration));

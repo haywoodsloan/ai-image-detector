@@ -1,0 +1,40 @@
+{
+  "name": "ai-image-autotrain",
+  "version": "0.0.1",
+  "description": "Autotrain Docker with extra scripting",
+  "main": "launch.js",
+  "type": "module",
+  "scripts": {
+    "format": "eslint --fix launch.js && prettier -w launch.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile-configs": "node scripts/compile-configs.js",
+    "stop-autotrain": "docker compose stop",
+    "restart-autotrain-app": "docker compose restart app",
+    "attach-autotrain-app": "docker compose attach --no-stdin --sig-proxy=false app",
+    "open-autotrain-cli": "docker compose up --build --force-recreate --detach cli && docker compose attach cli",
+    "open-autotrain-app": "node scripts/launch-app.js",
+    "open-autotrain-app-logs": "run-p attach-autotrain-app open-autotrain-app",
+    "rebuild-autotrain-app": "docker compose up --build --force-recreate --detach app",
+    "rebuild-autotrain-app-logs": "run-s rebuild-autotrain-app attach-autotrain-app",
+    "rebuild-open-autotrain-app": "run-s rebuild-autotrain-app open-autotrain-app",
+    "rebuild-open-autotrain-app-logs": "run-s rebuild-autotrain-app open-autotrain-app-logs"
+  },
+  "keywords": [
+    "autotrain",
+    "docker"
+  ],
+  "author": "haywoodsloan",
+  "license": "ISC",
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+    "eslint": "^9.3.0",
+    "eslint-config-prettier": "^9.1.0",
+    "globals": "^15.2.0",
+    "prettier": "^3.2.5"
+  },
+  "dependencies": {
+    "common": "file:../common",
+    "handlebars": "^4.7.8",
+    "npm-run-all": "^4.1.5"
+  }
+}

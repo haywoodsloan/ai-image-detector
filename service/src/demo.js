@@ -1,6 +1,6 @@
 import color from 'cli-color';
+import { getFilesFromDir } from 'common/utilities/files.js';
 import { loadSettings } from 'common/utilities/settings.js';
-import { glob } from 'glob';
 
 import { ConfigPath } from './index.js';
 import { checkIfAI } from './services/detector.js';
@@ -15,13 +15,13 @@ let total = 0;
 let correct = 0;
 
 // Test each local demo file
-const artificialFiles = await glob('data/images/artificial/**/*');
+const artificialFiles = await getFilesFromDir('data/images/artificial/');
 for (const uri of artificialFiles) {
   total++;
   (await checkAndPrint({ uri, isAI: true })) && correct++;
 }
 
-const realFiles = await glob('data/images/human/**/*');
+const realFiles = await getFilesFromDir('data/images/human/');
 for (const uri of realFiles) {
   total++;
   (await checkAndPrint({ uri, isAI: false })) && correct++;

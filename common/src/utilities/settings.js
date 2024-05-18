@@ -1,29 +1,30 @@
 import { readFile } from 'fs/promises';
+import { join } from 'path';
 
 import { isProd } from './environment.js';
 
 /**
- * @param {string | URL} configPath
+ * @param {string} configPath
  */
 export async function loadSettings(configPath) {
   // Track the accumulated settings
   const settings = {};
 
   // Load base settings
-  const baseSettingsPath = new URL('settings.json', configPath);
+  const baseSettingsPath = join(configPath, 'settings.json');
   Object.assign(settings, await loadSettingsFile(baseSettingsPath));
 
   // Load env settings
   if (isProd) {
-    const prodSettingsPath = new URL('settings.prod.json', configPath);
+    const prodSettingsPath = join(configPath, 'settings.prod.json');
     Object.assign(settings, await loadSettingsFile(prodSettingsPath));
   } else {
-    const devSettingsPath = new URL('settings.dev.json', configPath);
+    const devSettingsPath = join(configPath, 'settings.dev.json');
     Object.assign(settings, await loadSettingsFile(devSettingsPath));
   }
 
   // Load local settings (for secrets)
-  const localSettingsPath = new URL('settings.local.json', configPath);
+  const localSettingsPath = join(configPath, 'settings.local.json');
   Object.assign(settings, await loadSettingsFile(localSettingsPath));
 
   // Assign the settings into the environment

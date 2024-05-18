@@ -69,8 +69,8 @@ const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
 const ImageSelector =
   'shreddit-post img[src^="https://preview.redd.it"]:not([alt=""])';
 
-const LogPath = new URL('../.log/', import.meta.url);
-const ConfigPath = new URL('../config/', import.meta.url);
+const LogPath = '.log/';
+const ConfigPath = 'config/';
 
 const TestRatio = 0.1;
 const UploadBatchSize = 50;

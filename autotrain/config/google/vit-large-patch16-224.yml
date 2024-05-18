@@ -1,6 +1,6 @@
 task: image-classification
 base_model: google/vit-large-patch16-224
-project_name: autotrain-ai-image-detect
+project_name: autotrain-ai-image-detect-{{datestamp}}
 log: tensorboard
 backend: local
 
