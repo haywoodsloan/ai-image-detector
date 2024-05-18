@@ -30,15 +30,11 @@
       "problemMatcher": []
     },
     {
-      "label": "Rebuild Autotrain",
-      "type": "docker-compose",
-      "dockerCompose": {
-        "up": {
-          "detached": true,
-          "build": true,
-          "customOptions": "--force-recreate"
-        },
-        "files": ["${workspaceFolder}/autotrain/compose-dev.yml"]
+      "label": "Rebuild Autotrain App",
+      "type": "shell",
+      "command": "docker compose up --build --force-recreate --detach app",
+      "options": {
+        "cwd": "${workspaceFolder}/autotrain"
       },
       "presentation": {
         "showReuseMessage": false
@@ -46,30 +42,36 @@
       "problemMatcher": []
     },
     {
-      "label": "Attach to Autotrain",
+      "label": "Attach to Autotrain App",
       "type": "shell",
       "command": "docker attach --no-stdin --sig-proxy=false autotrain-app",
       "problemMatcher": []
     },
     {
-      "label": "Rebuild Autotrain with Logs",
-      "dependsOn": ["Rebuild Autotrain", "Attach to Autotrain"],
+      "label": "Rebuild Autotrain App with Logs",
+      "dependsOn": ["Rebuild Autotrain App", "Attach to Autotrain App"],
       "dependsOrder": "sequence",
       "problemMatcher": []
     },
     {
       "label": "Stop Autotrain",
       "type": "shell",
-      "command": "docker compose -f ${workspaceFolder}/autotrain/compose-dev.yml stop",
+      "command": "docker compose stop",
+      "options": {
+        "cwd": "${workspaceFolder}/autotrain"
+      },
       "presentation": {
         "reveal": "silent"
       },
       "problemMatcher": []
     },
     {
-      "label": "Restart Autotrain",
+      "label": "Restart Autotrain App",
       "type": "shell",
-      "command": "docker compose -f ${workspaceFolder}/autotrain/compose-dev.yml restart",
+      "command": "docker compose restart app",
+      "options": {
+        "cwd": "${workspaceFolder}/autotrain"
+      },
       "presentation": {
         "reveal": "silent"
       },
@@ -86,14 +88,23 @@
       "problemMatcher": []
     },
     {
+      "label": "Open Autotrain CLI",
+      "type": "shell",
+      "command": "docker compose up --build --force-recreate --detach cli && docker compose attach cli",
+      "options": {
+        "cwd": "${workspaceFolder}/autotrain"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Open Autotrain App with Logs",
-      "dependsOn": ["Attach to Autotrain", "Open Autotrain App"],
+      "dependsOn": ["Attach to Autotrain App", "Open Autotrain App"],
       "dependsOrder": "parallel",
       "problemMatcher": []
     },
     {
-      "label": "Rebuild and Open Autotrain",
-      "dependsOn": ["Rebuild Autotrain", "Open Autotrain App with Logs"],
+      "label": "Rebuild and Open Autotrain App",
+      "dependsOn": ["Rebuild Autotrain App", "Open Autotrain App with Logs"],
       "dependsOrder": "sequence",
       "problemMatcher": []
     },

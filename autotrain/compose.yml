@@ -1,0 +1,51 @@
+name: 'autotrain-advanced'
+
+services:
+  app:
+    container_name: 'autotrain-app'
+    build:
+      dockerfile: app.Dockerfile
+    environment:
+      HF_TOKEN_FILE: /run/secrets/hf_key
+    ports:
+      - '7860:7860'
+    secrets:
+      - hf_key
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+  cli:
+    container_name: 'autotrain-cli'
+    build:
+      dockerfile: cli.Dockerfile
+    environment:
+      HF_TOKEN_FILE: /run/secrets/hf_key
+      HF_USER_FILE: /hf_user
+    volumes:
+      - ./config:/var/hf/config
+      - ./images/data:/var/hf/images/data
+    configs:
+      - hf_user
+    secrets:
+      - hf_key
+    stdin_open: true
+    tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+configs:
+  hf_user:
+    file: .huggingface_user
+
+secrets:
+  hf_key:
+    file: .huggingface_key

@@ -408,7 +408,7 @@ env.bak/
 venv.bak/
 
 # Local settings
-.huggingface
+.huggingface_*
 local.*
 *.local
 *.local.*
