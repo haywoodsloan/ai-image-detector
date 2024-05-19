@@ -1,11 +1,11 @@
 task: image-classification
 base_model: google/vit-large-patch16-224
-project_name: autotrain-ai-image-detect-{{datestamp}}
+project_name: autotrain-ai-image-detect-{{datetime}}
 log: tensorboard
 backend: local
 
 data:
-  path: /var/hf/images
+  path: haywoodsloan/ai-images
   train_split: train
   valid_split: test
   column_mapping:
@@ -14,7 +14,7 @@ data:
 
 params:
   lr: 0.00005
-  epochs: 10
+  epochs: 3
   batch_size: 8
   warmup_ratio: 0.1
   gradient_accumulation: 1
