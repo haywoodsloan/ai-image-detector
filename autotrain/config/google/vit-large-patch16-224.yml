@@ -14,7 +14,7 @@ data:
 
 params:
   lr: 0.00005
-  epochs: 3
+  epochs: 5
   batch_size: 8
   warmup_ratio: 0.1
   gradient_accumulation: 1
