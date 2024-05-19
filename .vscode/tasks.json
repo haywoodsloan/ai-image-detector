@@ -31,11 +31,9 @@
     },
     {
       "label": "Rebuild Autotrain App",
-      "type": "shell",
-      "command": "docker compose up --build --force-recreate --detach app",
-      "options": {
-        "cwd": "${workspaceFolder}/autotrain"
-      },
+      "type": "npm",
+      "script": "rebuild-autotrain-app",
+      "path": "autotrain",
       "presentation": {
         "showReuseMessage": false
       },
@@ -43,23 +41,23 @@
     },
     {
       "label": "Attach to Autotrain App",
-      "type": "shell",
-      "command": "docker attach --no-stdin --sig-proxy=false autotrain-app",
+      "type": "npm",
+      "script": "attach-autotrain-app",
+      "path": "autotrain",
       "problemMatcher": []
     },
     {
       "label": "Rebuild Autotrain App with Logs",
-      "dependsOn": ["Rebuild Autotrain App", "Attach to Autotrain App"],
-      "dependsOrder": "sequence",
+      "type": "npm",
+      "script": "rebuild-autotrain-app-logs",
+      "path": "autotrain",
       "problemMatcher": []
     },
     {
       "label": "Stop Autotrain",
-      "type": "shell",
-      "command": "docker compose stop",
-      "options": {
-        "cwd": "${workspaceFolder}/autotrain"
-      },
+      "type": "npm",
+      "script": "stop-autotrain",
+      "path": "autotrain",
       "presentation": {
         "reveal": "silent"
       },
@@ -67,11 +65,9 @@
     },
     {
       "label": "Restart Autotrain App",
-      "type": "shell",
-      "command": "docker compose restart app",
-      "options": {
-        "cwd": "${workspaceFolder}/autotrain"
-      },
+      "type": "npm",
+      "script": "restart-autotrain-app",
+      "path": "autotrain",
       "presentation": {
         "reveal": "silent"
       },
@@ -79,8 +75,9 @@
     },
     {
       "label": "Open Autotrain App",
-      "type": "shell",
-      "command": "node ${workspaceFolder}/autotrain/launch.js",
+      "type": "npm",
+      "script": "open-autotrain-app",
+      "path": "autotrain",
       "presentation": {
         "reveal": "silent",
         "showReuseMessage": false
@@ -89,8 +86,9 @@
     },
     {
       "label": "Open Autotrain CLI",
-      "type": "shell",
-      "command": "docker compose up --build --force-recreate --detach cli && docker compose attach cli",
+      "type": "npm",
+      "script": "open-autotrain-cli",
+      "path": "autotrain",
       "options": {
         "cwd": "${workspaceFolder}/autotrain"
       },
@@ -98,14 +96,16 @@
     },
     {
       "label": "Open Autotrain App with Logs",
-      "dependsOn": ["Attach to Autotrain App", "Open Autotrain App"],
-      "dependsOrder": "parallel",
+      "type": "npm",
+      "script": "open-autotrain-app-logs",
+      "path": "autotrain",
       "problemMatcher": []
     },
     {
-      "label": "Rebuild and Open Autotrain App",
-      "dependsOn": ["Rebuild Autotrain App", "Open Autotrain App with Logs"],
-      "dependsOrder": "sequence",
+      "label": "Rebuild and Open Autotrain App with Logs",
+      "type": "npm",
+      "script": "rebuild-autotrain-app-logs",
+      "path": "autotrain",
       "problemMatcher": []
     },
     {
@@ -139,8 +139,18 @@
       "problemMatcher": []
     },
     {
+      "label": "Format Autotrain",
+      "type": "npm",
+      "script": "format",
+      "path": "autotrain",
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Format All",
-      "dependsOn": ["Format Common", "Format Scrapper", "Format Service"],
+      "dependsOn": ["Format Common", "Format Scrapper", "Format Service", "Format Autotrain"],
       "dependsOrder": "parallel",
       "problemMatcher": []
     }

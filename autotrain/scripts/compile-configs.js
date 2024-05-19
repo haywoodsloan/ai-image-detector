@@ -1,5 +1,5 @@
 import { getFilesFromDir } from 'common/utilities/files.js';
-import { mkdir, readFile, rmdir, writeFile } from 'fs/promises';
+import { mkdir, readFile, rm, watch, writeFile } from 'fs/promises';
 import Handlebars from 'handlebars';
 import { dirname, join } from 'path';
 
@@ -13,21 +13,27 @@ Handlebars.registerHelper('datestamp', () => {
 
 const compilePath = '.compiled/';
 const compileConfigPath = join(compilePath, 'config/');
-
-try {
-  await rmdir(compileConfigPath);
-} catch {
-  /* ignore if dir doesn't exist */
-}
+await rm(compileConfigPath, { force: true, recursive: true });
 
 const configPath = 'config/';
 const configs = await getFilesFromDir(configPath);
-
 for (const config of configs) {
-  const template = Handlebars.compile(await readFile(config, 'utf8'));
+  await compile(config);
+}
+
+console.log('\nWatching for config changes...');
+const watcher = watch(configPath, { recursive: true });
+for await (const { filename } of watcher) {
+  await compile(filename);
+}
+
+async function compile(filename) {
+  console.log(`Compiling: ${filename}`);
+
+  const template = Handlebars.compile(await readFile(filename, 'utf8'));
   const compiled = template();
 
-  const outputPath = join(compilePath, config);
+  const outputPath = join(compilePath, filename);
   const parentPath = dirname(outputPath);
 
   await mkdir(parentPath, { recursive: true });
