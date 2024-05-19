@@ -1,5 +1,5 @@
 import { getFilesFromDir } from 'common/utilities/files.js';
-import { mkdir, readFile, rm, watch, writeFile } from 'fs/promises';
+import { mkdir, readFile, rm, stat, watch, writeFile } from 'fs/promises';
 import Handlebars from 'handlebars';
 import { dirname, join } from 'path';
 
@@ -18,18 +18,27 @@ await rm(compileConfigPath, { force: true, recursive: true });
 const configPath = 'config/';
 const configs = await getFilesFromDir(configPath);
 for (const config of configs) {
+  console.log(`Compiling ${config}`);
   await compile(config);
 }
 
 console.log('\nWatching for config changes...');
 const watcher = watch(configPath, { recursive: true });
 for await (const { filename } of watcher) {
-  await compile(filename);
+  const filePath = join(configPath, filename);
+  try {
+    const fileStats = await stat(filePath);
+    if (!fileStats.isFile()) continue;
+
+    console.log(`Changed ${filePath}`);
+    await compile(filePath);
+  } catch {
+    console.log(`Removed ${filePath}`);
+    await rm(join(compilePath, filePath), { force: true, recursive: true });
+  }
 }
 
 async function compile(filename) {
-  console.log(`Compiling: ${filename}`);
-
   const template = Handlebars.compile(await readFile(filename, 'utf8'));
   const compiled = template();
 
