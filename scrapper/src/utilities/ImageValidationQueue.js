@@ -88,7 +88,7 @@ export class ImageValidationQueue {
    */
   async #validateImage(url) {
     const image = await fetch(url);
-    if (!image.ok) throw new Error(`HEAD request failed: ${image.statusText}`);
+    if (!image.ok) throw new Error(`GET request failed: ${image.statusText}`);
 
     const contentType = image.headers.get('Content-Type');
     const validHeader = contentType.startsWith('image/');
