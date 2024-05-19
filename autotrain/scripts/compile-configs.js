@@ -22,7 +22,7 @@ for (const config of configs) {
   await compile(config);
 }
 
-console.log('\nWatching for config changes...');
+console.log('Watching for config changes...');
 const watcher = watch(configPath, { recursive: true });
 for await (const { filename } of watcher) {
   const filePath = join(configPath, filename);
