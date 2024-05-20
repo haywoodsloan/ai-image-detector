@@ -1,3 +1,4 @@
 [submodule "autotrain/images"]
 	path = autotrain/images
 	url = https://huggingface.co/datasets/haywoodsloan/ai-images
+	branch = main
