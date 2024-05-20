@@ -32,8 +32,8 @@ for (const config of configs) {
   await compile(config);
 }
 
-// Recompile periodically support datetime updates
-setTimeout(async () => {
+// Recompile periodically to support datetime updates
+setInterval(async () => {
   for (const config of refreshConfigs) {
     await compile(config);
   }
