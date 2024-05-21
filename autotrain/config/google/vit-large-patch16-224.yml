@@ -5,7 +5,7 @@ log: tensorboard
 backend: local
 
 data:
-  path: haywoodsloan/ai-images
+  path: /var/hf/images
   train_split: train
   valid_split: test
   column_mapping:
@@ -14,7 +14,7 @@ data:
 
 params:
   lr: 0.00005
-  epochs: 5
+  epochs: 1
   warmup_ratio: 0.1
   gradient_accumulation: 1
   optimizer: adamw_torch

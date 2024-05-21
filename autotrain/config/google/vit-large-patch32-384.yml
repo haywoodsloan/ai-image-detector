@@ -5,7 +5,7 @@ log: tensorboard
 backend: local
 
 data:
-  path: haywoodsloan/ai-images
+  path: /var/hf/images
   train_split: train
   valid_split: test
   column_mapping:
