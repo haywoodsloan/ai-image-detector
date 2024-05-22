@@ -13,7 +13,7 @@ data:
     target_column: label
 
 params:
-  lr: 0.00005
+  lr: 2e-5
   epochs: 5
   warmup_ratio: 0.1
   gradient_accumulation: 1
