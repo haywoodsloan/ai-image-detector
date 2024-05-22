@@ -17,6 +17,7 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+
   cli:
     build:
       dockerfile: cli.Dockerfile
