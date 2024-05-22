@@ -1,0 +1,4 @@
+- google/vit-base-patch16-224
+- google/vit-large-patch16-224
+- google/vit-large-patch32-384
+- microsoft/beit-base-patch16-224-pt22k-ft22k
