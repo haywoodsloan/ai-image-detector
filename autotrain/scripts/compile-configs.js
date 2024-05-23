@@ -1,6 +1,6 @@
 import { mkdir, readFile, rm, stat, watch, writeFile } from 'fs/promises';
 import Handlebars from 'handlebars';
-import { dirname, join } from 'path';
+import { dirname, join, parse } from 'path';
 import YAML from 'yaml';
 
 const DatetimeRegex = /{{\s*datetime\s*}}/;
@@ -58,7 +58,8 @@ for await (const { filename, eventType } of watcher) {
     await compileAll();
   } else {
     console.log(`Recompiling ${filePath}`);
-    await compile(filename);
+    const { name } = parse(filename);
+    await compile(name);
   }
 }
 
@@ -70,7 +71,7 @@ async function compileAll() {
 
   for (const model of models) {
     const baseContent = baseTemplate({ model });
-    await compile(`${model}.yml`, YAML.parse(baseContent));
+    await compile(model, YAML.parse(baseContent));
   }
 }
 
@@ -78,22 +79,22 @@ async function compileAll() {
  * @param {string} modelPath
  * @param {any} baseConfig
  */
-async function compile(modelPath, baseConfig = null) {
+async function compile(model, baseConfig = null) {
   if (!baseConfig) {
     const baseTemplate = await getBaseTemplate();
-    const baseContent = baseTemplate({ model: modelPath });
+    const baseContent = baseTemplate({ model });
     baseConfig = YAML.parse(baseContent);
   }
 
-  const fileName = join(ConfigPath, modelPath);
+  const fileName = join(ConfigPath, `${model}.yml`);
   const merged = {};
 
   try {
     const fileContent = await readFile(fileName, 'utf8');
     const hasDatetime = DatetimeRegex.test(fileContent);
 
-    if (hasDatetime) refreshConfigs.add(modelPath);
-    else refreshConfigs.delete(modelPath);
+    if (hasDatetime) refreshConfigs.add(model);
+    else refreshConfigs.delete(model);
 
     const template = Handlebars.compile(fileContent);
     const compiled = template();
