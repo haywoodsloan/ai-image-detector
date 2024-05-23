@@ -25,8 +25,8 @@ services:
       HF_TOKEN_FILE: /run/secrets/hf_key
       HF_USER_FILE: /hf_user
     volumes:
-      - ./.compiled/config:/var/hf/config:ro
-      - ./images/data:/var/hf/images/data:ro
+      - ./.compiled/config:/app/configs:ro
+      - ./images/data:/app/haywoodsloan/ai-images/data:ro
     configs:
       - hf_user
     secrets:
