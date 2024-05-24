@@ -5,6 +5,7 @@ import YAML from 'yaml';
 
 const DatetimeRegex = /{{\s*datetime\s*}}/;
 const AutoRefreshInterval = 5 * 60 * 1000;
+const MaxModTimeDiff = 5000;
 
 const CompilePath = '.compiled/';
 const ConfigPath = 'config/';
@@ -48,7 +49,10 @@ for await (const { filename, eventType } of watcher) {
 
   const filePath = join(ConfigPath, filename);
   const fileStats = await stat(filePath);
+  const modTimeDiff = Date.now() - fileStats.mtime;
+
   if (!fileStats.isFile()) continue;
+  if (modTimeDiff > MaxModTimeDiff) continue;
 
   if (filePath === BasePath) {
     console.log('Base config changed, recompiling all');
