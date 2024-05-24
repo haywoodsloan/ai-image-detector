@@ -1,6 +1,14 @@
-import { mkdir, readFile, rm, stat, watch, writeFile } from 'fs/promises';
+import {
+  mkdir,
+  readFile,
+  readdir,
+  rm,
+  stat,
+  watch,
+  writeFile,
+} from 'fs/promises';
 import Handlebars from 'handlebars';
-import { dirname, join, parse } from 'path';
+import { dirname, join, parse, relative } from 'path';
 import YAML from 'yaml';
 
 const DatetimeRegex = /{{\s*datetime\s*}}/;
@@ -9,6 +17,7 @@ const MaxModTimeDiff = 5000;
 
 const CompilePath = '.compiled/';
 const ConfigPath = 'config/';
+const CompileConfigPath = join(CompilePath, ConfigPath);
 
 const BasePath = join(ConfigPath, 'base.yml.hbs');
 const ModelsPath = join(ConfigPath, 'models.yml');
@@ -29,8 +38,7 @@ Handlebars.registerHelper('datetime', () => {
 /** @type {Set<string>} */
 const refreshConfigs = new Set();
 
-const compileConfigPath = join(CompilePath, ConfigPath);
-await rm(compileConfigPath, { force: true, recursive: true });
+await rm(CompileConfigPath, { force: true, recursive: true });
 await compileAll();
 
 // Recompile periodically to support datetime updates
@@ -58,8 +66,8 @@ for await (const { filename, eventType } of watcher) {
     console.log('Base config changed, recompiling all');
     await compileAll();
   } else if (filePath === ModelsPath) {
-    console.log('Model list changed, recompiling all');
-    await compileAll();
+    console.log('Model list changed, compiling updates');
+    await compileDiff();
   } else {
     console.log(`Recompiling ${filePath}`);
     const { name } = parse(filename);
@@ -69,11 +77,47 @@ for await (const { filename, eventType } of watcher) {
 
 async function compileAll() {
   const baseTemplate = await getBaseTemplate();
-
-  const modelsContent = await readFile(ModelsPath, 'utf8');
-  const models = YAML.parse(modelsContent);
+  const models = await getModelList();
 
   for (const model of models) {
+    const baseContent = baseTemplate({ model });
+    await compile(model, YAML.parse(baseContent));
+  }
+}
+
+async function compileDiff() {
+  const newModels = await getModelList();
+
+  const configEntries = await readdir(CompileConfigPath, {
+    recursive: true,
+    withFileTypes: true,
+  });
+
+  const existingModels = configEntries
+    .filter((entry) => entry.isFile())
+    .map((entry) => {
+      const { name } = parse(entry.name);
+      const prefix = relative(CompileConfigPath, entry.parentPath);
+      return `${prefix.replaceAll('\\', '/')}/${name}`;
+    });
+
+  const removeModels = existingModels.filter(
+    (model) => !newModels.includes(model)
+  );
+
+  for (const model of removeModels) {
+    const modelPath = join(CompileConfigPath, `${model}.yml`);
+    await rm(modelPath, { force: true });
+  }
+
+  const addModels = newModels.filter(
+    (model) => !existingModels.includes(model)
+  );
+
+  if (!addModels.length) return;
+  const baseTemplate = await getBaseTemplate();
+
+  for (const model of addModels) {
     const baseContent = baseTemplate({ model });
     await compile(model, YAML.parse(baseContent));
   }
@@ -119,10 +163,18 @@ async function compile(model, baseConfig = null) {
 
 async function getBaseTemplate() {
   const baseContent = await readFile(BasePath, 'utf8');
-  const baseHasDatetime = DatetimeRegex.test(baseContent);
+  const hasDatetime = DatetimeRegex.test(baseContent);
 
-  if (baseHasDatetime) refreshConfigs.add(BasePath);
+  if (hasDatetime) refreshConfigs.add(BasePath);
   else refreshConfigs.delete(BasePath);
 
   return Handlebars.compile(baseContent);
+}
+
+/**
+ * @returns {Promise<string[]>}
+ */
+async function getModelList() {
+  const modelsContent = await readFile(ModelsPath, 'utf8');
+  return YAML.parse(modelsContent);
 }
