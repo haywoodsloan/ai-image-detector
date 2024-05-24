@@ -27,7 +27,7 @@ import {
 import { waitForHidden } from './utilities/puppeteer.js';
 
 // #region Command Arguments
-const args = yargs(hideBin(process.argv))
+const args = await yargs(hideBin(process.argv))
   .option('count', {
     type: 'number',
     description: 'The maximum number of images to scrape',
@@ -42,7 +42,8 @@ const args = yargs(hideBin(process.argv))
     type: 'boolean',
     description: 'If real (non-AI) images should be scrapped',
     default: false,
-  }).argv;
+  })
+  .parse();
 // #endregion
 
 // #region Constants

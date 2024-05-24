@@ -95,6 +95,16 @@
       "problemMatcher": []
     },
     {
+      "label": "Run Autotrain CLI",
+      "type": "npm",
+      "script": "run-autotrain-cli -- ${input:autotrain-model}",
+      "path": "autotrain",
+      "options": {
+        "cwd": "${workspaceFolder}/autotrain"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Open Autotrain App with Logs",
       "type": "npm",
       "script": "open-autotrain-app-logs",
@@ -150,9 +160,21 @@
     },
     {
       "label": "Format All",
-      "dependsOn": ["Format Common", "Format Scrapper", "Format Service", "Format Autotrain"],
+      "dependsOn": [
+        "Format Common",
+        "Format Scrapper",
+        "Format Service",
+        "Format Autotrain"
+      ],
       "dependsOrder": "parallel",
       "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "autotrain-model",
+      "description": "The base model for autotrain",
+      "type": "promptString"
     }
   ]
 }

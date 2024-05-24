@@ -11,8 +11,13 @@
     "restart-autotrain-app": "docker compose restart app",
     "attach-autotrain-app": "docker compose attach --no-stdin --sig-proxy=false app",
     "compile-autotrain-configs": "node scripts/compile-configs.js",
-    "restart-autotrain-cli": "docker compose up --build --detach cli && docker compose attach cli",
-    "open-autotrain-cli": "run-p -r compile-autotrain-configs restart-autotrain-cli",
+    "watch-autotrain-configs": "npm run compile-autotrain-configs -- --watch",
+    "start-autotrain-cli": "docker compose up --build --detach cli",
+    "attach-autotrain-cli": "docker compose attach cli",
+    "restart-autotrain-cli": "run-s start-autotrain-cli attach-autotrain-cli",
+    "invoke-autotrain-cli": "docker compose exec cli conda run --live-stream -p ~/env autotrain",
+    "run-autotrain-cli": "run-s compile-autotrain-configs start-autotrain-cli \"invoke-autotrain-cli -- --config configs/{1}.yml\" --",
+    "open-autotrain-cli": "run-p -r watch-autotrain-configs restart-autotrain-cli",
     "open-autotrain-app": "node scripts/launch-app.js",
     "open-autotrain-app-logs": "run-p attach-autotrain-app open-autotrain-app",
     "rebuild-autotrain-app": "docker compose up --build --detach app",
@@ -37,6 +42,7 @@
     "common": "file:../common",
     "handlebars": "^4.7.8",
     "npm-run-all": "^4.1.5",
-    "yaml": "^2.4.2"
+    "yaml": "^2.4.2",
+    "yargs": "^17.7.2"
   }
 }

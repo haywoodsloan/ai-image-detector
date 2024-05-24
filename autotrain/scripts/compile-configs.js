@@ -10,6 +10,8 @@ import {
 import Handlebars from 'handlebars';
 import { dirname, join, parse, relative } from 'path';
 import YAML from 'yaml';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
 const DatetimeRegex = /{{\s*datetime\s*}}/;
 const AutoRefreshInterval = 5 * 60 * 1000;
@@ -37,9 +39,17 @@ Handlebars.registerHelper('datetime', () => {
 
 /** @type {Set<string>} */
 const refreshConfigs = new Set();
+const args = await yargs(hideBin(process.argv)).boolean('watch').parse();
 
+// Clear old configs and compile new ones
 await rm(CompileConfigPath, { force: true, recursive: true });
 await compileAll();
+
+// If not watching end after compiling
+if (!args.watch) {
+  console.log('Configs successfully compiled');
+  process.exit(0);
+}
 
 // Recompile periodically to support datetime updates
 setInterval(async () => {
