@@ -18,15 +18,15 @@
   "author": "haywoodsloan",
   "license": "ISC",
   "dependencies": {
-    "@huggingface/inference": "^2.6.7",
+    "@huggingface/inference": "^2.7.0",
     "common": "file:../common"
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "cli-color": "^2.0.4",
-    "eslint": "^9.2.0",
+    "eslint": "^9.3.0",
     "eslint-config-prettier": "^9.1.0",
-    "globals": "^15.2.0",
+    "globals": "^15.3.0",
     "prettier": "^3.2.5"
   }
 }
