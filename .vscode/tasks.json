@@ -173,7 +173,7 @@
   "inputs": [
     {
       "id": "autotrain-model",
-      "description": "The base model for autotrain",
+      "description": "The base model for training",
       "type": "promptString"
     }
   ]
