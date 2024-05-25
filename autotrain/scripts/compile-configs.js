@@ -39,7 +39,17 @@ Handlebars.registerHelper('datetime', () => {
 
 /** @type {Set<string>} */
 const refreshConfigs = new Set();
-const args = await yargs(hideBin(process.argv)).boolean('watch').parse();
+const args = await yargs(hideBin(process.argv))
+  .boolean('watch')
+  .string('model')
+  .parse();
+
+// If a specific model is requested just compile that
+if (args.model) {
+  console.log(`Compiling ${args.model}`)
+  await compile(args.model);
+  process.exit(0);
+}
 
 // Clear old configs and compile new ones
 await rm(CompileConfigPath, { force: true, recursive: true });
@@ -79,9 +89,10 @@ for await (const { filename, eventType } of watcher) {
     console.log('Model list changed, compiling updates');
     await compileDiff();
   } else {
-    console.log(`Recompiling ${filePath}`);
-    const { name } = parse(filename);
-    await compile(name);
+    const { name, dir } = parse(filename);
+    const model = `${dir}/${name}`;
+    console.log(`Recompiling ${model}`);
+    await compile(model);
   }
 }
 
@@ -134,7 +145,7 @@ async function compileDiff() {
 }
 
 /**
- * @param {string} modelPath
+ * @param {string} model
  * @param {any} baseConfig
  */
 async function compile(model, baseConfig = null) {
