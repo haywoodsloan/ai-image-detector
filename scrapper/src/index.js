@@ -114,13 +114,6 @@ let count = 0;
 
 try {
   for (let i = 0; i < redditUrls.length && count < args.count; i++) {
-    // Wait before loading additional Subreddits
-    if (i > 0) {
-      const delay = NextSubredditDelay / 1000;
-      console.log(colors.yellow(`Waiting ${delay} secs before next Subreddit`));
-      await wait(NextSubredditDelay);
-    }
-
     // Navigate to the page and wait for network traffic to settle
     const redditUrl = redditUrls[i];
     console.log(colors.yellow(`Navigating to ${redditUrl}`));
