@@ -38,7 +38,7 @@ Handlebars.registerHelper('datetime', () => {
 });
 
 /** @type {Set<string>} */
-const refreshConfigs = new Set();
+const refreshModels = new Set();
 const args = await yargs(hideBin(process.argv))
   .boolean('watch')
   .string('model')
@@ -46,7 +46,7 @@ const args = await yargs(hideBin(process.argv))
 
 // If a specific model is requested just compile that
 if (args.model) {
-  console.log(`Compiling ${args.model}`)
+  console.log(`Compiling ${args.model}`);
   await compile(args.model);
   process.exit(0);
 }
@@ -63,10 +63,14 @@ if (!args.watch) {
 
 // Recompile periodically to support datetime updates
 setInterval(async () => {
-  if (refreshConfigs.has(BasePath)) {
+  if (refreshModels.has(BasePath)) {
     await compileAll();
   } else {
-    for (const config of refreshConfigs) await compile(config);
+    const baseTemplate = await getBaseTemplate();
+    for (const model of refreshModels) {
+      const baseContent = baseTemplate({ model });
+      await compile(model, YAML.parse(baseContent));
+    }
   }
 }, AutoRefreshInterval);
 
@@ -162,8 +166,8 @@ async function compile(model, baseConfig = null) {
     const fileContent = await readFile(fileName, 'utf8');
     const hasDatetime = DatetimeRegex.test(fileContent);
 
-    if (hasDatetime) refreshConfigs.add(model);
-    else refreshConfigs.delete(model);
+    if (hasDatetime) refreshModels.add(model);
+    else refreshModels.delete(model);
 
     const template = Handlebars.compile(fileContent);
     const compiled = template();
@@ -186,8 +190,8 @@ async function getBaseTemplate() {
   const baseContent = await readFile(BasePath, 'utf8');
   const hasDatetime = DatetimeRegex.test(baseContent);
 
-  if (hasDatetime) refreshConfigs.add(BasePath);
-  else refreshConfigs.delete(BasePath);
+  if (hasDatetime) refreshModels.add(BasePath);
+  else refreshModels.delete(BasePath);
 
   return Handlebars.compile(baseContent);
 }
