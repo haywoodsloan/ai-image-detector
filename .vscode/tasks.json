@@ -115,6 +115,16 @@
       "problemMatcher": []
     },
     {
+      "label": "Run Clean Autotrain CLI",
+      "type": "npm",
+      "script": "run-clean-autotrain-cli -- ${input:autotrain-model}",
+      "path": "autotrain",
+      "options": {
+        "cwd": "${workspaceFolder}/autotrain"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Open Autotrain App with Logs",
       "type": "npm",
       "script": "open-autotrain-app-logs",
