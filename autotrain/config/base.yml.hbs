@@ -1,4 +1,4 @@
-task: image-classification
+task: image_classification
 base_model: {{model}}
 project_name: autotrain-ai-image-detect-{{datetime}}
 log: tensorboard
@@ -13,22 +13,13 @@ data:
     target_column: label
 
 params:
-  lr: 2e-5
   epochs: 8
-  warmup_ratio: 0.1
-  gradient_accumulation: 1
+  lr: 2e-5
+  auto_find_batch_size: true
   optimizer: adamw_torch
   scheduler: linear
-  weight_decay: 0
-  max_grad_norm: 1
-  seed: 42
-  logging_steps: -1
-  auto_find_batch_size: true
+  gradient_accumulation: 1
   mixed_precision: fp16
-  save_total_limit: 1
-  evaluation_strategy: epoch
-  early_stopping_patience: 5
-  early_stopping_threshold: 0.01
 
 hub:
   username: ${HF_USERNAME}

@@ -30,9 +30,9 @@
       "problemMatcher": []
     },
     {
-      "label": "Rebuild Autotrain App",
+      "label": "Start Autotrain App",
       "type": "npm",
-      "script": "rebuild-autotrain-app",
+      "script": "start-autotrain-app",
       "path": "autotrain",
       "presentation": {
         "showReuseMessage": false
@@ -47,9 +47,9 @@
       "problemMatcher": []
     },
     {
-      "label": "Rebuild Autotrain App with Logs",
+      "label": "Start Autotrain App with Logs",
       "type": "npm",
-      "script": "rebuild-autotrain-app-logs",
+      "script": "start-autotrain-app-logs",
       "path": "autotrain",
       "problemMatcher": []
     },
@@ -112,9 +112,9 @@
       "problemMatcher": []
     },
     {
-      "label": "Rebuild and Open Autotrain App with Logs",
+      "label": "Start and Open Autotrain App with Logs",
       "type": "npm",
-      "script": "rebuild-autotrain-app-logs",
+      "script": "start-autotrain-app-logs",
       "path": "autotrain",
       "problemMatcher": []
     },
