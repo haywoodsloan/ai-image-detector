@@ -80,7 +80,6 @@ const RetryLimit = 10;
 
 const LoadStuckTimeout = 20 * 1000;
 const RedditErrorDelay = 20 * 1000;
-const NextSubredditDelay = 20 * 1000;
 const ScrollDelay = 2000;
 // #endregion
 
@@ -104,8 +103,8 @@ const browser = await launch({
 const page = await browser.newPage();
 await page.setUserAgent(ChromeUA);
 
-/** @type {Promise[]} */
-const pendingUploads = [];
+/** @type {Set<Promise>} */
+const pendingUploads = new Set();
 const validationQueue = await ImageValidationQueue.createQueue();
 
 // Browse to multiple Subreddits and scrape files
@@ -176,7 +175,11 @@ try {
         // If the batch has reached the upload size go ahead and upload it
         if (validationQueue.size >= UploadBatchSize) {
           const uploads = await validationQueue.getValidated();
-          pendingUploads.push(uploadWithRetry(uploads));
+          const pendingUpload = uploadWithRetry(uploads).then(() =>
+            pendingUploads.delete(pendingUpload)
+          );
+
+          pendingUploads.add(pendingUpload);
           validationQueue.clear();
         }
       }
@@ -246,11 +249,11 @@ try {
 // Upload the remaining files to HuggingFace
 if (validationQueue.size) {
   const uploads = await validationQueue.getValidated();
-  pendingUploads.push(uploadWithRetry(uploads));
+  pendingUploads.add(uploadWithRetry(uploads));
 }
 
 // Wait for all pending uploads to finish
-await Promise.all(pendingUploads);
+await Promise.all([...pendingUploads]);
 
 // Close browser and finish
 await browser.close();
