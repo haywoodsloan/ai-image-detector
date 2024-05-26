@@ -85,6 +85,16 @@
       "problemMatcher": []
     },
     {
+      "label": "Recreate Autotrain CLI",
+      "type": "npm",
+      "script": "recreate-autotrain-cli",
+      "path": "autotrain",
+      "options": {
+        "cwd": "${workspaceFolder}/autotrain"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Open Autotrain CLI",
       "type": "npm",
       "script": "open-autotrain-cli",
