@@ -1,5 +1,9 @@
 - google/vit-base-patch16-224
 - google/vit-large-patch16-224
+- google/vit-large-patch16-384
 - google/vit-large-patch32-384
 - microsoft/beit-base-patch16-224-pt22k-ft22k
 - microsoft/beit-large-patch16-224-pt22k-ft22k
+- microsoft/beit-large-patch16-512
+- microsoft/beit-large-patch16-224
+- facebook/convnext-large-224
