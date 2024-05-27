@@ -54,6 +54,7 @@ const AiSubReddits = [
 const RealSubReddits = [
   'https://www.reddit.com/r/Art/',
   'https://www.reddit.com/r/pics/',
+  'https://www.reddit.com/r/BookCovers/'
 ];
 
 const WindowHeight = 1250;
