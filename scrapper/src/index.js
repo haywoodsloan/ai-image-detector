@@ -116,7 +116,7 @@ try {
   for (let i = 0; i < redditUrls.length && count < args.count; i++) {
     // Navigate to the page and wait for network traffic to settle
     const redditUrl = redditUrls[i];
-    console.log(y(`Navigating to ${redditUrl}`));
+    console.log(y`Navigating to ${redditUrl}`);
     await page.goto(redditUrl, { waitUntil: 'networkidle2' });
 
     // Wait for the loader to appear so we know the posts will load.
@@ -124,11 +124,11 @@ try {
     while (true) {
       try {
         await page.waitForSelector(LoaderSelector);
-        console.log(g(`Successfully loaded ${redditUrl}`));
+        console.log(g`Successfully loaded ${redditUrl}`);
         break;
       } catch (error) {
         if (retryCount >= RetryLimit) throw error;
-        console.log(r(`Subreddit loading failed, refreshing`));
+        console.log(r`Subreddit loading failed, refreshing`);
         await wait(RedditErrorDelay);
 
         await page.reload({ waitUntil: 'networkidle2' });
@@ -161,7 +161,7 @@ try {
         const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
 
         // Track new file
-        console.log(b(`Found: ${fileName}`));
+        console.log(b`Found: ${fileName}`);
         addFoundImage(fileName);
 
         // Start a validation request and add to the count if it passes
@@ -187,7 +187,7 @@ try {
 
       // Break if we've reached the maximum number of images
       if (count >= args.count) {
-        console.log(y('Reached maximum image count'));
+        console.log(y`Reached maximum image count`);
         break;
       }
 
@@ -195,7 +195,7 @@ try {
       // If so break, we've reached the end of the Subreddit
       const loader = await page.$(LoaderSelector);
       if (!loader) {
-        console.log(y('Reached end of Subreddit'));
+        console.log(y`Reached end of Subreddit`);
         break;
       }
 
@@ -226,7 +226,7 @@ try {
         try {
           await waitForHidden(loading, LoadStuckTimeout);
         } catch {
-          console.warn(r('Post loading failed, refreshing'));
+          console.warn(r`Post loading failed, refreshing`);
           await page.reload({ waitUntil: 'networkidle2' });
         }
       }
@@ -258,4 +258,4 @@ await Promise.all([...pendingUploads]);
 
 // Close browser and finish
 await browser.close();
-console.log(g('Done!'));
+console.log(g`Done!`);

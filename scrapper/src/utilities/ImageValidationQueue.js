@@ -56,7 +56,7 @@ export class ImageValidationQueue {
       })
       .catch((error) => {
         const fileName = basename(upload.path);
-        console.log(r(`Skipping: ${fileName} [${error}]`));
+        console.log(r`Skipping: ${fileName} [${error}]`);
         this.#validations.delete(validation);
         return false;
       });
