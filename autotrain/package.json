@@ -5,7 +5,7 @@
   "main": "launch.js",
   "type": "module",
   "scripts": {
-    "format": "eslint --fix launch.js && prettier -w launch.js",
+    "format": "eslint --fix ./scripts && prettier -w ./scripts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "stop-autotrain": "docker compose stop",
     "restart-autotrain-app": "docker compose restart app",

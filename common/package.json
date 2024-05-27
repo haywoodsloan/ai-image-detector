@@ -22,5 +22,8 @@
     "eslint-config-prettier": "^9.1.0",
     "globals": "^15.3.0",
     "prettier": "^3.2.5"
+  },
+  "dependencies": {
+    "cli-color": "^2.0.4"
   }
 }

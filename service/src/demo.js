@@ -1,4 +1,4 @@
-import color from 'cli-color';
+import { g, r, y } from 'common/utilities/colors.js';
 import { getFilesFromDir } from 'common/utilities/files.js';
 import { loadSettings } from 'common/utilities/settings.js';
 
@@ -36,11 +36,11 @@ const report = [
 ].join('\n');
 
 if (score <= 50) {
-  console.log(color.red(report));
+  console.log(r(report));
 } else if (score <= 75) {
-  console.log(color.yellow(report));
+  console.log(y(report));
 } else {
-  console.log(color.green(report));
+  console.log(g(report));
 }
 
 /**
@@ -61,10 +61,10 @@ async function checkAndPrint({ uri, isAI }) {
   const msg = result ? 'This image is AI generated\n' : 'This image is real\n';
 
   if (result === isAI) {
-    console.log(color.green(msg));
+    console.log(g(msg));
     return true;
   } else {
-    console.error(color.red(msg));
+    console.error(r(msg));
     return false;
   }
 }

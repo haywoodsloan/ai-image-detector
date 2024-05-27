@@ -19,7 +19,6 @@
   "license": "ISC",
   "dependencies": {
     "@huggingface/hub": "^0.15.1",
-    "cli-color": "^2.0.4",
     "common": "file:../common",
     "looks-same": "^9.0.0",
     "puppeteer": "^22.10.0",

@@ -1,5 +1,5 @@
 import { listFiles, uploadFiles } from '@huggingface/hub';
-import colors from 'cli-color';
+import { g, r, y } from 'common/utilities/colors.js';
 import { wait } from 'common/utilities/sleep.js';
 import { basename, dirname } from 'path';
 
@@ -104,7 +104,7 @@ export function releaseImagePath(path) {
 export async function uploadWithRetry(files) {
   // Filter out invalid images
   if (!files.length) return;
-  console.log(colors.yellow(`Uploading ${files.length} files to HF`));
+  console.log(y(`Uploading ${files.length} files to HF`));
 
   // Start a retry loop
   let retryCount = 0;
@@ -117,18 +117,18 @@ export async function uploadWithRetry(files) {
         files,
       });
 
-      console.log(colors.green('Upload to HF succeeded'));
+      console.log(g(`${files.length} files successfully uploaded`));
       break;
     } catch (error) {
       if (error.statusCode === 429) {
         // Warn about rate limiting and wait a few minutes
         const delay = RateLimitDelay / 60 / 1000;
-        console.warn(colors.red(`Rate-limited, waiting ${delay} mins`));
+        console.warn(r(`Rate-limited, waiting ${delay} mins`));
         await wait(RateLimitDelay);
       } else if (retryCount < RetryLimit) {
         // Retry after a few seconds for other errors
         retryCount++;
-        console.warn(colors.red(`Retrying after error: ${error.message}`));
+        console.warn(r(`Retrying after error: ${error.message}`));
         await wait(HuggingFaceErrorDelay * retryCount);
       } else {
         // If not a known error re-throw

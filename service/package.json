@@ -23,7 +23,6 @@
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "cli-color": "^2.0.4",
     "eslint": "^9.3.0",
     "eslint-config-prettier": "^9.1.0",
     "globals": "^15.3.0",

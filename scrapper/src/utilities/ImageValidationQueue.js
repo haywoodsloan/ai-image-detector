@@ -1,4 +1,4 @@
-import colors from 'cli-color';
+import { r } from 'common/utilities/colors.js';
 import { readFile, readdir } from 'fs/promises';
 import looksSame from 'looks-same';
 import { basename, join } from 'path';
@@ -56,7 +56,7 @@ export class ImageValidationQueue {
       })
       .catch((error) => {
         const fileName = basename(upload.path);
-        console.log(colors.red(`Skipping: ${fileName} [${error}]`));
+        console.log(r(`Skipping: ${fileName} [${error}]`));
         this.#validations.delete(validation);
         return false;
       });
