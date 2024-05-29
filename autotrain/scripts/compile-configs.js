@@ -94,7 +94,7 @@ for await (const { filename, eventType } of watcher) {
     await compileDiff();
   } else {
     const { name, dir } = parse(filename);
-    const model = `${dir}/${name}`;
+    const model = `${dir.replaceAll('\\', '/')}/${name}`;
     console.log(`Recompiling ${model}`);
     await compile(model);
   }

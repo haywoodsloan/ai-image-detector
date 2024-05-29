@@ -16,7 +16,7 @@
     "start-autotrain-cli": "docker compose up --build --detach cli",
     "attach-autotrain-cli": "docker compose attach cli",
     "restart-autotrain-cli": "run-s start-autotrain-cli attach-autotrain-cli",
-    "invoke-autotrain-cli": "docker compose exec cli conda run --live-stream -p ~/env bash -ci",
+    "invoke-autotrain-cli": "docker compose exec cli bash -ci",
     "run-autotrain-cli": "run-s \"compile-autotrain-configs -- --model {1}\" start-autotrain-cli \"invoke-autotrain-cli -- 'autotrain --config configs/{1}.yml'\" --",
     "run-clean-autotrain-cli": "run-s recreate-autotrain-cli \"run-autotrain-cli -- {1}\" --",
     "open-autotrain-cli": "run-p -r watch-autotrain-configs restart-autotrain-cli",
