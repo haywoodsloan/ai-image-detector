@@ -15,7 +15,7 @@ function interpolate(strs, ...args) {
     strs?.length > 0 &&
     strs?.length === strs?.raw?.length &&
     strs?.length === args?.length + 1;
-    
+
   if (!isTag) return [strs, ...args];
   const builder = [];
 
