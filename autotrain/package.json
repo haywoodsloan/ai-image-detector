@@ -13,7 +13,7 @@
     "compile-autotrain-configs": "node scripts/compile-configs.js",
     "watch-autotrain-configs": "npm run compile-autotrain-configs -- --watch",
     "recreate-autotrain-cli": "docker compose build --no-cache cli && docker compose up --force-recreate --detach cli",
-    "start-autotrain-cli": "docker compose up --build --detach cli",
+    "start-autotrain-cli": "docker compose up --build --detach --force-recreate cli",
     "attach-autotrain-cli": "docker compose attach cli",
     "restart-autotrain-cli": "run-s start-autotrain-cli attach-autotrain-cli",
     "invoke-autotrain-cli": "docker compose exec cli bash -ci",
