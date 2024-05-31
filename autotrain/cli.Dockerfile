@@ -24,4 +24,4 @@ ENV HOME=/workspace
 RUN echo 'export HF_USERNAME=$(cat $HF_USER_FILE)' >> ~/.bashrc
 RUN echo 'export HF_TOKEN=$(cat $HF_TOKEN_FILE)' >> ~/.bashrc
 
-CMD bash
+CMD pip install -U autotrain-advanced && bash
