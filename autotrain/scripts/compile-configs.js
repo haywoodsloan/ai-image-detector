@@ -12,6 +12,7 @@ import { dirname, join, parse, relative } from 'path';
 import YAML from 'yaml';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import merge from 'deepmerge'
 
 const DatetimeRegex = /{{\s*datetime\s*}}/;
 const AutoRefreshInterval = 5 * 60 * 1000;
@@ -160,7 +161,7 @@ async function compile(model, baseConfig = null) {
   }
 
   const fileName = join(ConfigPath, `${model}.yml`);
-  const merged = {};
+  let merged;
 
   try {
     const fileContent = await readFile(fileName, 'utf8');
@@ -173,9 +174,9 @@ async function compile(model, baseConfig = null) {
     const compiled = template();
 
     const parsed = YAML.parse(compiled);
-    Object.assign(merged, baseConfig, parsed);
+    merged = merge.all([baseConfig, parsed]);
   } catch {
-    Object.assign(merged, baseConfig);
+    merged = merge.all([baseConfig]);
   }
 
   const output = YAML.stringify(merged);
