@@ -17,13 +17,13 @@ ENV HF_HOME="/workspace/.cache"
 
 RUN conda install -y nvidia/label/cuda-12.1.1::cuda-nvcc
 RUN conda install -y xformers::xformers
+RUN conda clean -y --all
 
 RUN pip install -U autotrain-advanced
 RUN python -m nltk.downloader punkt
 RUN pip install -U flash-attn --no-build-isolation
 RUN pip install -U deepspeed
-
-RUN conda clean --all
+RUN pip cache purge
 
 RUN echo 'export HF_USERNAME=$(cat $HF_USER_FILE)' >> ~/.bashrc
 RUN echo 'export HF_TOKEN=$(cat $HF_TOKEN_FILE)' >> ~/.bashrc
