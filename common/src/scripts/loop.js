@@ -4,6 +4,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { wait } from '../utilities/sleep.js';
+import { y } from '../utilities/colors.js';
 
 const args = await yargs(hideBin(process.argv))
   .command('$0 <cmd>', 'loop command', (yargs) =>
@@ -31,7 +32,7 @@ while (count < args.count) {
   const child = spawn(args.cmd, { shell: true, stdio: 'inherit' });
   await new Promise((res) => child.once('close', res));
 
-  console.log(`Waiting for ${args.timeout} seconds`);
+  console.log(y`\nWaiting for ${args.timeout} seconds...\n`);
   await wait(args.timeout * 1000);
   count++;
 }
