@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Common utilities, services, and configs for the other projects in this repo",
   "type": "module",
+  "bin": {
+    "loop": "./src/scripts/loop.js"
+  },
   "exports": {
     "./*": "./src/*"
   },
@@ -24,6 +27,7 @@
     "prettier": "^3.2.5"
   },
   "dependencies": {
-    "cli-color": "^2.0.4"
+    "cli-color": "^2.0.4",
+    "yargs": "^17.7.2"
   }
 }

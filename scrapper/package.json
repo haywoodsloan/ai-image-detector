@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
+    "loop": "loop --timeout 3600 \"npm run start && npm run start -- --real\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "eslint --fix ./src && prettier -w ./src"
   },
