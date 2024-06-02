@@ -4,7 +4,7 @@
   "description": "Common utilities, services, and configs for the other projects in this repo",
   "type": "module",
   "bin": {
-    "loop": "./src/scripts/loop.js"
+    "loop": "./scripts/loop.js"
   },
   "exports": {
     "./*": "./src/*"
@@ -21,10 +21,10 @@
   "devDependencies": {
     "@eslint/js": "^9.2.0",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "eslint": "^9.3.0",
+    "eslint": "^9.4.0",
     "eslint-config-prettier": "^9.1.0",
     "globals": "^15.3.0",
-    "prettier": "^3.2.5"
+    "prettier": "^3.3.0"
   },
   "dependencies": {
     "cli-color": "^2.0.4",
