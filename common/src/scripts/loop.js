@@ -32,7 +32,7 @@ while (count < args.count) {
   const child = spawn(args.cmd, { shell: true, stdio: 'inherit' });
   await new Promise((res) => child.once('close', res));
 
-  console.log(y`\nWaiting for ${args.timeout} seconds...\n`);
+  console.log(y`\nWaiting for ${args.timeout} seconds...`);
   await wait(args.timeout * 1000);
   count++;
 }
