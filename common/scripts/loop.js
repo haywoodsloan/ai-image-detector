@@ -3,8 +3,8 @@ import { spawn } from 'child_process';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import { wait } from '../utilities/sleep.js';
-import { y } from '../utilities/colors.js';
+import { wait } from '../src/utilities/sleep.js';
+import { y } from '../src/utilities/colors.js';
 
 const args = await yargs(hideBin(process.argv))
   .command('$0 <cmd>', 'loop command', (yargs) =>
