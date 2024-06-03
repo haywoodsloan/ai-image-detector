@@ -188,6 +188,33 @@
       ],
       "dependsOrder": "parallel",
       "problemMatcher": []
+    },
+    {
+      "type": "func",
+      "label": "func: host start",
+      "command": "host start",
+      "problemMatcher": "$func-node-watch",
+      "isBackground": true,
+      "options": {
+        "cwd": "${workspaceFolder}/service"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "npm install (service)",
+      "command": "npm install",
+      "options": {
+        "cwd": "${workspaceFolder}/service"
+      }
+    },
+    {
+      "type": "shell",
+      "label": "npm prune (service)",
+      "command": "npm prune --production",
+      "problemMatcher": [],
+      "options": {
+        "cwd": "${workspaceFolder}/service"
+      }
     }
   ],
   "inputs": [

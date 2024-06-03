@@ -57,6 +57,7 @@ const RealSubReddits = [
   'https://www.reddit.com/r/BookCovers/',
 ];
 
+const LogPath = '.log/';
 const WindowHeight = 1250;
 const WindowWidth = 1650;
 const ChromeUA = new UserAgent([
@@ -71,9 +72,6 @@ const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
 const ImageSelector =
   'shreddit-post img[src^="https://preview.redd.it"]:not([alt=""])';
 
-const LogPath = '.log/';
-const ConfigPath = 'config/';
-
 const TestRatio = 0.1;
 const UploadBatchSize = 50;
 const CleanupRemainder = 9;
@@ -85,7 +83,7 @@ const ScrollDelay = 2000;
 // #endregion
 
 // Parse local settings for HuggingFace credentials
-const { hfKey } = await loadSettings(ConfigPath);
+const { hfKey } = await loadSettings();
 setHfAccessToken(hfKey);
 
 // Start preloading the existing image names

@@ -2,13 +2,12 @@ import { g, r, y } from 'common/utilities/colors.js';
 import { getFilesFromDir } from 'common/utilities/files.js';
 import { loadSettings } from 'common/utilities/settings.js';
 
-import { ConfigPath } from './index.js';
 import { checkIfAI } from './services/detector.js';
 import { shortenPath } from './utilities/path.js';
 import { isHttpUrl, shortenUrl } from './utilities/url.js';
 
 // Load settings for Hugging Face key
-await loadSettings(ConfigPath);
+await loadSettings();
 
 // Track stats
 let total = 0;

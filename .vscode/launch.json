@@ -5,6 +5,13 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Attach to Service Function",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "preLaunchTask": "func: host start"
+    },
+    {
       "name": "Run Data Scrapper (AI)",
       "request": "launch",
       "runtimeArgs": ["run-script", "start", "--", "--debug"],

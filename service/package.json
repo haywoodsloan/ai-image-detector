@@ -2,9 +2,10 @@
   "name": "ai-image-detector",
   "version": "0.0.1",
   "description": "Analyzes an input image and guesses if it is AI generated.",
-  "main": "src/index.js",
+  "main": "src/functions/*.js",
   "type": "module",
   "scripts": {
+    "start": "func start",
     "demo": "node src/demo.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "eslint --fix ./src && prettier -w ./src"
@@ -18,6 +19,7 @@
   "author": "haywoodsloan",
   "license": "ISC",
   "dependencies": {
+    "@azure/functions": "^4.5.0",
     "@huggingface/inference": "^2.7.0",
     "common": "file:../common"
   },

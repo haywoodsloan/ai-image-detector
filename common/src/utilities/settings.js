@@ -6,7 +6,7 @@ import { isProd } from './environment.js';
 /**
  * @param {string} configPath
  */
-export async function loadSettings(configPath) {
+export async function loadSettings(configPath = "/") {
   // Track the accumulated settings
   const settings = {};
 
@@ -16,15 +16,15 @@ export async function loadSettings(configPath) {
 
   // Load env settings
   if (isProd) {
-    const prodSettingsPath = join(configPath, 'settings.prod.json');
+    const prodSettingsPath = join(configPath, 'prod.settings.json');
     Object.assign(settings, await loadSettingsFile(prodSettingsPath));
   } else {
-    const devSettingsPath = join(configPath, 'settings.dev.json');
+    const devSettingsPath = join(configPath, 'dev.settings.json');
     Object.assign(settings, await loadSettingsFile(devSettingsPath));
   }
 
   // Load local settings (for secrets)
-  const localSettingsPath = join(configPath, 'settings.local.json');
+  const localSettingsPath = join(configPath, 'local.settings.json');
   Object.assign(settings, await loadSettingsFile(localSettingsPath));
 
   // Assign the settings into the environment
