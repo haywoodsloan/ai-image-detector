@@ -7,11 +7,14 @@ ENV PYTHONUNBUFFERED=1
 ENV HOME=/workspace
 
 RUN apt-get update
-RUN apt-get install -y git git-lfs libgl1 libglib2.0-0
+RUN apt-get install -y build-essential cmake git git-lfs libgl1 libglib2.0-0 libaio-dev
 RUN apt-get upgrade -y
 RUN apt-get autoremove && apt-get autoclean && apt-get clean
 
 RUN git lfs install
+RUN git clone --depth 1 --branch v3.5.0 https://github.com/NVIDIA/cutlass.git /workspace/cutlass
+ENV CUTLASS_PATH=/workspace/cutlass
+
 RUN mkdir /workspace/.cache
 ENV HF_HOME="/workspace/.cache"
 

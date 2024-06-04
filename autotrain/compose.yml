@@ -1,4 +1,4 @@
-name: 'autotrain-advanced'
+name: autotrain-advanced
 
 services:
   app:
@@ -33,6 +33,7 @@ services:
       - hf_key
     stdin_open: true
     tty: true
+    shm_size: 1gb
     deploy:
       resources:
         reservations:
