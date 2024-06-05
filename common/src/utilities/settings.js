@@ -6,7 +6,7 @@ import { isProd } from './environment.js';
 /**
  * @param {string} configPath
  */
-export async function loadSettings(configPath = "/") {
+export async function loadSettings(configPath = "./") {
   // Track the accumulated settings
   const settings = {};
 

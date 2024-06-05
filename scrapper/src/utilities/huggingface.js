@@ -142,6 +142,7 @@ export async function uploadWithRetry(files) {
  * @param {string} hfToken
  */
 export function setHfAccessToken(hfToken) {
+  if (!hfToken) throw new Error ("Invalid HF token");
   credentials.accessToken = hfToken;
 }
 
