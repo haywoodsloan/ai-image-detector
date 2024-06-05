@@ -7,7 +7,7 @@ export const DataPath = 'data';
 export const TrainSplit = 'train';
 export const TestSplit = 'test';
 
-export const RealLabel = 'human';
+export const RealLabel = 'real';
 export const AiLabel = 'artificial';
 
 const RetryLimit = 10;
