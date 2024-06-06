@@ -3,6 +3,7 @@ import { getFilesFromDir } from 'common/utilities/files.js';
 import { loadSettings } from 'common/utilities/settings.js';
 
 import { checkIfAI } from './services/detector.js';
+import { getImageData } from './utilities/image.js';
 import { shortenPath } from './utilities/path.js';
 import { isHttpUrl, shortenUrl } from './utilities/url.js';
 
@@ -56,9 +57,10 @@ async function checkAndPrint({ uri, isAI }) {
     );
   }
 
-  const result = await checkIfAI(uri);
-  const msg = result ? 'This image is AI generated\n' : 'This image is real\n';
+  const buffer = await getImageData(uri);
+  const result = await checkIfAI(buffer);
 
+  const msg = result ? 'This image is AI generated\n' : 'This image is real\n';
   if (result === isAI) {
     console.log(g(msg));
     return true;

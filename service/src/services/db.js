@@ -1,24 +1,49 @@
 import { isDev } from 'common/utilities/environment.js';
+import memoize from 'memoize';
 import { MongoClient } from 'mongodb';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
 import { AiClassLabel, DetectorVersion, RealClassLabel } from './detector.js';
 
+const DbName = 'service';
+const CollName = 'images';
+
 const MinVoteCount = 5;
+const MockDbPort = 8254;
+const ExpireTime = 30 * 24 * 60 * 60;
 
-const dbUri = isDev
-  ? (await MongoMemoryServer.create()).getUri()
-  : process.env.dbConStr;
+const getImageCollection = memoize(async () => {
+  const dbUri = isDev ? (await startMockDb()).getUri() : process.env.dbConStr;
+  const client = await MongoClient.connect(dbUri);
 
-const client = await MongoClient.connect(dbUri);
-const db = client.db('service');
-const images = db.collection('images');
+  const db = client.db(DbName);
+  const images = db.collection(CollName);
+
+  try {
+    await images.createIndex(
+      { lastModDate: 1 },
+      { expireAfterSeconds: ExpireTime }
+    );
+  } catch (error) {
+    if (error.codeName !== 'IndexOptionsConflict') throw error;
+    await db.command({
+      collMod: images.collectionName,
+      index: {
+        keyPattern: { lastModDate: 1 },
+        expireAfterSeconds: ExpireTime,
+      },
+    });
+  }
+
+  return images;
+});
 
 /**
  * @param {string} hash
  * @returns {Promise<string>}
  */
-export async function getImageClass(hash) {
+export async function retrieveImageClass(hash) {
+  const images = await getImageCollection();
   const image = await images.findOne({ hash });
 
   // Check votes
@@ -42,13 +67,21 @@ export async function getImageClass(hash) {
 }
 
 /**
- * @param {string} hash 
- * @param {string} imgClass 
+ * @param {string} hash
+ * @param {string} imgClass
  */
-export async function setImageClass(hash, imgClass) {
+export async function storeImageClass(hash, imgClass) {
+  const images = await getImageCollection();
   await images.updateOne(
     { hash },
-    { $set: { hash, imgClass, detVer: DetectorVersion } },
+    {
+      $set: {
+        hash,
+        imgClass,
+        detVer: DetectorVersion,
+        lastModDate: new Date(),
+      },
+    },
     { upsert: true }
   );
 }
@@ -56,10 +89,14 @@ export async function setImageClass(hash, imgClass) {
 /**
  * @param {string} hash
  */
-export async function voteImageAI(hash) {
+export async function storeAiVote(hash) {
+  const images = await getImageCollection();
   await images.updateOne(
     { hash },
-    { $set: { hash }, $inc: { aiVotes: 1 } },
+    {
+      $set: { hash, lastModDate: new Date() },
+      $inc: { aiVotes: 1 },
+    },
     { upsert: true }
   );
 }
@@ -67,10 +104,20 @@ export async function voteImageAI(hash) {
 /**
  * @param {string} hash
  */
-export async function voteImageReal(hash) {
+export async function storeRealVote(hash) {
+  const images = await getImageCollection();
   await images.updateOne(
     { hash },
-    { $set: { hash }, $inc: { realVotes: 1 } },
+    {
+      $set: { hash, lastModDate: new Date() },
+      $inc: { realVotes: 1 },
+    },
     { upsert: true }
   );
+}
+
+function startMockDb() {
+  return MongoMemoryServer.create({
+    instance: { port: MockDbPort },
+  });
 }

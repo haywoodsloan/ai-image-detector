@@ -1,11 +1,11 @@
-import { openAsBlob } from 'fs';
+import { readFile } from 'fs/promises';
 
 import { isHttpUrl } from './url.js';
 
 /**
  * @param {string} uri
  */
-export async function getImageAsBlob(uri) {
+export async function getImageData(uri) {
   if (isHttpUrl(uri)) {
     const response = await fetch(uri, {
       headers: {
@@ -13,9 +13,9 @@ export async function getImageAsBlob(uri) {
       },
     });
 
-    return await response.blob();
+    return Buffer.from(await response.arrayBuffer());
   }
 
-  const blob = await openAsBlob(uri);
-  return blob;
+  const buffer = await readFile(uri);
+  return buffer;
 }
