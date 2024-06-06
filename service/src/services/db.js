@@ -12,19 +12,28 @@ const MinVoteCount = 5;
 const MockDbPort = 8254;
 const ExpireTime = 30 * 24 * 60 * 60;
 
+const startMockDb = memoize(() =>
+  MongoMemoryServer.create({
+    instance: { port: MockDbPort },
+  })
+);
+
 const getImageCollection = memoize(async () => {
   const dbUri = isDev ? (await startMockDb()).getUri() : process.env.dbConStr;
   const client = await MongoClient.connect(dbUri);
-
   const db = client.db(DbName);
+
+  /** @type {ImageCollection} */
   const images = db.collection(CollName);
 
   try {
+    // Create a TTL index on the last modified date
     await images.createIndex(
       { lastModDate: 1 },
       { expireAfterSeconds: ExpireTime }
     );
   } catch (error) {
+    // Update the expire time if the index exists (only if value is changed)
     if (error.codeName !== 'IndexOptionsConflict') throw error;
     await db.command({
       collMod: images.collectionName,
@@ -114,10 +123,4 @@ export async function storeRealVote(hash) {
     },
     { upsert: true }
   );
-}
-
-function startMockDb() {
-  return MongoMemoryServer.create({
-    instance: { port: MockDbPort },
-  });
 }
