@@ -19,8 +19,11 @@ const startMockDb = memoize(() =>
 );
 
 const getImageCollection = memoize(async () => {
-  const dbUri = isDev ? (await startMockDb()).getUri() : process.env.dbConStr;
-  const client = await MongoClient.connect(dbUri);
+  const mongoUri = isDev
+    ? (await startMockDb()).getUri()
+    : process.env.dbConStr;
+
+  const client = await MongoClient.connect(mongoUri);
   const db = client.db(DbName);
 
   /** @type {ImageCollection} */
