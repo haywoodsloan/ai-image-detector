@@ -1,7 +1,7 @@
 import { app } from '@azure/functions';
 
 app.http('checkImage', {
-    methods: ['GET', 'POST'],
+    methods: ['POST'],
     authLevel: 'anonymous',
     handler: async (request, context) => {
         context.log(`Http function processed request for url "${request.url}"`);

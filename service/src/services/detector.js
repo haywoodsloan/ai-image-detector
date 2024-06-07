@@ -1,8 +1,8 @@
 import { HfInference } from '@huggingface/inference';
-import { createHash } from 'crypto';
 import memoize from 'memoize';
 
-import { retrieveImageClass, storeImageClass } from './db.js';
+import { hashImage } from '../utilities/hash.js';
+import { queryVotedClass } from './db/voteColl.js';
 
 export const RealClassLabel = 'real';
 export const AiClassLabel = 'artificial';
@@ -21,28 +21,25 @@ const getHfInterface = memoize(() => new HfInference(process.env.hfKey));
  */
 export async function checkIfAI(data) {
   // Create a hash to for DB storage
-  const hash = createHash('sha1').update(data).digest('base64');
+  const hash = hashImage(data);
 
   // Check for a cached class from the DB
-  const cachedClass = await retrieveImageClass(hash);
+  const cachedClass = await queryVotedClass(hash);
   if (cachedClass) {
     return cachedClass === AiClassLabel;
   }
 
   // Check several AI related classifications
   const hfInterface = getHfInterface();
-  const classifications = await Promise.all(
+  const results = await Promise.all(
     DetectorModels.map((model) =>
       hfInterface.imageClassification({ model, data })
     )
   );
 
-  const isAI = classifications
+  return results
     .flat()
     .some(
       ({ label, score }) => label === AiClassLabel && score >= AiClassThresh
     );
-
-  await storeImageClass(hash, isAI ? AiClassLabel : RealClassLabel);
-  return isAI;
 }

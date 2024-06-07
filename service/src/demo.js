@@ -2,7 +2,13 @@ import { g, r, y } from 'common/utilities/colors.js';
 import { getFilesFromDir } from 'common/utilities/files.js';
 import { loadSettings } from 'common/utilities/settings.js';
 
-import { checkIfAI } from './services/detector.js';
+import { upsertVotedClass } from './services/db/voteColl.js';
+import {
+  AiClassLabel,
+  RealClassLabel,
+  checkIfAI,
+} from './services/detector.js';
+import { hashImage } from './utilities/hash.js';
 import { getImageData } from './utilities/image.js';
 import { shortenPath } from './utilities/path.js';
 import { isHttpUrl, shortenUrl } from './utilities/url.js';
@@ -57,8 +63,8 @@ async function checkAndPrint({ uri, isAI }) {
     );
   }
 
-  const buffer = await getImageData(uri);
-  const result = await checkIfAI(buffer);
+  const data = await getImageData(uri);
+  const result = await checkIfAI(data);
 
   const msg = result ? 'This image is AI generated\n' : 'This image is real\n';
   if (result === isAI) {
@@ -66,6 +72,11 @@ async function checkAndPrint({ uri, isAI }) {
     return true;
   } else {
     console.error(r(msg));
+    await upsertVotedClass(
+      hashImage(data),
+      '0000-1111-2222-3333-4444',
+      result ? RealClassLabel : AiClassLabel
+    );
     return false;
   }
 }

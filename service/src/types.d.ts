@@ -1,12 +1,16 @@
-declare type ImageCollection = import('mongodb').Collection<ImageDocument>;
 
-declare type ImageDocument = {
+declare type VoteCollection = import('mongodb').Collection<VoteDocument>;
+declare type UserCollection = import('mongodb').Collection<UserDocument>;
+
+declare type VoteDocument = {
   hash: string;
-  lastModDate: Date;
+  userId: string;
+  voteClass: string;
+  lastModify: Date;
+};
 
-  aiVotes?: number;
-  realVotes?: number;
-
-  imgClass?: string;
-  detVer?: string;
+declare type UserDocument = {
+  userId: string;
+  lastAccess: Date;
+  createdAt: Date;
 };
