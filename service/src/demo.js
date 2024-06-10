@@ -2,6 +2,7 @@ import { g, r, y } from 'common/utilities/colors.js';
 import { getFilesFromDir } from 'common/utilities/files.js';
 import { loadSettings } from 'common/utilities/settings.js';
 
+import { insertNewUser } from './services/db/userColl.js';
 import { upsertVotedClass } from './services/db/voteColl.js';
 import {
   AiClassLabel,
@@ -50,7 +51,7 @@ if (score <= 50) {
 }
 
 /**
- * @param {string} uri
+ * @param {{uri: string, isAI: boolean}} input
  */
 async function checkAndPrint({ uri, isAI }) {
   if (isHttpUrl(uri)) {
@@ -64,7 +65,7 @@ async function checkAndPrint({ uri, isAI }) {
   }
 
   const data = await getImageData(uri);
-  const result = await checkIfAI(data);
+  const result = (await checkIfAI(data)) >= 0.9;
 
   const msg = result ? 'This image is AI generated\n' : 'This image is real\n';
   if (result === isAI) {
@@ -72,11 +73,10 @@ async function checkAndPrint({ uri, isAI }) {
     return true;
   } else {
     console.error(r(msg));
-    await upsertVotedClass(
-      hashImage(data),
-      '0000-1111-2222-3333-4444',
-      result ? RealClassLabel : AiClassLabel
-    );
+    const { userId } = await insertNewUser();
+    await upsertVotedClass(hashImage(data), userId, {
+      voteClass: result ? RealClassLabel : AiClassLabel,
+    });
     return false;
   }
 }
