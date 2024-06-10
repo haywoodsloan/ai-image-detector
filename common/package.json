@@ -30,7 +30,9 @@
     "@huggingface/hub": "^0.15.1",
     "@huggingface/inference": "^2.7.0",
     "cli-color": "^2.0.4",
+    "looks-same": "^9.0.0",
     "memoize": "^10.0.0",
+    "sharp": "^0.32.6",
     "yargs": "^17.7.2"
   }
 }

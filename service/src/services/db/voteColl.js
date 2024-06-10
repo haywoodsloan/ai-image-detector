@@ -58,11 +58,12 @@ export async function upsertVotedClass(hash, userId, update) {
   if (!user) throw new Error('Invalid UserID');
 
   const votes = await getVoteCollection();
-  await votes.updateOne(
+  const vote = await votes.findOneAndUpdate(
     { hash, userId },
     { $set: { ...update, lastModify: new Date() } },
     { upsert: true }
   );
 
   await updateUser(userId);
+  return vote;
 }

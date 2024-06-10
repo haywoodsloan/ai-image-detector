@@ -1,4 +1,5 @@
 declare type HttpResponseInit = import('@azure/functions').HttpResponseInit;
+declare type InvocationContext = import('@azure/functions').InvocationContext;
 
 declare type VoteCollection = import('mongodb').Collection<VoteDocument>;
 declare type UserCollection = import('mongodb').Collection<UserDocument>;

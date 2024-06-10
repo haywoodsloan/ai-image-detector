@@ -5,12 +5,14 @@ import { wait } from 'common/utilities/sleep.js';
 import memoize from 'memoize';
 import { basename, dirname } from 'path';
 
+export const MainBranch = 'main';
 export const DataPath = 'data';
 export const TrainSplit = 'train';
 export const TestSplit = 'test';
 
 export const RealLabel = 'real';
 export const AiLabel = 'artificial';
+export const AllLabels = [RealLabel, AiLabel];
 
 const RetryLimit = 10;
 const MaxSubsetSize = 10_000;
@@ -43,28 +45,32 @@ const getHfInterface = memoize(
   { cacheKey: () => credentials?.accessToken }
 );
 
-export const preloadExistingImages = memoize(async () => {
-  const files = listFiles({
-    path: DataPath,
-    repo: DatasetRepo,
-    recursive: true,
-    credentials,
-  });
+export const preloadExistingImages = memoize(
+  /** @param {string} branch */
+  async (branch = MainBranch) => {
+    const files = listFiles({
+      path: DataPath,
+      repo: DatasetRepo,
+      revision: branch,
+      recursive: true,
+      credentials,
+    });
 
-  for await (const file of files) {
-    if (file.type !== 'file') continue;
-    existingImages.add(basename(file.path));
+    for await (const file of files) {
+      if (file.type !== 'file') continue;
+      existingImages.add(basename(file.path));
 
-    const { split, label, subsetIdx } = parseImagePath(file.path);
-    incrementSubsetCount(split, label, subsetIdx);
+      const { split, label, subsetIdx } = parseImagePath(file.path);
+      incrementSubsetCount(split, label, subsetIdx);
+    }
   }
-});
+);
 
 /**
  * @param {string} fileName
  */
-export async function isExistingImage(fileName) {
-  await preloadExistingImages();
+export async function isExistingImage(fileName, branch = MainBranch) {
+  await preloadExistingImages(branch);
   return existingImages.has(fileName);
 }
 
@@ -81,8 +87,8 @@ export function addFoundImage(fileName) {
  * @param {string} label
  * @param {string} fileName
  */
-export async function getPathForImage(split, label, fileName) {
-  await preloadExistingImages();
+export async function getPathForImage(split, label, fileName, branch = MainBranch) {
+  await preloadExistingImages(branch);
   const subsets = subsetCounts[split][label];
   let subsetIdx = subsets.findIndex((size) => size < MaxSubsetSize);
 
@@ -104,7 +110,7 @@ export function releaseImagePath(path) {
 /**
  * @param {ValidatedUpload[]} files
  */
-export async function uploadWithRetry(files) {
+export async function uploadWithRetry(files, branch = MainBranch) {
   // Filter out invalid images
   if (!files.length) return;
   console.log(y`Uploading ${files.length} files to HF`);
@@ -114,6 +120,7 @@ export async function uploadWithRetry(files) {
   while (true) {
     try {
       await uploadFiles({
+        branch,
         useWebWorkers: true,
         repo: DatasetRepo,
         credentials,

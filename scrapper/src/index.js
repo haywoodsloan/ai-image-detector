@@ -10,7 +10,7 @@ import UserAgent from 'user-agents';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import { ImageValidationQueue } from './utilities/ImageValidationQueue.js';
+import { ImageValidationQueue } from 'common/utilities/ImageValidationQueue.js';
 import {
   AiLabel,
   RealLabel,

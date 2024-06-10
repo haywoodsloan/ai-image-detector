@@ -1,8 +1,9 @@
-import { r } from 'common/utilities/colors.js';
 import { readFile, readdir } from 'fs/promises';
 import looksSame from 'looks-same';
 import { basename, join } from 'path';
 import sharp from 'sharp';
+
+import { r } from './colors.js';
 
 // Maximum number of pixels Autotrain will handle
 const MaxPixels = 178_956_970;
@@ -84,17 +85,23 @@ export class ImageValidationQueue {
   }
 
   /**
-   * @param {URL} url
+   * @param {URL | Buffer} content
    */
-  async #validateImage(url) {
-    const image = await fetch(url);
-    if (!image.ok) throw new Error(`GET request failed: ${image.statusText}`);
+  async #validateImage(content) {
+    let imageBuffer;
+    if (content instanceof Buffer) {
+      imageBuffer = content;
+    } else {
+      const req = await fetch(content);
+      if (!req.ok) throw new Error(`GET request failed: ${req.statusText}`);
 
-    const contentType = image.headers.get('Content-Type');
-    const validHeader = contentType.startsWith('image/');
-    if (!validHeader) throw new Error(`Invalid MIME type: ${contentType}`);
+      const contentType = req.headers.get('Content-Type');
+      const validHeader = contentType.startsWith('image/');
+      if (!validHeader) throw new Error(`Invalid MIME type: ${contentType}`);
 
-    let imageBuffer = Buffer.from(await image.arrayBuffer());
+      imageBuffer = Buffer.from(await req.arrayBuffer());
+    }
+
     for (const { name, buffer } of ImageValidationQueue.#excludedBuffers) {
       const { equal } = await looksSame(buffer, imageBuffer, {
         stopOnFirstFail: true,
