@@ -23,7 +23,7 @@ import {
   releaseImagePath,
   setHfAccessToken,
   uploadWithRetry,
-} from './utilities/huggingface.js';
+} from 'common/utilities/huggingface.js';
 import { waitForHidden } from './utilities/puppeteer.js';
 
 // #region Command Arguments
@@ -82,7 +82,7 @@ const RedditErrorDelay = 20 * 1000;
 const ScrollDelay = 2000;
 // #endregion
 
-// Parse local settings for HuggingFace credentials
+// Parse local settings for Hugging Face credentials
 const { hfKey } = await loadSettings();
 setHfAccessToken(hfKey);
 
@@ -149,7 +149,7 @@ try {
         return new URL(`https://i.redd.it/${shortFileName}`);
       });
 
-      // Queue image uploads to bulk upload to HuggingFace, skip existing files
+      // Queue image uploads to bulk upload to Hugging Face, skip existing files
       for (let i = 0; i < urls.length && count < args.count; i++) {
         const url = urls[i];
         const fileName = sanitize(basename(url.pathname));
@@ -163,7 +163,7 @@ try {
         addFoundImage(fileName);
 
         // Start a validation request and add to the count if it passes
-        const path = getPathForImage(split, label, fileName);
+        const path = await getPathForImage(split, label, fileName);
         validationQueue
           .queueValidation({ path, content: url })
           .then((isValid) => {
@@ -245,7 +245,7 @@ try {
   throw error;
 }
 
-// Upload the remaining files to HuggingFace
+// Upload the remaining files to Hugging Face
 if (validationQueue.size) {
   const uploads = await validationQueue.getValidated();
   pendingUploads.add(uploadWithRetry(uploads));

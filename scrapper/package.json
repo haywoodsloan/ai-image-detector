@@ -19,7 +19,6 @@
   "author": "haywoodsloan",
   "license": "ISC",
   "dependencies": {
-    "@huggingface/hub": "^0.15.1",
     "common": "file:../common",
     "looks-same": "^9.0.0",
     "puppeteer": "^22.10.0",

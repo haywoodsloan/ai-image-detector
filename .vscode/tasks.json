@@ -190,26 +190,44 @@
       "problemMatcher": []
     },
     {
+      "label": "Start Azurite",
+      "type": "npm",
+      "script": "start-azurite",
+      "path": "service",
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "pattern": { "regexp": "" },
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": "service is starting at http://127.0.0.1",
+            "endsPattern": "successfully listening at http://127.0.0.1"
+          }
+        }
+      ]
+    },
+    {
+      "label": "func: start",
       "type": "func",
-      "label": "func: host start",
-      "command": "host start",
+      "command": "start",
       "problemMatcher": "$func-node-watch",
       "isBackground": true,
+      "dependsOn": "Start Azurite",
       "options": {
         "cwd": "${workspaceFolder}/service"
       }
     },
     {
-      "type": "shell",
       "label": "npm install (service)",
+      "type": "shell",
       "command": "npm install",
       "options": {
         "cwd": "${workspaceFolder}/service"
       }
     },
     {
-      "type": "shell",
       "label": "npm prune (service)",
+      "type": "shell",
       "command": "npm prune --production",
       "problemMatcher": [],
       "options": {

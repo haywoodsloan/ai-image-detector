@@ -4,6 +4,7 @@ import { queryUser } from '../services/db/userColl.js';
 import { checkIfAI } from '../services/detector.js';
 import { getImageData } from '../utilities/image.js';
 import { isHttpUrl } from '../utilities/url.js';
+import { createErrorResponse } from '../utilities/error.js';
 
 app.http('checkImage', {
   methods: ['POST'],
@@ -13,21 +14,21 @@ app.http('checkImage', {
     if (!isHttpUrl(url)) {
       const error = new Error('Must specify a valid URL');
       context.error(error);
-      return { status: 400, jsonBody: { error: error.message } };
+      return createErrorResponse(400, error);
     }
 
     const user = await queryUser(userId);
     if (!user) {
       const error = new Error('Must specify a valid UserID');
       context.error(error);
-      return { status: 400, jsonBody: { error: error.message } };
+      return createErrorResponse(400, error);
     }
 
-    context.log(`Checking image at: ${url}, for user ID: ${user.userId}`);
+    context.log(`Checking image (Url=${url}, UserId=${user.userId})`);
     const data = await getImageData(url);
     const artificial = await checkIfAI(data);
 
-    context.log(`Artificial score: ${artificial}`);
+    context.log(`Result (Score=${artificial})`);
     return { jsonBody: { artificial } };
   },
 });

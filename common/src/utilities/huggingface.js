@@ -1,6 +1,8 @@
 import { listFiles, uploadFiles } from '@huggingface/hub';
+import { HfInference } from '@huggingface/inference';
 import { g, r, y } from 'common/utilities/colors.js';
 import { wait } from 'common/utilities/sleep.js';
+import memoize from 'memoize';
 import { basename, dirname } from 'path';
 
 export const DataPath = 'data';
@@ -36,27 +38,27 @@ const subsetCounts = {
   },
 };
 
-/** @type {Promise?} */
-let imageLoadRequest;
+const getHfInterface = memoize(
+  () => new HfInference(credentials?.accessToken),
+  { cacheKey: () => credentials?.accessToken }
+);
 
-export async function preloadExistingImages() {
-  return (imageLoadRequest ||= (async () => {
-    const files = listFiles({
-      path: DataPath,
-      repo: DatasetRepo,
-      recursive: true,
-      credentials,
-    });
+export const preloadExistingImages = memoize(async () => {
+  const files = listFiles({
+    path: DataPath,
+    repo: DatasetRepo,
+    recursive: true,
+    credentials,
+  });
 
-    for await (const file of files) {
-      if (file.type !== 'file') continue;
-      existingImages.add(basename(file.path));
+  for await (const file of files) {
+    if (file.type !== 'file') continue;
+    existingImages.add(basename(file.path));
 
-      const { split, label, subsetIdx } = parseImagePath(file.path);
-      incrementSubsetCount(split, label, subsetIdx);
-    }
-  })());
-}
+    const { split, label, subsetIdx } = parseImagePath(file.path);
+    incrementSubsetCount(split, label, subsetIdx);
+  }
+});
 
 /**
  * @param {string} fileName
@@ -79,7 +81,8 @@ export function addFoundImage(fileName) {
  * @param {string} label
  * @param {string} fileName
  */
-export function getPathForImage(split, label, fileName) {
+export async function getPathForImage(split, label, fileName) {
+  await preloadExistingImages();
   const subsets = subsetCounts[split][label];
   let subsetIdx = subsets.findIndex((size) => size < MaxSubsetSize);
 
@@ -142,8 +145,17 @@ export async function uploadWithRetry(files) {
  * @param {string} hfToken
  */
 export function setHfAccessToken(hfToken) {
-  if (!hfToken) throw new Error ("Invalid HF token");
+  if (!hfToken) throw new Error('Invalid HF token');
   credentials.accessToken = hfToken;
+}
+
+/**
+ *
+ * @param {ImageClassificationArgs} args
+ * @param {ClassificationOptions} options
+ */
+export async function getImageClassification(args, options) {
+  return getHfInterface().imageClassification(args, options);
 }
 
 /**

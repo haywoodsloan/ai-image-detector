@@ -6,10 +6,10 @@ app.http('createUser', {
   methods: ['POST'],
   authLevel: 'anonymous',
   handler: async (_, context) => {
-    context.log(`Creating a new user`);
+    context.log(`Creating new user`);
     const newUser = await insertNewUser();
 
-    context.log(`New user ID: ${newUser.userId}`);
+    context.log(`New user created (UserId=${newUser.userId})`);
     return { jsonBody: newUser };
   },
 });
