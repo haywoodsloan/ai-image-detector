@@ -1,22 +1,11 @@
-import { b, g, r, y } from 'common/utilities/colors.js';
-import { loadSettings } from 'common/utilities/settings.js';
-import { wait } from 'common/utilities/sleep.js';
-import { mkdir, writeFile } from 'fs/promises';
-import { basename } from 'path';
-import { launch } from 'puppeteer';
-import sanitize from 'sanitize-filename';
-import { fileURLToPath } from 'url';
-import UserAgent from 'user-agents';
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
-
 import { ImageValidationQueue } from 'common/utilities/ImageValidationQueue.js';
+import { b, g, r, y } from 'common/utilities/colors.js';
+import { hashImage } from 'common/utilities/hash.js';
 import {
   AiLabel,
   RealLabel,
   TestSplit,
   TrainSplit,
-  addFoundImage,
   getPathForImage,
   isExistingImage,
   preloadExistingImages,
@@ -24,6 +13,18 @@ import {
   setHfAccessToken,
   uploadWithRetry,
 } from 'common/utilities/huggingface.js';
+import { getImageData } from 'common/utilities/image.js';
+import { loadSettings } from 'common/utilities/settings.js';
+import { wait } from 'common/utilities/sleep.js';
+import { mkdir, writeFile } from 'fs/promises';
+import { basename, extname } from 'path';
+import { launch } from 'puppeteer';
+import sanitize from 'sanitize-filename';
+import { fileURLToPath } from 'url';
+import UserAgent from 'user-agents';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+
 import { waitForHidden } from './utilities/puppeteer.js';
 
 // #region Command Arguments
@@ -106,6 +107,9 @@ await page.setUserAgent(ChromeUA);
 const pendingUploads = new Set();
 const validationQueue = await ImageValidationQueue.createQueue();
 
+/** @type {Set<string>} */
+const scrappedUrls = new Set();
+
 // Browse to multiple Subreddits and scrape files
 const redditUrls = args.real ? RealSubReddits : AiSubReddits;
 let count = 0;
@@ -152,20 +156,28 @@ try {
       // Queue image uploads to bulk upload to Hugging Face, skip existing files
       for (let i = 0; i < urls.length && count < args.count; i++) {
         const url = urls[i];
-        const fileName = sanitize(basename(url.pathname));
+
+        // Skip urls to images that have already been scrapped
+        if (scrappedUrls.has(url.href)) continue;
+        scrappedUrls.add(url.href);
+
+        // Build the file name from the hash of the data
+        const data = await getImageData(url);
+        const hash = hashImage(data);
+        const ext = extname(url.pathname);
+        const fileName = sanitize(`${hash}${ext}`);
 
         // Skip existing files
         if (await isExistingImage(fileName)) continue;
-        const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
-
-        // Track new file
         console.log(b`Found: ${fileName}`);
-        addFoundImage(fileName);
+
+        // Get a path to upload the image to
+        const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
+        const path = await getPathForImage(split, label, fileName);
 
         // Start a validation request and add to the count if it passes
-        const path = await getPathForImage(split, label, fileName);
         validationQueue
-          .queueValidation({ path, content: url })
+          .queueValidation({ path, content: data })
           .then((isValid) => {
             if (isValid) count++;
             else releaseImagePath(path);

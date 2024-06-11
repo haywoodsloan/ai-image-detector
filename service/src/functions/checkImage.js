@@ -3,7 +3,7 @@ import { app } from '@azure/functions';
 import { queryUser } from '../services/db/userColl.js';
 import { checkIfAI } from '../services/detector.js';
 import { createErrorResponse } from '../utilities/error.js';
-import { getImageData } from '../utilities/image.js';
+import { getImageData } from 'common/utilities/image.js';
 import { l } from '../utilities/string.js';
 import { isHttpUrl } from '../utilities/url.js';
 

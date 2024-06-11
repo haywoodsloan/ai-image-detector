@@ -7,7 +7,7 @@ declare type UserCollection = import('mongodb').Collection<UserDocument>;
 declare type VoteDocument = {
   hash: string;
   userId: string;
-  voteClass: string;
+  voteLabel: string;
   lastModify: Date;
 };
 

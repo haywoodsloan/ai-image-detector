@@ -1,5 +1,7 @@
+import { AllLabels } from 'common/utilities/huggingface.js';
 import memoize from 'memoize';
 
+import { l } from '../../utilities/string.js';
 import { getServiceDb } from './serviceDb.js';
 import { UserCollName, queryUser, updateUser } from './userColl.js';
 
@@ -21,7 +23,7 @@ const getVoteCollection = memoize(async () => {
 /**
  * @param {string} hash
  */
-export async function queryVotedClass(hash) {
+export async function queryVotedLabel(hash) {
   const votes = await getVoteCollection();
 
   /** @type {{_id: string, count: number}} */
@@ -37,8 +39,8 @@ export async function queryVotedClass(hash) {
         },
       },
       { $unwind: { path: '$userInfo', preserveNullAndEmptyArrays: false } },
-      { $match: { voteClass: { $ne: null } } },
-      { $group: { _id: '$voteClass', count: { $sum: 1 } } },
+      { $match: { voteLabel: { $in: AllLabels } } },
+      { $group: { _id: '$voteLabel', count: { $sum: 1 } } },
       { $match: { count: { $gte: MinVoteCount } } },
       { $sort: { count: -1 } },
       { $limit: 1 },
@@ -54,9 +56,12 @@ export async function queryVotedClass(hash) {
  * @param {Partial<VoteDocument>} update
  * @description Always updates the `lastModify` field to now
  */
-export async function upsertVotedClass(hash, userId, update) {
+export async function upsertVotedLabel(hash, userId, update) {
   const user = await queryUser(userId);
   if (!user) throw new Error('Invalid UserID');
+
+  if (update.voteLabel && !AllLabels.includes(update.voteLabel))
+    throw new Error(l`voteLabel must be one of ${AllLabels}`);
 
   const votes = await getVoteCollection();
   const vote = await votes.findOneAndUpdate(

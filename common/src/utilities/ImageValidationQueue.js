@@ -4,6 +4,7 @@ import { basename, join } from 'path';
 import sharp from 'sharp';
 
 import { r } from './colors.js';
+import { getImageData } from './image.js';
 
 // Maximum number of pixels Autotrain will handle
 const MaxPixels = 178_956_970;
@@ -88,19 +89,8 @@ export class ImageValidationQueue {
    * @param {URL | Buffer} content
    */
   async #validateImage(content) {
-    let imageBuffer;
-    if (content instanceof Buffer) {
-      imageBuffer = content;
-    } else {
-      const req = await fetch(content);
-      if (!req.ok) throw new Error(`GET request failed: ${req.statusText}`);
-
-      const contentType = req.headers.get('Content-Type');
-      const validHeader = contentType.startsWith('image/');
-      if (!validHeader) throw new Error(`Invalid MIME type: ${contentType}`);
-
-      imageBuffer = Buffer.from(await req.arrayBuffer());
-    }
+    let imageBuffer =
+      content instanceof Buffer ? content : await getImageData(content);
 
     for (const { name, buffer } of ImageValidationQueue.#excludedBuffers) {
       const { equal } = await looksSame(buffer, imageBuffer, {

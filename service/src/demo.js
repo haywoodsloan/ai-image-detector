@@ -1,16 +1,13 @@
 import { g, r, y } from 'common/utilities/colors.js';
 import { getFilesFromDir } from 'common/utilities/files.js';
+import { hashImage } from 'common/utilities/hash.js';
+import { AiLabel, RealLabel } from 'common/utilities/huggingface.js';
+import { getImageData } from 'common/utilities/image.js';
 import { loadSettings } from 'common/utilities/settings.js';
 
 import { insertNewUser } from './services/db/userColl.js';
-import { upsertVotedClass } from './services/db/voteColl.js';
-import {
-  AiClassLabel,
-  RealClassLabel,
-  checkIfAI,
-} from './services/detector.js';
-import { hashImage } from './utilities/hash.js';
-import { getImageData } from './utilities/image.js';
+import { upsertVotedLabel } from './services/db/voteColl.js';
+import { checkIfAI } from './services/detector.js';
 import { shortenPath } from './utilities/path.js';
 import { isHttpUrl, shortenUrl } from './utilities/url.js';
 
@@ -74,8 +71,8 @@ async function checkAndPrint({ uri, isAI }) {
   } else {
     console.error(r(msg));
     const { userId } = await insertNewUser();
-    await upsertVotedClass(hashImage(data), userId, {
-      voteClass: result ? RealClassLabel : AiClassLabel,
+    await upsertVotedLabel(hashImage(data), userId, {
+      voteLabel: result ? RealLabel : AiLabel,
     });
     return false;
   }
