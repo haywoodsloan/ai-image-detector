@@ -1,7 +1,7 @@
 import { app } from '@azure/functions';
 
 import { insertNewUser } from '../services/db/userColl.js';
-import { logObject } from '../utilities/string.js';
+import { l } from '../utilities/string.js';
 
 app.http('createUser', {
   methods: ['POST'],
@@ -10,7 +10,7 @@ app.http('createUser', {
     context.log(`Creating new user`);
     const newUser = await insertNewUser();
 
-    context.log(`New user created ${logObject({ userId: newUser.userId })}`);
+    context.log(l`New user created ${{ userId: newUser.userId }}`);
     return { jsonBody: newUser };
   },
 });

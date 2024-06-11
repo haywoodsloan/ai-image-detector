@@ -21,7 +21,7 @@ export class ImageValidationQueue {
 
   static async createQueue() {
     if (!ImageValidationQueue.#excludedBuffers) {
-      const excludePath = 'exclude/';
+      const excludePath = new URL('../../exclude', import.meta.url);
       const excludeEntries = await readdir(excludePath, {
         withFileTypes: true,
         recursive: true,

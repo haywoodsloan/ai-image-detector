@@ -37,6 +37,7 @@ export async function queryVotedClass(hash) {
         },
       },
       { $unwind: { path: '$userInfo', preserveNullAndEmptyArrays: false } },
+      { $match: { voteClass: { $ne: null } } },
       { $group: { _id: '$voteClass', count: { $sum: 1 } } },
       { $match: { count: { $gte: MinVoteCount } } },
       { $sort: { count: -1 } },
@@ -61,7 +62,7 @@ export async function upsertVotedClass(hash, userId, update) {
   const vote = await votes.findOneAndUpdate(
     { hash, userId },
     { $set: { ...update, lastModify: new Date() } },
-    { upsert: true }
+    { upsert: true, returnDocument: 'after' }
   );
 
   await updateUser(userId);

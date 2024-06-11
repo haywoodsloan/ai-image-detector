@@ -5,7 +5,10 @@ import {
   TrainSplit,
   getPathForImage,
   isExistingImage,
+  releaseImagePath,
+  uploadWithRetry,
 } from 'common/utilities/huggingface.js';
+import { extname } from 'path';
 import sanitize from 'sanitize-filename';
 
 import { queryUser } from '../services/db/userColl.js';
@@ -13,7 +16,7 @@ import { queryVotedClass, upsertVotedClass } from '../services/db/voteColl.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { hashImage } from '../utilities/hash.js';
 import { getImageData } from '../utilities/image.js';
-import { logObject } from '../utilities/string.js';
+import { l } from '../utilities/string.js';
 import { isHttpUrl } from '../utilities/url.js';
 
 const PendingBranch = 'pending';
@@ -32,8 +35,7 @@ app.http('voteImageClass', {
     }
 
     if (!AllLabels.includes(voteClass)) {
-      const labels = AllLabels.join(', ');
-      const error = new Error(`voteClass must be one of: [${labels}]`);
+      const error = new Error(l`voteClass must be one of: ${AllLabels}`);
       context.error(error);
       return createErrorResponse(400, error);
     }
@@ -45,12 +47,14 @@ app.http('voteImageClass', {
       return createErrorResponse(400, error);
     }
 
-    context.log(`Vote image ${logObject({ url, userId, voteClass })}`);
+    context.log(l`Vote image ${{ url, userId, voteClass }}`);
     const data = await getImageData(url);
     const hash = hashImage(data);
-
     const vote = await upsertVotedClass(hash, userId, { voteClass });
-    uploadIfEnoughVotes(data, hash, context);
+
+    const { pathname } = new URL(url);
+    const ext = extname(pathname);
+    uploadIfEnoughVotes(data, hash, ext);
 
     return { jsonBody: vote };
   },
@@ -59,18 +63,18 @@ app.http('voteImageClass', {
 /**
  * @param {Buffer} data
  * @param {string} hash
- * @param {InvocationContext} context
+ * @param {string} ext
  */
-async function uploadIfEnoughVotes(data, hash, context) {
+async function uploadIfEnoughVotes(data, hash, ext) {
   const voteClass = await queryVotedClass(hash);
   if (!voteClass) {
-    context.log('Not enough votes for upload');
+    console.log(l`Not enough votes for upload ${{ hash }}`);
     return;
   }
 
-  const fileName = sanitize(hash);
+  const fileName = sanitize(`${hash}.${ext}`);
   if (await isExistingImage(fileName, PendingBranch)) {
-    context.log('Image already exists');
+    console.log(l`Image already exists ${{ fileName }}`);
     return;
   }
 
@@ -82,13 +86,18 @@ async function uploadIfEnoughVotes(data, hash, context) {
     PendingBranch
   );
 
-  validator.queueValidation({ path: uploadPath, content: data });
-  const validated = await validator.getValidated();
+  validator
+    .queueValidation({ path: uploadPath, content: data })
+    .then((isValid) => {
+      if (!isValid) releaseImagePath(uploadPath);
+    });
 
+  const validated = await validator.getValidated();
   if (!validated.length) {
-    context.warn(`Image validation failed ${logObject({ fileName })}`);
+    console.warn(l`Image validation failed ${{ fileName }}`);
     return;
   }
 
-  // TODO finish upload
+  await uploadWithRetry(validated, PendingBranch);
+  console.log(l`Image uploaded to Hugging Face ${{ file: uploadPath }}`);
 }

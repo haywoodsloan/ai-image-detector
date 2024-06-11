@@ -4,7 +4,7 @@ import { queryUser } from '../services/db/userColl.js';
 import { checkIfAI } from '../services/detector.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { getImageData } from '../utilities/image.js';
-import { logObject } from '../utilities/string.js';
+import { l } from '../utilities/string.js';
 import { isHttpUrl } from '../utilities/url.js';
 
 app.http('checkImage', {
@@ -27,11 +27,11 @@ app.http('checkImage', {
       return createErrorResponse(400, error);
     }
 
-    context.log(`Checking image ${logObject({ url, userId })}`);
+    context.log(l`Checking image ${{ url, userId }}`);
     const data = await getImageData(url);
     const score = await checkIfAI(data);
 
-    context.log(`Result ${logObject({ score })}`);
+    context.log(l`Result ${{ score }}`);
     return { jsonBody: { artificial: score } };
   },
 });
