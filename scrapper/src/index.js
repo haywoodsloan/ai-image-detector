@@ -201,6 +201,9 @@ try {
           const results = await Promise.all(Array.from(validationQueue));
           const uploads = results.filter(Boolean);
 
+          // Skip uploading if less than the batch size after validation
+          if (uploads.length < UploadBatchSize) continue;
+
           const pendingUpload = uploadWithRetry(uploads).then(() =>
             pendingUploads.delete(pendingUpload)
           );
