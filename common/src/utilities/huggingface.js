@@ -188,7 +188,7 @@ export function releaseImagePath(path) {
 }
 
 /**
- * @param {ValidatedUpload} file
+ * @param {Upload} file
  */
 export async function replaceWithRetry(file, branch = MainBranch) {
   const fileName = basename(file.path);
@@ -251,7 +251,7 @@ export async function replaceWithRetry(file, branch = MainBranch) {
 }
 
 /**
- * @param {ValidatedUpload[]} files
+ * @param {Upload[]} files
  */
 export async function uploadWithRetry(files, branch = MainBranch) {
   // Filter out invalid images

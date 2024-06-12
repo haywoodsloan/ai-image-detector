@@ -29,9 +29,9 @@ app.http('checkImage', {
 
     context.log(l`Checking image ${{ url, userId }}`);
     const data = await getImageData(url);
-    const score = await checkIfAI(data);
+    const artificial = await checkIfAI(data);
 
-    context.log(l`Result ${{ score }}`);
-    return { jsonBody: { artificial: score } };
+    context.log(l`Result ${{ artificial }}`);
+    return { jsonBody: { artificial } };
   },
 });

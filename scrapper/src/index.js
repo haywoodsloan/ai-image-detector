@@ -1,4 +1,3 @@
-import { ImageValidationQueue } from 'common/utilities/ImageValidationQueue.js';
 import { b, g, r, y } from 'common/utilities/colors.js';
 import { hashImage } from 'common/utilities/hash.js';
 import {
@@ -9,11 +8,10 @@ import {
   getPathForImage,
   isExistingImage,
   preloadExistingImages,
-  releaseImagePath,
   setHfAccessToken,
   uploadWithRetry,
 } from 'common/utilities/huggingface.js';
-import { getImageData } from 'common/utilities/image.js';
+import { sanitizeImage } from 'common/utilities/image.js';
 import { loadSettings } from 'common/utilities/settings.js';
 import { wait } from 'common/utilities/sleep.js';
 import { mkdir, writeFile } from 'fs/promises';
@@ -103,9 +101,11 @@ const browser = await launch({
 const page = await browser.newPage();
 await page.setUserAgent(ChromeUA);
 
-/** @type {Set<Promise>} */
+/** @type {Set<Promise<{path: string, content: Blob} | null>>} */
+const validationQueue = new Set();
+
+/** @type {Set<Promise<void>>} */
 const pendingUploads = new Set();
-const validationQueue = await ImageValidationQueue.createQueue();
 
 /** @type {Set<string>} */
 const scrappedUrls = new Set();
@@ -161,37 +161,52 @@ try {
         if (scrappedUrls.has(url.href)) continue;
         scrappedUrls.add(url.href);
 
-        // Build the file name from the hash of the data
-        const data = await getImageData(url);
-        const hash = hashImage(data);
-        const ext = extname(url.pathname);
-        const fileName = sanitize(`${hash}${ext}`);
+        const validation = (async () => {
+          // Fetch the image, validate it, then determine where to upload it
+          let data;
 
-        // Skip existing files
-        if (await isExistingImage(fileName)) continue;
-        console.log(b`Found: ${fileName}`);
+          try {
+            // Get the sanitized version of the image
+            data = await sanitizeImage(url);
+          } catch (error) {
+            // If the image couldn't be sanitized skip it
+            console.log(r`Skipping: ${url} [${error}]`);
+            validationQueue.delete(validation);
+            return;
+          }
 
-        // Get a path to upload the image to
-        const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
-        const path = await getPathForImage(split, label, fileName);
+          // Build the file name from the hash of the data
+          const hash = hashImage(data);
+          const ext = extname(url.pathname);
+          const fileName = sanitize(`${hash}${ext}`);
 
-        // Start a validation request and add to the count if it passes
-        validationQueue
-          .queueValidation({ path, content: data })
-          .then((isValid) => {
-            if (isValid) count++;
-            else releaseImagePath(path);
-          });
+          // Skip existing files
+          if (await isExistingImage(fileName)) {
+            validationQueue.delete(validation);
+            return;
+          }
 
-        // If the batch has reached the upload size go ahead and upload it
+          // Get a path to upload the image to
+          console.log(b`Found: ${fileName}`);
+          const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
+          const path = await getPathForImage(split, label, fileName);
+
+          // Increase the total count and return an upload object
+          count++;
+          return { path, content: new Blob([data]) };
+        })();
+
+        validationQueue.add(validation);
         if (validationQueue.size >= UploadBatchSize) {
-          const uploads = await validationQueue.getValidated();
+          const results = await Promise.all(Array.from(validationQueue));
+          const uploads = results.filter(Boolean);
+
           const pendingUpload = uploadWithRetry(uploads).then(() =>
             pendingUploads.delete(pendingUpload)
           );
 
-          pendingUploads.add(pendingUpload);
           validationQueue.clear();
+          pendingUploads.add(pendingUpload);
         }
       }
 
@@ -216,7 +231,7 @@ try {
       // Scroll to load more images
       await page.evaluate(
         (selector, remainder) => {
-          const elements = [...document.querySelectorAll(selector)];
+          const elements = Array.from(document.querySelectorAll(selector));
           elements.slice(0, -remainder).forEach((element) => element.remove());
           window.scrollBy(0, document.body.scrollHeight);
         },
@@ -259,12 +274,13 @@ try {
 
 // Upload the remaining files to Hugging Face
 if (validationQueue.size) {
-  const uploads = await validationQueue.getValidated();
+  const results = await Promise.all(Array.from(validationQueue));
+  const uploads = results.filter(Boolean);
   pendingUploads.add(uploadWithRetry(uploads));
 }
 
 // Wait for all pending uploads to finish
-await Promise.all([...pendingUploads]);
+await Promise.all(Array.from(pendingUploads));
 
 // Close browser and finish
 await browser.close();

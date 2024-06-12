@@ -1,16 +1,14 @@
 import { app } from '@azure/functions';
-import { ImageValidationQueue } from 'common/utilities/ImageValidationQueue.js';
 import { hashImage } from 'common/utilities/hash.js';
 import {
   AllLabels,
   TrainSplit,
   getPathForImage,
   isExistingImage,
-  releaseImagePath,
   replaceWithRetry,
   uploadWithRetry,
 } from 'common/utilities/huggingface.js';
-import { getImageData } from 'common/utilities/image.js';
+import { getImageData, sanitizeImage } from 'common/utilities/image.js';
 import { extname } from 'path';
 import sanitize from 'sanitize-filename';
 
@@ -57,12 +55,8 @@ app.http('voteImageLabel', {
 
     const newLabel = await queryVotedLabel(hash);
     if (newLabel && oldLabel !== newLabel) {
-      console.log(l`Voted label changed, uploading ${{ hash }}`);
-
-      const { pathname } = new URL(url);
-      const ext = extname(pathname);
-
-      upload(data, newLabel, hash, ext);
+      console.log(l`Voted label changed, uploading ${{ url }}`);
+      upload(data, url, newLabel);
     }
 
     return { jsonBody: vote };
@@ -71,39 +65,37 @@ app.http('voteImageLabel', {
 
 /**
  * @param {Buffer} data
+ * @param {string | URL} url
  * @param {string} label
- * @param {string} hash
- * @param {string} ext
  */
-async function upload(data, label, hash, ext) {
+async function upload(data, url, label) {
+  try {
+    data = await sanitizeImage(data);
+  } catch (error) {
+    console.warn(l`Image validation failed ${{ url, error }}`);
+    return;
+  }
+
+  const hash = hashImage(data);
+  const { pathname } = new URL(url);
+  const ext = extname(pathname);
+
   const fileName = sanitize(`${hash}${ext}`);
   const uploadPath = await getPathForImage(TrainSplit, label, fileName, {
     branch: PendingBranch,
     skipCache: true,
   });
 
-  const validator = await ImageValidationQueue.createQueue();
-  validator
-    .queueValidation({ path: uploadPath, content: data })
-    .then((isValid) => {
-      if (!isValid) releaseImagePath(uploadPath);
-    });
-
-  const [validated] = await validator.getValidated();
-  if (!validated) {
-    console.warn(l`Image validation failed ${{ fileName }}`);
-    return;
-  }
-
+  const upload = { path: uploadPath, content: new Blob([data]) };
   if (
     await isExistingImage(fileName, { branch: PendingBranch, skipCache: true })
   ) {
-    (await replaceWithRetry(validated, PendingBranch))
+    (await replaceWithRetry(upload, PendingBranch))
       ? console.log(l`Image replaced on Hugging Face ${{ file: uploadPath }}`)
       : console.log(l`Matching image on Hugging Face ${{ file: uploadPath }}`);
     return;
   }
 
-  await uploadWithRetry([validated], PendingBranch);
+  await uploadWithRetry([upload], PendingBranch);
   console.log(l`Image uploaded to Hugging Face ${{ file: uploadPath }}`);
 }

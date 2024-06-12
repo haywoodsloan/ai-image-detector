@@ -17,8 +17,9 @@ export const DetectorModels = Object.freeze([
  * @param {Buffer} data
  * @param {string} hash
  */
-export async function checkIfAI(data, hash = hashImage(data)) {
+export async function checkIfAI(data) {
   // Check for a cached class from the DB
+  const hash = hashImage(data);
   const cachedClass = await queryVotedLabel(hash);
   switch (cachedClass) {
     case AiLabel:
