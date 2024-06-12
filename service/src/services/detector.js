@@ -1,6 +1,10 @@
-import { AiLabel, RealLabel, getImageClassification } from 'common/utilities/huggingface.js';
-
 import { hashImage } from 'common/utilities/hash.js';
+import {
+  AiLabel,
+  RealLabel,
+  getImageClassification,
+} from 'common/utilities/huggingface.js';
+
 import { queryVotedLabel } from './db/voteColl.js';
 
 // Use the detector version for db lookups
@@ -25,9 +29,7 @@ export async function checkIfAI(data, hash = hashImage(data)) {
 
   // Check several AI related classifications
   const results = await Promise.all(
-    DetectorModels.map((model) =>
-      getImageClassification({ model, data })
-    )
+    DetectorModels.map((model) => getImageClassification({ model, data }))
   );
 
   // Take the average AI classification score from all results

@@ -16,7 +16,7 @@ export const getServiceDb = memoize(async () => {
   const mongoUrl = isDev
     ? (await startMockDb()).getUri()
     : process.env.dbConStr;
-    
+
   const client = await MongoClient.connect(mongoUrl);
   return client.db(DbName);
 });

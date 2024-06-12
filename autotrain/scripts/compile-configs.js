@@ -1,3 +1,4 @@
+import merge from 'deepmerge';
 import {
   mkdir,
   readFile,
@@ -12,7 +13,6 @@ import { dirname, join, parse, relative } from 'path';
 import YAML from 'yaml';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import merge from 'deepmerge'
 
 const DatetimeRegex = /{{\s*datetime\s*}}/;
 const AutoRefreshInterval = 5 * 60 * 1000;
