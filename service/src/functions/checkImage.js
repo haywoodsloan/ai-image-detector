@@ -14,12 +14,14 @@ app.http('checkImage', {
     /** @type {{url: string, userId: string}} */
     const { url, userId } = await request.json();
 
+    // Check url is valid
     if (!isHttpUrl(url)) {
       const error = new Error('Must specify a valid URL');
       context.error(error);
       return createErrorResponse(400, error);
     }
 
+    // Check the user is valid
     const user = await queryUserById(userId);
     if (!user) {
       const error = new Error('Must specify a valid UserID');
@@ -27,6 +29,7 @@ app.http('checkImage', {
       return createErrorResponse(400, error);
     }
 
+    // Get the AI classification score
     context.log(l`Checking image ${{ url, userId }}`);
     const data = await getImageData(url);
     const artificial = await checkIfAI(data);

@@ -56,6 +56,7 @@ const getHfInterface = memoize(
 export const preloadExistingImages = memoize(
   /** @param {string} branch */
   async (branch = MainBranch) => {
+    // Check all files in the data folder
     const files = listFiles({
       path: DataPath,
       repo: DatasetRepo,
@@ -64,6 +65,7 @@ export const preloadExistingImages = memoize(
       credentials,
     });
 
+    // Track all files and subset counts
     for await (const file of files) {
       if (file.type !== 'file') continue;
       existingImages.set(basename(file.path), file.path);
@@ -81,11 +83,13 @@ export async function isExistingImage(
   fileName,
   { branch = MainBranch, skipCache = false } = {}
 ) {
+  // If using the cache, preload then check stored images
   if (!skipCache) {
     await preloadExistingImages(branch);
     return existingImages.has(fileName);
   }
 
+  // If not using the cache, check all splits/labels/subsets
   for (const split of AllSplits) {
     const subsets = listFiles({
       path: `${DataPath}/${split}`,
@@ -121,6 +125,7 @@ export async function isExistingImage(
     }
   }
 
+  // If the image couldn't be found remove it from the cache
   existingImages.delete(fileName);
   return false;
 }
@@ -139,11 +144,13 @@ export async function getPathForImage(
 ) {
   let subsetIdx;
   if (!skipCache) {
+    // If using the cache, preload then find the first subset with room
     await preloadExistingImages(branch);
     const subsets = subsetCounts[split][label];
     subsetIdx = subsets.findIndex((size) => size < MaxSubsetSize);
     if (subsetIdx === -1) subsetIdx = subsets.length;
   } else {
+    // If not using the cache, check existing subsets 
     for (subsetIdx = 0; ; subsetIdx++) {
       const subset = `set-${String(subsetIdx).padStart(3, '0')}`;
       const path = `${DataPath}/${split}/${subset}/${label}`;
@@ -156,12 +163,14 @@ export async function getPathForImage(
           credentials,
         });
 
+        // Add any found images to the cache
         for await (const image of images) {
           if (image.type !== 'file') continue;
           incrementSubsetCount(split, label, subsetIdx);
           existingImages.set(basename(image.path), image.path);
         }
 
+        // Move to the next subset once the count is at max
         const subsetCount = subsetCounts[split][label][subsetIdx];
         if (subsetCount < MaxSubsetSize) break;
       } catch {
@@ -170,6 +179,7 @@ export async function getPathForImage(
     }
   }
 
+  // Create a path using the open subset, track in the cache
   incrementSubsetCount(split, label, subsetIdx);
   const subset = `set-${String(subsetIdx).padStart(3, '0')}`;
   const path = `${DataPath}/${split}/${subset}/${label}/${fileName}`;
@@ -191,16 +201,19 @@ export function releaseImagePath(path) {
  * @param {Upload} file
  */
 export async function replaceWithRetry(file, branch = MainBranch) {
+  // Error if the files doesn't exists already
   const fileName = basename(file.path);
   const oldPath = existingImages.get(fileName);
   if (!oldPath) throw new Error('File to move missing from HF');
 
+  // Skip if the old and new labels are the same
   const { label: oldLabel } = parseImagePath(oldPath);
   const { label: newLabel } = parseImagePath(file.path);
-  if (oldLabel === newLabel) return false;
 
+  if (oldLabel === newLabel) return false;
   console.log(y`Moving file on HF: ${oldPath} => ${file.path}`);
 
+  // First delete the old image
   let retryCount = 0;
   while (true) {
     try {
@@ -223,6 +236,7 @@ export async function replaceWithRetry(file, branch = MainBranch) {
     }
   }
 
+  // Next upload the new image
   retryCount = 0;
   while (true) {
     try {
@@ -246,6 +260,7 @@ export async function replaceWithRetry(file, branch = MainBranch) {
     }
   }
 
+  // Update the cache
   existingImages.set(fileName, file.path);
   return true;
 }

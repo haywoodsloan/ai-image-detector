@@ -13,6 +13,7 @@ export const startMockDb = memoize(() =>
 );
 
 export const getServiceDb = memoize(async () => {
+  // If local testing use a in memory mongodb instance
   const mongoUrl = isLocal
     ? (await startMockDb()).getUri()
     : process.env.dbConStr;
