@@ -1,4 +1,4 @@
-import { isDev } from 'common/utilities/environment.js';
+import { isLocal } from 'common/utilities/environment.js';
 import memoize from 'memoize';
 import { MongoClient } from 'mongodb';
 import { MongoMemoryServer } from 'mongodb-memory-server';
@@ -13,7 +13,7 @@ export const startMockDb = memoize(() =>
 );
 
 export const getServiceDb = memoize(async () => {
-  const mongoUrl = isDev
+  const mongoUrl = isLocal
     ? (await startMockDb()).getUri()
     : process.env.dbConStr;
 

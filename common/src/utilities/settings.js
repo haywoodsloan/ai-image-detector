@@ -39,7 +39,8 @@ export async function loadSettings(configPath = './') {
 async function loadSettingsFile(path) {
   try {
     const buffer = await readFile(path);
-    return JSON.parse(buffer);
+    const parsed = JSON.parse(buffer);
+    return parsed?.Values;
   } catch {
     // File doesn't exists, skip it
     return null;

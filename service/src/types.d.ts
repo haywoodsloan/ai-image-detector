@@ -15,4 +15,5 @@ declare type UserDocument = {
   userId: string;
   lastAccess: Date;
   createdAt: Date;
+  createdBy: string;
 };

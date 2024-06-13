@@ -11,18 +11,31 @@ const getUserCollection = memoize(async () => {
   /** @type {UserCollection} */
   const users = db.collection(UserCollName);
 
-  // Set a unique index for each hash + userId combo.
+  // Set a unique index for each userId and createdBy address.
   await users.createIndex({ userId: 1 }, { unique: true });
+  await users.createIndex({ createdBy: 1 }, { unique: true });
+
   return users;
 });
 
 /**
  * @param {string} userId
  */
-export async function queryUser(userId) {
+export async function queryUserById(userId) {
   const users = await getUserCollection();
   return users.findOneAndUpdate(
     { userId },
+    { $set: { lastAccess: new Date() } }
+  );
+}
+
+/**
+ * @param {string} userId
+ */
+export async function queryUserByIp(createdBy) {
+  const users = await getUserCollection();
+  return users.findOneAndUpdate(
+    { createdBy },
     { $set: { lastAccess: new Date() } }
   );
 }
@@ -41,15 +54,18 @@ export async function updateUser(userId, update = null) {
 }
 
 /**
+ * @param {string} createdBy
  * @param {string} userId
  */
-export async function insertNewUser(userId = randomUUID()) {
+export async function insertNewUser(createdBy, userId = randomUUID()) {
+  if (!createdBy) throw new Error('Invalid createdBy address');
+
   const users = await getUserCollection();
   const now = new Date();
 
   /** @type {UserDocument} */
-  const newUser = { userId, createdAt: now, lastAccess: now };
-
+  const newUser = { userId, createdBy, createdAt: now, lastAccess: now };
   await users.insertOne(newUser);
+
   return newUser;
 }

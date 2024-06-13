@@ -1,3 +1,5 @@
+import { randomBytes } from 'crypto';
+
 /**
  * @param {string} str
  */
@@ -24,6 +26,15 @@ export function l(strs, ...args) {
   }
 
   return builder.join('');
+}
+
+/**
+ * @param {number} length
+ */
+export function randomString(length) {
+  return randomBytes(Math.ceil(length / 2))
+    .toString('hex')
+    .substring(0, length);
 }
 
 function stringify(val) {

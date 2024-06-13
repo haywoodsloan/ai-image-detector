@@ -3,7 +3,7 @@ import memoize from 'memoize';
 
 import { l } from '../../utilities/string.js';
 import { getServiceDb } from './serviceDb.js';
-import { UserCollName, queryUser, updateUser } from './userColl.js';
+import { UserCollName, queryUserById, updateUser } from './userColl.js';
 
 export const VoteCollName = 'votes';
 
@@ -17,6 +17,7 @@ const getVoteCollection = memoize(async () => {
 
   // Set a unique index for each hash + userId combo.
   await votes.createIndex({ hash: 1, userId: 1 }, { unique: true });
+
   return votes;
 });
 
@@ -57,8 +58,8 @@ export async function queryVotedLabel(hash) {
  * @description Always updates the `lastModify` field to now
  */
 export async function upsertVotedLabel(hash, userId, update) {
-  const user = await queryUser(userId);
-  if (!user) throw new Error('Invalid UserID');
+  const user = await queryUserById(userId);
+  if (!user) throw new Error('Invalid userID');
 
   if (update.voteLabel && !AllLabels.includes(update.voteLabel))
     throw new Error(l`voteLabel must be one of ${AllLabels}`);
