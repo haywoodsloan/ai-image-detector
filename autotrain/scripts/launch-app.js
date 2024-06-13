@@ -4,22 +4,19 @@ const SleepDuration = 1000;
 const TimeoutMinutes = 5;
 const AutotrainUrl = 'http://localhost:7860';
 
-let retryCount = 0;
-const maxRetryCount = (TimeoutMinutes * 60 * 1000) / SleepDuration;
-
+// Periodically check if the autotrain site is available
+const stopTime = Date.now() + TimeoutMinutes * 60 * 1000;
 while (true) {
   try {
     await fetch(AutotrainUrl);
     break;
   } catch (error) {
-    if (retryCount >= maxRetryCount) {
+    if (Date.now() > stopTime) {
       throw new Error(
-        `Autotrain is not available after 90 seconds:\n  ${error}`
+        `Autotrain not available after ${TimeoutMinutes} minutes:\n  ${error}`
       );
     }
-
     await new Promise((res) => setTimeout(res, SleepDuration));
-    retryCount++;
   }
 }
 

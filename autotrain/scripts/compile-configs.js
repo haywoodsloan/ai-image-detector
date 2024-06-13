@@ -80,6 +80,7 @@ const watcher = watch(ConfigPath, { recursive: true });
 for await (const { filename, eventType } of watcher) {
   if (eventType !== 'change') continue;
 
+  // Double check the modify time, sometimes a change event is a false positive
   const filePath = join(ConfigPath, filename);
   const fileStats = await stat(filePath);
   const modTimeDiff = Date.now() - fileStats.mtime;
@@ -119,6 +120,7 @@ async function compileDiff() {
     withFileTypes: true,
   });
 
+  // Must convert to standard model '/' separator
   const existingModels = configEntries
     .filter((entry) => entry.isFile())
     .map((entry) => {
@@ -127,6 +129,7 @@ async function compileDiff() {
       return `${prefix.replaceAll('\\', '/')}/${name}`;
     });
 
+  // Remove existing configs for models not on the list
   const removeModels = existingModels.filter(
     (model) => !newModels.includes(model)
   );
@@ -136,6 +139,7 @@ async function compileDiff() {
     await rm(modelPath, { force: true });
   }
 
+  // Add configs for models added to the list
   const addModels = newModels.filter(
     (model) => !existingModels.includes(model)
   );
@@ -167,12 +171,14 @@ async function compile(model, baseConfig = null) {
     const fileContent = await readFile(fileName, 'utf8');
     const hasDatetime = DatetimeRegex.test(fileContent);
 
+    // Track models to refresh with periodic datetime changes
     if (hasDatetime) refreshModels.add(model);
     else refreshModels.delete(model);
 
     const template = Handlebars.compile(fileContent);
     const compiled = template();
 
+    // Merge the model specific config and the base
     const parsed = YAML.parse(compiled);
     merged = merge.all([baseConfig, parsed]);
   } catch {
