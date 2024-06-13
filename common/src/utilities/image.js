@@ -10,7 +10,7 @@ import { isHttpUrl } from '../../../service/src/utilities/url.js';
 const MaxPixels = 178_956_970;
 
 const getExcludedImages = memoize(async () => {
-  const excludePath = new URL('../../exclude', import.meta.url);
+  const excludePath = join(import.meta.dirname, '../../exclude');
   const excludeEntries = await readdir(excludePath, {
     withFileTypes: true,
     recursive: true,

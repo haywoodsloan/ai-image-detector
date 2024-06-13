@@ -15,7 +15,7 @@ import { sanitizeImage } from 'common/utilities/image.js';
 import { loadSettings } from 'common/utilities/settings.js';
 import { wait } from 'common/utilities/sleep.js';
 import { mkdir, writeFile } from 'fs/promises';
-import { basename, extname } from 'path';
+import { basename, extname, join } from 'path';
 import { launch } from 'puppeteer';
 import sanitize from 'sanitize-filename';
 import { fileURLToPath } from 'url';
@@ -164,7 +164,6 @@ try {
         const validation = (async () => {
           // Fetch the image, validate it, then determine where to upload it
           let data;
-
           try {
             // Get the sanitized version of the image
             data = await sanitizeImage(url);
@@ -265,11 +264,11 @@ try {
   await mkdir(LogPath, { recursive: true });
 
   // Log the last stack trace
-  const errorLog = new URL('error.log', LogPath);
+  const errorLog = join(LogPath, 'error.log');
   await writeFile(errorLog, error.stack);
 
   // Log the last screenshot
-  const errorPng = new URL('error.png', LogPath);
+  const errorPng = join(LogPath, 'error.png');
   await page.screenshot({ path: fileURLToPath(errorPng) });
 
   throw error;
