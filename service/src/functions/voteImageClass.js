@@ -96,9 +96,12 @@ async function upload(data, url, label) {
   });
 
   const upload = { path: uploadPath, content: new Blob([data]) };
-  if (
-    await isExistingImage(fileName, { branch: PendingBranch, skipCache: true })
-  ) {
+  const isExisting = await isExistingImage(fileName, {
+    branch: PendingBranch,
+    skipCache: true,
+  });
+
+  if (isExisting) {
     // If an existing image either replace ir or skip the image (if label is the same)
     (await replaceWithRetry(upload, PendingBranch))
       ? console.log(l`Image replaced on Hugging Face ${{ file: uploadPath }}`)
