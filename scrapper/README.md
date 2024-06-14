@@ -1,5 +1,5 @@
 > [!IMPORTANT]
-> To test locally create a file named `settings.local.json` in this directory with this structure
+> To test locally create a file named `local.settings.json` in this directory with this structure
 >
 > ```json
 > {
