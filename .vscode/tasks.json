@@ -25,8 +25,9 @@
     },
     {
       "label": "Scrape Continuous",
-      "type": "shell",
-      "command": "while ($true) { npm --prefix scrapper start; npm  --prefix scrapper start -- --real; sleep 3600 }",
+      "type": "npm",
+      "script": "loop",
+      "path": "scrapper",
       "problemMatcher": []
     },
     {
