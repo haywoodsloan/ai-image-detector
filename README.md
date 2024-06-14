@@ -6,7 +6,7 @@ Training, scrapping, and service components for an AI Image Detector.
 
 ## Get Started
 
-See the README in a component's subfolder for specific setup instructions.
+See the `README.md` in a component's subfolder for specific setup instructions.
 
 ## License
 
