@@ -1,0 +1,24 @@
+import { app } from '@azure/functions';
+
+import { queryUserById } from '../services/db/userColl.js';
+import { queryVotesByUser } from '../services/db/voteColl.js';
+import { createErrorResponse } from '../utilities/error.js';
+
+app.http('getUserVotes', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  handler: async (request, context) => {
+    const { userId } = await request.json();
+
+    // Check the user is valid
+    const user = await queryUserById(userId);
+    if (!user) {
+      const error = new Error('Must specify a valid UserID');
+      context.error(error);
+      return createErrorResponse(400, error);
+    }
+
+    const votes = await queryVotesByUser(userId);
+    return { jsonBody: votes };
+  },
+});

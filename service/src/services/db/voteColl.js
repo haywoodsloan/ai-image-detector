@@ -52,6 +52,20 @@ export async function queryVotedLabel(hash) {
 }
 
 /**
+ * @param {string} userId
+ */
+export async function queryVotesByUser(userId) {
+  const user = await queryUserById(userId);
+  if (!user) throw new Error('Invalid userID');
+
+  const votes = await getVoteCollection();
+  const userVotes = await votes.find({ userId }).toArray();
+
+  await updateUser(userId);
+  return userVotes;
+}
+
+/**
  * @param {string} hash
  * @param {string} userId
  * @param {Partial<VoteDocument>} update
