@@ -3,7 +3,7 @@ import memoize from 'memoize';
 
 import { l } from '../../utilities/string.js';
 import { getServiceDb } from './serviceDb.js';
-import { UserCollName, queryUserById, updateUser } from './userColl.js';
+import { UserCollName, queryUser, updateUser } from './userColl.js';
 
 export const VoteCollName = 'votes';
 
@@ -55,7 +55,7 @@ export async function queryVotedLabel(hash) {
  * @param {string} userId
  */
 export async function queryVotesByUser(userId) {
-  const user = await queryUserById(userId);
+  const user = await queryUser(userId);
   if (!user) throw new Error('Invalid userID');
 
   const votes = await getVoteCollection();
@@ -72,7 +72,7 @@ export async function queryVotesByUser(userId) {
  * @description Always updates the `lastModify` field to now
  */
 export async function upsertVotedLabel(hash, userId, update) {
-  const user = await queryUserById(userId);
+  const user = await queryUser(userId);
   if (!user) throw new Error('Invalid userID');
 
   if (update.voteLabel && !AllLabels.includes(update.voteLabel))

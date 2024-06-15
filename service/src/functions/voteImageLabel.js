@@ -12,7 +12,7 @@ import { getImageData, sanitizeImage } from 'common/utilities/image.js';
 import { extname } from 'path';
 import sanitize from 'sanitize-filename';
 
-import { queryUserById } from '../services/db/userColl.js';
+import { queryUser } from '../services/db/userColl.js';
 import { queryVotedLabel, upsertVotedLabel } from '../services/db/voteColl.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { l } from '../utilities/string.js';
@@ -42,7 +42,7 @@ app.http('voteImageLabel', {
     }
 
     // Check the user is valid
-    const user = await queryUserById(userId);
+    const user = await queryUser(userId);
     if (!user) {
       const error = new Error('Must specify a valid UserID');
       context.error(error);

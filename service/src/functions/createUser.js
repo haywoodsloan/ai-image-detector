@@ -1,9 +1,12 @@
 import { app } from '@azure/functions';
 import { isLocal } from 'common/utilities/environment.js';
 
-import { insertNewUser, queryUserByIp } from '../services/db/userColl.js';
+import { insertNewUser, queryLastCreate } from '../services/db/userColl.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { l, randomString } from '../utilities/string.js';
+
+// An IP can only create a user ID every 5 minutes
+const IpCreateTimeout = 5 * 60 * 1000;
 
 app.http('createUser', {
   methods: ['POST'],
@@ -21,11 +24,12 @@ app.http('createUser', {
       return createErrorResponse(400, error);
     }
 
-    // Return an existing user for this IP
-    const existingUser = await queryUserByIp(clientIp);
-    if (existingUser) {
-      context.log(l`Found existing user ${{ userId: existingUser.userId }}`);
-      return { jsonBody: existingUser };
+    // Check that this IP hasn't created another User ID in that last 5 minutes
+    const lastCreate = await queryLastCreate(clientIp);
+    if (lastCreate && Date.now() - lastCreate.getTime() < IpCreateTimeout) {
+      const error = new Error('Too many create requests from this IP');
+      context.error(error);
+      return createErrorResponse(429, error);
     }
 
     // If no existing user create a new one

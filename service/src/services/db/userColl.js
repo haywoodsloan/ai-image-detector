@@ -11,9 +11,8 @@ const getUserCollection = memoize(async () => {
   /** @type {UserCollection} */
   const users = db.collection(UserCollName);
 
-  // Set a unique index for each userId and createdBy address.
+  // Set a unique index for each userId.
   await users.createIndex({ userId: 1 }, { unique: true });
-  await users.createIndex({ createdBy: 1 }, { unique: true });
 
   return users;
 });
@@ -21,7 +20,7 @@ const getUserCollection = memoize(async () => {
 /**
  * @param {string} userId
  */
-export async function queryUserById(userId) {
+export async function queryUser(userId) {
   const users = await getUserCollection();
   return users.findOneAndUpdate(
     { userId },
@@ -32,12 +31,19 @@ export async function queryUserById(userId) {
 /**
  * @param {string} userId
  */
-export async function queryUserByIp(createdBy) {
+export async function queryLastCreate(createdBy) {
   const users = await getUserCollection();
-  return users.findOneAndUpdate(
-    { createdBy },
-    { $set: { lastAccess: new Date() } }
-  );
+
+  /** @type {UserDocument} */
+  const lastUser = await users
+    .aggregate([
+      { $match: { createdBy } },
+      { $sort: { createdAt: -1 } },
+      { $limit: 1 },
+    ])
+    .tryNext();
+
+  return lastUser?.createdAt;
 }
 
 /**

@@ -1,7 +1,7 @@
 import { app } from '@azure/functions';
 import { getImageData } from 'common/utilities/image.js';
 
-import { queryUserById } from '../services/db/userColl.js';
+import { queryUser } from '../services/db/userColl.js';
 import { checkIfAI } from '../services/detector.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { l } from '../utilities/string.js';
@@ -22,7 +22,7 @@ app.http('checkImage', {
     }
 
     // Check the user is valid
-    const user = await queryUserById(userId);
+    const user = await queryUser(userId);
     if (!user) {
       const error = new Error('Must specify a valid UserID');
       context.error(error);
