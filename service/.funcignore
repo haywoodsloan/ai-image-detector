@@ -8,3 +8,4 @@ __queuestorage__
 local.settings.json
 test
 tsconfig.json
+data
