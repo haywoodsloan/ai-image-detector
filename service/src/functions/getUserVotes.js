@@ -1,9 +1,9 @@
 import { app } from '@azure/functions';
+import { l } from 'common/utilities/string.js';
 
 import { queryUser } from '../services/db/userColl.js';
 import { queryVotesByUser } from '../services/db/voteColl.js';
 import { createErrorResponse } from '../utilities/error.js';
-import { l } from '../utilities/string.js';
 
 app.http('getUserVotes', {
   methods: ['POST'],

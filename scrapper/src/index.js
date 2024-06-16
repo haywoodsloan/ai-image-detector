@@ -1,5 +1,6 @@
 import { TimeSpan } from 'common/utilities/TimeSpan.js';
 import { b, g, r, y } from 'common/utilities/colors.js';
+import { appendLines, readLines } from 'common/utilities/file.js';
 import { hashImage } from 'common/utilities/hash.js';
 import {
   AiLabel,
@@ -15,7 +16,7 @@ import {
 import { sanitizeImage } from 'common/utilities/image.js';
 import { loadSettings } from 'common/utilities/settings.js';
 import { wait } from 'common/utilities/sleep.js';
-import { appendFile, mkdir, readFile, writeFile } from 'fs/promises';
+import { mkdir, writeFile } from 'fs/promises';
 import { basename, dirname, extname, join } from 'path';
 import { launch } from 'puppeteer';
 import sanitize from 'sanitize-filename';
@@ -104,7 +105,7 @@ const browser = await launch({
 const page = await browser.newPage();
 await page.setUserAgent(ChromeUA);
 
-/** @type {Set<Promise<{path: string, content: Blob} | null>>} */
+/** @type {Set<Promise<{path: string, content: Blob, origin: URL} | null>>} */
 const validationQueue = new Set();
 
 /** @type {Set<Promise<void>>} */
@@ -114,9 +115,10 @@ const pendingUploads = new Set();
 const scrappedUrls = new Set();
 
 try {
-  // Load the cached urls
-  const content = await readFile(UrlCachePath, 'utf8');
-  content.split('\n').forEach((url) => scrappedUrls.add(url));
+  // Load the previously scrapped URLs from the cache file
+  for await (const url of readLines(UrlCachePath)) {
+    scrappedUrls.add(url);
+  }
 } catch {
   /* file doesn't exists */
 }
@@ -172,7 +174,6 @@ try {
 
         // Skip urls to images that have already been scrapped
         if (scrappedUrls.has(url.href)) continue;
-        await appendFile(UrlCachePath, `${url.href}\n`);
         scrappedUrls.add(url.href);
 
         const validation = (async () => {
@@ -206,7 +207,7 @@ try {
 
           // Increase the total count and return an upload object
           count++;
-          return { path, content: new Blob([data]) };
+          return { path, content: new Blob([data]), origin: url };
         })();
 
         validationQueue.add(validation);
@@ -217,12 +218,14 @@ try {
           // Skip uploading if less than the batch size after validation
           if (uploads.length < UploadBatchSize) continue;
 
-          const pendingUpload = uploadWithRetry(uploads).then(() =>
-            pendingUploads.delete(pendingUpload)
-          );
+          const pendingUpload = uploadWithRetry(uploads).then(async () => {
+            const newUrls = uploads.map(({ origin }) => origin.href);
+            await appendLines(UrlCachePath, newUrls);
+            pendingUploads.delete(pendingUpload);
+          });
 
-          validationQueue.clear();
           pendingUploads.add(pendingUpload);
+          validationQueue.clear();
         }
       }
 

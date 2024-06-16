@@ -1,7 +1,7 @@
 import { AllLabels } from 'common/utilities/huggingface.js';
+import { l } from 'common/utilities/string.js';
 import memoize from 'memoize';
 
-import { l } from '../../utilities/string.js';
 import { getServiceDb } from './serviceDb.js';
 import { UserCollName, queryUser, updateUser } from './userColl.js';
 

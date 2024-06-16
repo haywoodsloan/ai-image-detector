@@ -1,10 +1,10 @@
 import { app } from '@azure/functions';
 import { getImageData } from 'common/utilities/image.js';
+import { l } from 'common/utilities/string.js';
 
 import { queryUser } from '../services/db/userColl.js';
 import { checkIfAI } from '../services/detector.js';
 import { createErrorResponse } from '../utilities/error.js';
-import { l } from '../utilities/string.js';
 import { isHttpUrl } from '../utilities/url.js';
 
 app.http('checkImage', {

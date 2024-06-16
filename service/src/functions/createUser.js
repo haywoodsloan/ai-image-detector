@@ -1,10 +1,10 @@
 import { app } from '@azure/functions';
 import { TimeSpan } from 'common/utilities/TimeSpan.js';
 import { isLocal } from 'common/utilities/environment.js';
+import { l, randomString } from 'common/utilities/string.js';
 
 import { insertNewUser, queryLastCreate } from '../services/db/userColl.js';
 import { createErrorResponse } from '../utilities/error.js';
-import { l, randomString } from '../utilities/string.js';
 
 // An IP can only create a user ID every 5 minutes
 const IpCreateTimeout = TimeSpan.fromMinutes(30);

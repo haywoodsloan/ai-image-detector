@@ -1,5 +1,5 @@
 import { g, r, y } from 'common/utilities/colors.js';
-import { getFilesFromDir } from 'common/utilities/files.js';
+import { getFilesFromDir } from 'common/utilities/file.js';
 import { hashImage } from 'common/utilities/hash.js';
 import { AiLabel, RealLabel } from 'common/utilities/huggingface.js';
 import { getImageData } from 'common/utilities/image.js';
