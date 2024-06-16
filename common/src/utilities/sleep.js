@@ -1,5 +1,5 @@
 /**
- * @param {number} delay
+ * @param {number | import('./TimeSpan.js').TimeSpan} delay
  * @param {AbortSignal} signal
  */
 export async function wait(delay, signal = null) {

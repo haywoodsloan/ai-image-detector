@@ -1,4 +1,5 @@
 import { app } from '@azure/functions';
+import { TimeSpan } from 'common/utilities/TimeSpan.js';
 import { isLocal } from 'common/utilities/environment.js';
 
 import { insertNewUser, queryLastCreate } from '../services/db/userColl.js';
@@ -6,7 +7,7 @@ import { createErrorResponse } from '../utilities/error.js';
 import { l, randomString } from '../utilities/string.js';
 
 // An IP can only create a user ID every 5 minutes
-const IpCreateTimeout = 5 * 60 * 1000;
+const IpCreateTimeout = TimeSpan.fromMinutes(30);
 
 app.http('createUser', {
   methods: ['POST'],
@@ -17,6 +18,7 @@ app.http('createUser', {
       request.headers.get('X-Forwarded-Client-Ip');
 
     // Require a client IP to be provided unless this is local testing
+    context.log(l`Request IPs ${{ IPs: requestIPs }}`);
     const clientIp = requestIPs?.split(',')?.[0];
     if (!clientIp && !isLocal) {
       const error = new Error('Client IP missing from request headers');
@@ -26,8 +28,12 @@ app.http('createUser', {
 
     // Check that this IP hasn't created another User ID in that last 5 minutes
     const lastCreate = await queryLastCreate(clientIp);
+    context.log(l`Last Create ${{ lastCreate }}`);
     if (lastCreate && Date.now() - lastCreate.getTime() < IpCreateTimeout) {
-      const error = new Error('Too many create requests from this IP');
+      const error = new Error(
+        'Too many create requests from this IP, ' +
+          `try again in ${IpCreateTimeout.getMinutes()} minutes`
+      );
       context.error(error);
       return createErrorResponse(429, error);
     }

@@ -3,6 +3,7 @@ import { app } from '@azure/functions';
 import { queryUser } from '../services/db/userColl.js';
 import { queryVotesByUser } from '../services/db/voteColl.js';
 import { createErrorResponse } from '../utilities/error.js';
+import { l } from '../utilities/string.js';
 
 app.http('getUserVotes', {
   methods: ['POST'],
@@ -19,6 +20,7 @@ app.http('getUserVotes', {
     }
 
     const votes = await queryVotesByUser(userId);
+    context.log(l`User votes ${{ userId, voteCount: votes.length }}`);
     return { jsonBody: votes };
   },
 });

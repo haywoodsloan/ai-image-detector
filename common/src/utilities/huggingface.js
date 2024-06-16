@@ -11,6 +11,8 @@ import { wait } from 'common/utilities/sleep.js';
 import memoize from 'memoize';
 import { basename, dirname } from 'path';
 
+import { TimeSpan } from './TimeSpan.js';
+
 export const MainBranch = 'main';
 export const DataPath = 'data';
 
@@ -25,8 +27,8 @@ export const AllLabels = [RealLabel, AiLabel];
 const RetryLimit = 10;
 const MaxSubsetSize = 10_000;
 
-const HuggingFaceErrorDelay = 10 * 1000;
-const RateLimitDelay = 10 * 60 * 1000;
+const HuggingFaceErrorDelay = TimeSpan.fromSeconds(10);
+const RateLimitDelay = TimeSpan.fromMinutes(10);
 
 const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
 
@@ -150,7 +152,7 @@ export async function getPathForImage(
     subsetIdx = subsets.findIndex((size) => size < MaxSubsetSize);
     if (subsetIdx === -1) subsetIdx = subsets.length;
   } else {
-    // If not using the cache, check existing subsets 
+    // If not using the cache, check existing subsets
     for (subsetIdx = 0; ; subsetIdx++) {
       const subset = `set-${String(subsetIdx).padStart(3, '0')}`;
       const path = `${DataPath}/${split}/${subset}/${label}`;

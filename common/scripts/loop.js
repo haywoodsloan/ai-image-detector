@@ -3,6 +3,7 @@ import { spawn } from 'child_process';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
+import { TimeSpan } from '../src/utilities/TimeSpan.js';
 import { y } from '../src/utilities/colors.js';
 import { wait } from '../src/utilities/sleep.js';
 
@@ -36,7 +37,7 @@ await yargs(hideBin(process.argv))
         count++;
         if (args.timeout) {
           console.log(y`\nWaiting for ${args.timeout} seconds...`);
-          await wait(args.timeout * 1000);
+          await wait(TimeSpan.fromSeconds(args.timeout));
         }
       }
     }

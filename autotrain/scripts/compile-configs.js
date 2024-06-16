@@ -1,3 +1,4 @@
+import { TimeSpan } from 'common/utilities/TimeSpan.js';
 import merge from 'deepmerge';
 import {
   mkdir,
@@ -15,7 +16,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 const DatetimeRegex = /{{\s*datetime\s*}}/;
-const AutoRefreshInterval = 5 * 60 * 1000;
+const AutoRefreshInterval = TimeSpan.fromMinutes(5);
 const MaxModTimeDiff = 5000;
 
 const CompilePath = '.compiled/';

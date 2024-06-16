@@ -19,7 +19,7 @@ function interpolate(strs, ...args) {
 
   // If not a tagged template call just pass the args along
   if (!isTag) return [strs, ...args];
-  
+
   // If a tagged template call use standard string interpolation
   const builder = [];
   let idx = 0;

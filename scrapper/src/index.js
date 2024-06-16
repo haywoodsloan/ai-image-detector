@@ -1,3 +1,4 @@
+import { TimeSpan } from 'common/utilities/TimeSpan.js';
 import { b, g, r, y } from 'common/utilities/colors.js';
 import { hashImage } from 'common/utilities/hash.js';
 import {
@@ -76,9 +77,9 @@ const UploadBatchSize = 50;
 const CleanupRemainder = 9;
 const RetryLimit = 10;
 
-const LoadStuckTimeout = 20 * 1000;
-const RedditErrorDelay = 20 * 1000;
-const ScrollDelay = 2000;
+const LoadStuckTimeout = TimeSpan.fromSeconds(20);
+const RedditErrorDelay = TimeSpan.fromSeconds(20);
+const ScrollDelay = TimeSpan.fromSeconds(2);
 // #endregion
 
 // Parse local settings for Hugging Face credentials
