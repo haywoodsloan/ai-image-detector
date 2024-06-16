@@ -15,8 +15,8 @@ import {
 import { sanitizeImage } from 'common/utilities/image.js';
 import { loadSettings } from 'common/utilities/settings.js';
 import { wait } from 'common/utilities/sleep.js';
-import { mkdir, writeFile } from 'fs/promises';
-import { basename, extname, join } from 'path';
+import { appendFile, mkdir, readFile, writeFile } from 'fs/promises';
+import { basename, dirname, extname, join } from 'path';
 import { launch } from 'puppeteer';
 import sanitize from 'sanitize-filename';
 import { fileURLToPath } from 'url';
@@ -58,6 +58,8 @@ const RealSubReddits = [
 ];
 
 const LogPath = '.log/';
+const UrlCachePath = '.cache/urls.txt';
+
 const WindowHeight = 1250;
 const WindowWidth = 1650;
 const ChromeUA = new UserAgent([
@@ -111,11 +113,21 @@ const pendingUploads = new Set();
 /** @type {Set<string>} */
 const scrappedUrls = new Set();
 
+try {
+  // Load the cached urls
+  const content = await readFile(UrlCachePath, 'utf8');
+  content.split('\n').forEach((url) => scrappedUrls.add(url));
+} catch {
+  /* file doesn't exists */
+}
+
 // Browse to multiple Subreddits and scrape files
 const redditUrls = args.real ? RealSubReddits : AiSubReddits;
 let count = 0;
 
 try {
+  // Make sure the cache directory exists
+  await mkdir(dirname(UrlCachePath), { recursive: true });
   for (let i = 0; i < redditUrls.length && count < args.count; i++) {
     // Navigate to the page and wait for network traffic to settle
     const redditUrl = redditUrls[i];
@@ -160,6 +172,7 @@ try {
 
         // Skip urls to images that have already been scrapped
         if (scrappedUrls.has(url.href)) continue;
+        await appendFile(UrlCachePath, `${url.href}\n`);
         scrappedUrls.add(url.href);
 
         const validation = (async () => {
