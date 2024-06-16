@@ -85,6 +85,15 @@ const RedditErrorDelay = TimeSpan.fromSeconds(20);
 const ScrollDelay = TimeSpan.fromSeconds(2);
 // #endregion
 
+/** @type {Set<Promise<{path: string, content: Blob, origin: URL} | null>>} */
+const validationQueue = new Set();
+
+/** @type {Set<Promise<void>>} */
+const pendingUploads = new Set();
+
+/** @type {Set<string>} */
+const scrappedUrls = new Set();
+
 // Parse local settings for Hugging Face credentials
 const { hfKey } = await loadSettings();
 setHfAccessToken(hfKey);
@@ -104,15 +113,6 @@ const browser = await launch({
 
 const page = await browser.newPage();
 await page.setUserAgent(ChromeUA);
-
-/** @type {Set<Promise<{path: string, content: Blob, origin: URL} | null>>} */
-const validationQueue = new Set();
-
-/** @type {Set<Promise<void>>} */
-const pendingUploads = new Set();
-
-/** @type {Set<string>} */
-const scrappedUrls = new Set();
 
 try {
   // Load the previously scrapped URLs from the cache file
@@ -295,7 +295,13 @@ try {
 if (validationQueue.size) {
   const results = await Promise.all(Array.from(validationQueue));
   const uploads = results.filter(Boolean);
-  pendingUploads.add(uploadWithRetry(uploads));
+
+  pendingUploads.add(
+    uploadWithRetry(uploads).then(async () => {
+      const newUrls = uploads.map(({ origin }) => origin.href);
+      await appendLines(UrlCachePath, newUrls);
+    })
+  );
 }
 
 // Wait for all pending uploads to finish
