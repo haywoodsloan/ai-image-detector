@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "Common utilities, services, and configs for the other projects in this repo",
   "type": "module",
+  "types": "./src/types.d.ts",
   "bin": {
     "loop": "./scripts/loop.js"
   },

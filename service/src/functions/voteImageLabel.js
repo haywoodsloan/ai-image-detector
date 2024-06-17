@@ -3,9 +3,8 @@ import { hashImage } from 'common/utilities/hash.js';
 import {
   AllLabels,
   TrainSplit,
-  getPathForImage,
-  replaceWithRetry,
-  uploadWithRetry,
+  replaceImage,
+  uploadImages,
 } from 'common/utilities/huggingface.js';
 import { getImageData, sanitizeImage } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
@@ -87,24 +86,22 @@ async function upload(data, url, label) {
   const { pathname } = new URL(url);
   const ext = extname(pathname);
 
-  // Get an available upload path for the new image
+  // Build the image properties, always use the train split
   const fileName = sanitize(`${hash}${ext}`);
-  const uploadPath = await getPathForImage(
-    TrainSplit,
-    label,
-    fileName,
-    PendingBranch
-  );
+  const split = TrainSplit;
+  const content = new Blob([data]);
+  const origin = new URL(url);
 
-  const upload = { path: uploadPath, content: new Blob([data]) };
+  /** @type {HfImage} */
+  const image = { fileName, label, split, content, origin };
   try {
     // If an existing image either replace ir or skip the image (if label is the same)
-    (await replaceWithRetry(upload, PendingBranch))
-      ? console.log(l`Image replaced on Hugging Face ${{ file: uploadPath }}`)
-      : console.log(l`Matching image on Hugging Face ${{ file: uploadPath }}`);
+    (await replaceImage(image, PendingBranch))
+      ? console.log(l`Image replaced on Hugging Face ${{ fileName, label }}`)
+      : console.log(l`Matching image on Hugging Face ${{ fileName, label }}`);
   } catch {
     // If replace errors then it's a new file to upload
-    await uploadWithRetry([upload], PendingBranch);
-    console.log(l`Image uploaded to Hugging Face ${{ file: uploadPath }}`);
+    await uploadImages([image], PendingBranch);
+    console.log(l`Image uploaded to Hugging Face ${{ fileName, label }}`);
   }
 }

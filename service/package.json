@@ -4,6 +4,7 @@
   "description": "Analyzes an input image and guesses if it is AI generated.",
   "main": "src/functions/*.js",
   "type": "module",
+  "types": "./src/types.d.ts",
   "scripts": {
     "start-azurite": "npx -y azurite --silent",
     "start-azure-function": "func start",

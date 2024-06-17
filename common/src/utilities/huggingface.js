@@ -36,6 +36,9 @@ const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
 /** @type {{accessToken: string}} */
 const credentials = {};
 
+/** @type {Set<string>} */
+const pendingPaths = new Set();
+
 const getHfInterface = memoize(
   () => new HfInference(credentials?.accessToken),
   { cacheKey: () => credentials?.accessToken }
@@ -49,72 +52,22 @@ export async function isExistingImage(fileName, branch = MainBranch) {
 }
 
 /**
- *
- * @param {string} split
- * @param {string} label
- * @param {string} fileName
- * @param {{branch?: string, pendingPaths?: string[]}} options
+ * @param {HfImage} image
  */
-export async function getPathForImage(
-  split,
-  label,
-  fileName,
-  { branch = MainBranch, pendingPaths = [] } = {}
-) {
-  let subsetIdx;
-  for (subsetIdx = 0; ; subsetIdx++) {
-    const subset = `set-${String(subsetIdx).padStart(3, '0')}`;
-    const path = `${DataPath}/${split}/${subset}/${label}`;
-
-    // Check how many images are in the folder
-    let images;
-    try {
-      images = listFiles({
-        path,
-        repo: DatasetRepo,
-        revision: branch,
-        credentials,
-      });
-    } catch {
-      // If the list fails this subset is new
-      break;
-    }
-
-    // Start the count with the number of
-    // pending uploads for this path
-    let count = pendingPaths.filter((pending) =>
-      path.startsWith(pending)
-    ).length;
-
-    // Add any found images to the cache
-    for await (const image of images) {
-      if (image.type === 'file') count++;
-    }
-
-    // Use this subset if the count isn't at max
-    if (count < MaxSubsetSize) break;
-  }
-
-  // Create a path using the open subset, track in the cache
-  const subset = `set-${String(subsetIdx).padStart(3, '0')}`;
-  return `${DataPath}/${split}/${subset}/${label}/${fileName}`;
-}
-
-/**
- * @param {Upload} file
- */
-export async function replaceWithRetry(file, branch = MainBranch) {
+export async function replaceImage(image, branch = MainBranch) {
   // Error if the files doesn't exists already
-  const fileName = basename(file.path);
+  const { fileName, label: newLabel } = image;
   const oldPath = await getFullImagePath(fileName);
   if (!oldPath) throw new Error('File to replace missing from HF');
 
   // Skip if the old and new labels are the same
-  const { label: oldLabel } = parseImagePath(oldPath);
-  const { label: newLabel } = parseImagePath(file.path);
-
+  // Return false to indicate no change was made
+  const { label: oldLabel } = parsePath(oldPath);
   if (oldLabel === newLabel) return false;
-  console.log(y`Moving file on HF: ${oldPath} => ${file.path}`);
+
+  const [upload] = await createUploads([image], branch);
+  console.log(y`Moving file on HF: ${oldPath} => ${upload.path}`);
+  pendingPaths.add(upload.path);
 
   // First delete the old image
   let retryCount = 0;
@@ -144,14 +97,16 @@ export async function replaceWithRetry(file, branch = MainBranch) {
   while (true) {
     try {
       await uploadFile({
-        file,
+        file: upload,
         repo: DatasetRepo,
         branch,
         credentials,
         useWebWorkers: true,
       });
 
-      console.log(g`Successfully moved file: ${file.path}`);
+      console.log(g`Successfully moved file: ${upload.path}`);
+      pendingPaths.delete(upload.path);
+
       break;
     } catch (error) {
       if (retryCount < RetryLimit) {
@@ -163,31 +118,35 @@ export async function replaceWithRetry(file, branch = MainBranch) {
     }
   }
 
-  // Update the cache
+  // Return true if successfully replaced
   return true;
 }
 
 /**
- * @param {Upload[]} files
+ * @param {HfImage[]} images
  */
-export async function uploadWithRetry(files, branch = MainBranch) {
-  // Filter out invalid images
-  if (!files.length) return;
-  console.log(y`Uploading ${files.length} files to HF`);
+export async function uploadImages(images, branch = MainBranch) {
+  // Skip if no images in the array
+  if (!images.length) return;
+  console.log(y`Uploading ${images.length} files to HF`);
+  const uploads = await createUploads(images);
+  for (const { path } of uploads) pendingPaths.add(path);
 
   // Start a retry loop
   let retryCount = 0;
   while (true) {
     try {
       await uploadFiles({
-        branch,
-        useWebWorkers: true,
+        files: uploads,
         repo: DatasetRepo,
+        branch,
         credentials,
-        files,
+        useWebWorkers: true,
       });
 
-      console.log(g`${files.length} files successfully uploaded`);
+      console.log(g`${images.length} files successfully uploaded`);
+      for (const { path } of uploads) pendingPaths.delete(path);
+
       break;
     } catch (error) {
       if (error.statusCode === 429) {
@@ -275,7 +234,7 @@ async function getFullImagePath(fileName, branch = MainBranch) {
 /**
  * @param {string} path
  */
-function parseImagePath(path) {
+function parsePath(path) {
   const labelDir = dirname(path);
   const label = basename(labelDir);
 
@@ -287,4 +246,75 @@ function parseImagePath(path) {
   const split = basename(splitDir);
 
   return { split, label, subset, subsetIdx };
+}
+
+/**
+ * @param {string} split
+ * @param {string} label
+ * @param {number} subsetIdx
+ */
+function buildPath(split, label, subsetIdx, fileName = '') {
+  const subset = `set-${String(subsetIdx).padStart(3, '0')}`;
+  return fileName
+    ? `${DataPath}/${split}/${subset}/${label}/${fileName}`
+    : `${DataPath}/${split}/${subset}/${label}`;
+}
+
+/**
+ * @param {HfImage[]} uploads
+ */
+async function createUploads(uploads, branch = MainBranch) {
+  /** @type {{[key: string]: {[key: string]: number[]}}} */
+  const subsetCounts = {
+    [TrainSplit]: { [AiLabel]: [], [RealLabel]: [] },
+    [TestSplit]: { [AiLabel]: [], [RealLabel]: [] },
+  };
+
+  /** @type {HfUpload[]} */
+  const uploadsWithPath = [];
+  for (const upload of uploads) {
+    const { fileName, split, label } = upload;
+    const subsets = subsetCounts[split][label];
+
+    let subsetIdx = subsets.findIndex((count) => count < MaxSubsetSize);
+    if (subsetIdx === -1) {
+      for (subsetIdx = subsets.length; ; subsetIdx++) {
+        // Start the subset count based on the other pending paths
+        const prefix = buildPath(split, label, subsetIdx);
+        subsets[subsetIdx] = [...pendingPaths].filter((path) =>
+          path.startsWith(prefix)
+        ).length;
+
+        // Check how many images are in the folder
+        let images;
+        try {
+          images = listFiles({
+            path: prefix,
+            repo: DatasetRepo,
+            revision: branch,
+            credentials,
+          });
+        } catch {
+          // If the list fails this subset is new
+          break;
+        }
+
+        // Add any found images to the count
+        for await (const image of images) {
+          if (image.type === 'file') subsets[subsetIdx]++;
+        }
+
+        // Use this subset if the count isn't at max
+        if (subsets[subsetIdx] < MaxSubsetSize) break;
+      }
+    }
+
+    // Add the path to the open subset to the upload
+    // Also track the subset count
+    subsets[subsetIdx]++;
+    const path = buildPath(split, label, subsetIdx, fileName);
+    uploadsWithPath.push({ ...upload, path });
+  }
+
+  return uploadsWithPath;
 }

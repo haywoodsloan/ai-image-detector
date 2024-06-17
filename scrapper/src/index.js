@@ -7,10 +7,9 @@ import {
   RealLabel,
   TestSplit,
   TrainSplit,
-  getPathForImage,
   isExistingImage,
   setHfAccessToken,
-  uploadWithRetry,
+  uploadImages,
 } from 'common/utilities/huggingface.js';
 import { sanitizeImage } from 'common/utilities/image.js';
 import { loadSettings } from 'common/utilities/settings.js';
@@ -84,11 +83,8 @@ const RedditErrorDelay = TimeSpan.fromSeconds(20);
 const ScrollDelay = TimeSpan.fromSeconds(2);
 // #endregion
 
-/** @type {Set<Promise<{path: string, content: Blob, origin: URL} | null>>} */
+/** @type {Set<Promise<HfImage?>>} */
 const validationQueue = new Set();
-
-/** @type {Set<string>} */
-const pendingPaths = new Set();
 
 /** @type {Set<Promise<void>>} */
 const pendingUploads = new Set();
@@ -115,9 +111,8 @@ await page.setUserAgent(ChromeUA);
 
 try {
   // Load the previously scrapped URLs from the cache file
-  for await (const url of readLines(UrlCachePath)) {
-    scrappedUrls.add(url);
-  }
+  const urls = readLines(UrlCachePath);
+  for await (const url of urls) scrappedUrls.add(url);
 } catch {
   /* file doesn't exists */
 }
@@ -169,28 +164,29 @@ try {
 
       // Queue image uploads to bulk upload to Hugging Face, skip existing files
       for (let i = 0; i < urls.length && count < args.count; i++) {
-        const url = urls[i];
+        const origin = urls[i];
 
         // Skip urls to images that have already been scrapped
-        if (scrappedUrls.has(url.href)) continue;
-        scrappedUrls.add(url.href);
+        if (scrappedUrls.has(origin.href)) continue;
+        scrappedUrls.add(origin.href);
 
+        /** @type {Promise<HfImage?>} */
         const validation = (async () => {
           // Fetch the image, validate it, then determine where to upload it
           let data;
           try {
             // Get the sanitized version of the image
-            data = await sanitizeImage(url);
+            data = await sanitizeImage(origin);
           } catch (error) {
             // If the image couldn't be sanitized skip it
-            console.log(r`Skipping: ${url} [${error}]`);
+            console.log(r`Skipping: ${origin} [${error}]`);
             validationQueue.delete(validation);
             return;
           }
 
           // Build the file name from the hash of the data
           const hash = hashImage(data);
-          const ext = extname(url.pathname);
+          const ext = extname(origin.pathname);
           const fileName = sanitize(`${hash}${ext}`);
 
           // Skip existing files
@@ -199,30 +195,26 @@ try {
             return;
           }
 
-          // Get a path to upload the image to
+          // Get a split to add the image to
           console.log(b`Found: ${fileName}`);
           const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
-          const path = await getPathForImage(split, label, fileName, {
-            pendingPaths: [...pendingPaths],
-          });
 
-          // Increase the total count and return an upload object
+          // Increase the total count and return an image object
           count++;
-          pendingPaths.add(path);
-          return { path, content: new Blob([data]), origin: url };
+          const content = new Blob([data]);
+          return { split, label, fileName, origin, content };
         })();
 
         validationQueue.add(validation);
         if (validationQueue.size >= UploadBatchSize) {
           const results = await Promise.all([...validationQueue]);
-          const uploads = results.filter(Boolean);
+          const images = results.filter(Boolean);
 
           // Skip uploading if less than the batch size after validation
-          if (uploads.length < UploadBatchSize) continue;
+          if (images.length < UploadBatchSize) continue;
 
-          const pendingUpload = uploadWithRetry(uploads).then(async () => {
-            for (const { path } of uploads) pendingPaths.delete(path);
-            const newUrls = uploads.map(({ origin }) => origin.href);
+          const pendingUpload = uploadImages(images).then(async () => {
+            const newUrls = images.map(({ origin }) => origin.href);
             await appendLines(UrlCachePath, newUrls);
             pendingUploads.delete(pendingUpload);
           });
@@ -300,7 +292,7 @@ if (validationQueue.size) {
   const uploads = results.filter(Boolean);
 
   pendingUploads.add(
-    uploadWithRetry(uploads).then(async () => {
+    uploadImages(uploads).then(async () => {
       const newUrls = uploads.map(({ origin }) => origin.href);
       await appendLines(UrlCachePath, newUrls);
     })
