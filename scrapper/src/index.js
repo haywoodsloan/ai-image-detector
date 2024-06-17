@@ -87,6 +87,9 @@ const ScrollDelay = TimeSpan.fromSeconds(2);
 /** @type {Set<Promise<{path: string, content: Blob, origin: URL} | null>>} */
 const validationQueue = new Set();
 
+/** @type {Set<string>} */
+const pendingPaths = new Set();
+
 /** @type {Set<Promise<void>>} */
 const pendingUploads = new Set();
 
@@ -199,10 +202,13 @@ try {
           // Get a path to upload the image to
           console.log(b`Found: ${fileName}`);
           const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
-          const path = await getPathForImage(split, label, fileName);
+          const path = await getPathForImage(split, label, fileName, {
+            pendingPaths: [...pendingPaths],
+          });
 
           // Increase the total count and return an upload object
           count++;
+          pendingPaths.add(path);
           return { path, content: new Blob([data]), origin: url };
         })();
 
@@ -215,6 +221,7 @@ try {
           if (uploads.length < UploadBatchSize) continue;
 
           const pendingUpload = uploadWithRetry(uploads).then(async () => {
+            for (const { path } of uploads) pendingPaths.delete(path);
             const newUrls = uploads.map(({ origin }) => origin.href);
             await appendLines(UrlCachePath, newUrls);
             pendingUploads.delete(pendingUpload);
@@ -247,7 +254,7 @@ try {
       await page.evaluate(
         (selector, remainder) => {
           const elements = [...document.querySelectorAll(selector)];
-          elements.slice(0, -remainder).forEach((element) => element.remove());
+          for (const element of elements.slice(0, -remainder)) element.remove();
           window.scrollBy(0, document.body.scrollHeight);
         },
         ...[CleanupSelector, CleanupRemainder]

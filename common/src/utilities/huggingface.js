@@ -45,7 +45,7 @@ const getHfInterface = memoize(
  * @param {string} fileName
  */
 export async function isExistingImage(fileName, branch = MainBranch) {
-  return !!await getFullImagePath(fileName, branch);
+  return !!(await getFullImagePath(fileName, branch));
 }
 
 /**
@@ -53,12 +53,13 @@ export async function isExistingImage(fileName, branch = MainBranch) {
  * @param {string} split
  * @param {string} label
  * @param {string} fileName
+ * @param {{branch?: string, pendingPaths?: string[]}} options
  */
 export async function getPathForImage(
   split,
   label,
   fileName,
-  branch = MainBranch
+  { branch = MainBranch, pendingPaths = [] } = {}
 ) {
   let subsetIdx;
   for (subsetIdx = 0; ; subsetIdx++) {
@@ -79,8 +80,13 @@ export async function getPathForImage(
       break;
     }
 
+    // Start the count with the number of
+    // pending uploads for this path
+    let count = pendingPaths.filter((pending) =>
+      pending.startsWith(path)
+    ).length;
+
     // Add any found images to the cache
-    let count = 0;
     for await (const image of images) {
       if (image.type === 'file') count++;
     }
@@ -217,7 +223,7 @@ export async function getImageClassification(args, options) {
 }
 
 /**
- * @param {string} fileName 
+ * @param {string} fileName
  */
 async function getFullImagePath(fileName, branch = MainBranch) {
   // Will abort other requests
@@ -244,7 +250,7 @@ async function getFullImagePath(fileName, branch = MainBranch) {
       return await firstResult(labels, async (label) => {
         if (label.type !== 'directory') return;
         const filePath = `${label.path}/${fileName}`;
-        
+
         const found = await fileExists({
           path: filePath,
           repo: DatasetRepo,
