@@ -83,7 +83,7 @@ export async function getPathForImage(
     // Start the count with the number of
     // pending uploads for this path
     let count = pendingPaths.filter((pending) =>
-      pending.startsWith(path)
+      path.startsWith(pending)
     ).length;
 
     // Add any found images to the cache
