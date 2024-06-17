@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
-    "module": "Preserve",
-  }
+    "target": "ES2022",
+    "module": "Preserve"
+  },
+  "exclude": ["node_modules"]
 }

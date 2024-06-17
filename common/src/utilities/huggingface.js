@@ -12,6 +12,7 @@ import memoize from 'memoize';
 import { basename, dirname } from 'path';
 
 import { TimeSpan } from './TimeSpan.js';
+import { firstResult } from './async.js';
 
 export const MainBranch = 'main';
 export const DataPath = 'data';
@@ -35,101 +36,16 @@ const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
 /** @type {{accessToken: string}} */
 const credentials = {};
 
-/** @type {Map<string, string>} */
-const existingImages = new Map();
-
-/** @type {{[key: string]: {[key: string]: number[]}}} */
-const subsetCounts = {
-  [TrainSplit]: {
-    [RealLabel]: [0],
-    [AiLabel]: [0],
-  },
-  [TestSplit]: {
-    [RealLabel]: [0],
-    [AiLabel]: [0],
-  },
-};
-
 const getHfInterface = memoize(
   () => new HfInference(credentials?.accessToken),
   { cacheKey: () => credentials?.accessToken }
 );
 
-export const preloadExistingImages = memoize(
-  /** @param {string} branch */
-  async (branch = MainBranch) => {
-    // Check all files in the data folder
-    const files = listFiles({
-      path: DataPath,
-      repo: DatasetRepo,
-      revision: branch,
-      recursive: true,
-      credentials,
-    });
-
-    // Track all files and subset counts
-    for await (const file of files) {
-      if (file.type !== 'file') continue;
-      existingImages.set(basename(file.path), file.path);
-
-      const { split, label, subsetIdx } = parseImagePath(file.path);
-      incrementSubsetCount(split, label, subsetIdx);
-    }
-  }
-);
-
 /**
  * @param {string} fileName
  */
-export async function isExistingImage(
-  fileName,
-  { branch = MainBranch, skipCache = false } = {}
-) {
-  // If using the cache, preload then check stored images
-  if (!skipCache) {
-    await preloadExistingImages(branch);
-    return existingImages.has(fileName);
-  }
-
-  // If not using the cache, check all splits/labels/subsets
-  for (const split of AllSplits) {
-    const subsets = listFiles({
-      path: `${DataPath}/${split}`,
-      repo: DatasetRepo,
-      revision: branch,
-      credentials,
-    });
-
-    for await (const subset of subsets) {
-      if (subset.type !== 'directory') continue;
-      const labels = listFiles({
-        path: subset.path,
-        repo: DatasetRepo,
-        revision: branch,
-        credentials,
-      });
-
-      for await (const label of labels) {
-        if (label.type !== 'directory') continue;
-        const filePath = `${label.path}/${fileName}`;
-        const exists = await fileExists({
-          path: filePath,
-          repo: DatasetRepo,
-          revision: branch,
-          credentials,
-        });
-
-        if (exists) {
-          existingImages.set(fileName, filePath);
-          return true;
-        }
-      }
-    }
-  }
-
-  // If the image couldn't be found remove it from the cache
-  existingImages.delete(fileName);
-  return false;
+export async function isExistingImage(fileName, branch = MainBranch) {
+  return !!await getFullImagePath(fileName, branch);
 }
 
 /**
@@ -142,61 +58,40 @@ export async function getPathForImage(
   split,
   label,
   fileName,
-  { branch = MainBranch, skipCache = false } = {}
+  branch = MainBranch
 ) {
   let subsetIdx;
-  if (!skipCache) {
-    // If using the cache, preload then find the first subset with room
-    await preloadExistingImages(branch);
-    const subsets = subsetCounts[split][label];
-    subsetIdx = subsets.findIndex((size) => size < MaxSubsetSize);
-    if (subsetIdx === -1) subsetIdx = subsets.length;
-  } else {
-    // If not using the cache, check existing subsets
-    for (subsetIdx = 0; ; subsetIdx++) {
-      const subset = `set-${String(subsetIdx).padStart(3, '0')}`;
-      const path = `${DataPath}/${split}/${subset}/${label}`;
+  for (subsetIdx = 0; ; subsetIdx++) {
+    const subset = `set-${String(subsetIdx).padStart(3, '0')}`;
+    const path = `${DataPath}/${split}/${subset}/${label}`;
 
-      try {
-        const images = listFiles({
-          path,
-          repo: DatasetRepo,
-          revision: branch,
-          credentials,
-        });
-
-        // Add any found images to the cache
-        for await (const image of images) {
-          if (image.type !== 'file') continue;
-          incrementSubsetCount(split, label, subsetIdx);
-          existingImages.set(basename(image.path), image.path);
-        }
-
-        // Move to the next subset once the count is at max
-        const subsetCount = subsetCounts[split][label][subsetIdx];
-        if (subsetCount < MaxSubsetSize) break;
-      } catch {
-        break;
-      }
+    // Check how many images are in the folder
+    let images;
+    try {
+      images = listFiles({
+        path,
+        repo: DatasetRepo,
+        revision: branch,
+        credentials,
+      });
+    } catch {
+      // If the list fails this subset is new
+      break;
     }
+
+    // Add any found images to the cache
+    let count = 0;
+    for await (const image of images) {
+      if (image.type === 'file') count++;
+    }
+
+    // Use this subset if the count isn't at max
+    if (count < MaxSubsetSize) break;
   }
 
   // Create a path using the open subset, track in the cache
-  incrementSubsetCount(split, label, subsetIdx);
   const subset = `set-${String(subsetIdx).padStart(3, '0')}`;
-  const path = `${DataPath}/${split}/${subset}/${label}/${fileName}`;
-
-  existingImages.set(fileName, path);
-  return path;
-}
-
-/**
- * @param {string} path
- */
-export function releaseImagePath(path) {
-  existingImages.delete(basename(path));
-  const { split, label, subsetIdx } = parseImagePath(path);
-  decrementSubsetCount(split, label, subsetIdx);
+  return `${DataPath}/${split}/${subset}/${label}/${fileName}`;
 }
 
 /**
@@ -205,8 +100,8 @@ export function releaseImagePath(path) {
 export async function replaceWithRetry(file, branch = MainBranch) {
   // Error if the files doesn't exists already
   const fileName = basename(file.path);
-  const oldPath = existingImages.get(fileName);
-  if (!oldPath) throw new Error('File to move missing from HF');
+  const oldPath = await getFullImagePath(fileName);
+  if (!oldPath) throw new Error('File to replace missing from HF');
 
   // Skip if the old and new labels are the same
   const { label: oldLabel } = parseImagePath(oldPath);
@@ -263,7 +158,6 @@ export async function replaceWithRetry(file, branch = MainBranch) {
   }
 
   // Update the cache
-  existingImages.set(fileName, file.path);
   return true;
 }
 
@@ -323,27 +217,53 @@ export async function getImageClassification(args, options) {
 }
 
 /**
- * @param {string} split
- * @param {string} label
- * @param {number} subsetIdx
+ * @param {string} fileName 
  */
-function incrementSubsetCount(split, label, subsetIdx, increment = 1) {
-  const subsets = subsetCounts[split][label];
-  if (subsets[subsetIdx]) {
-    subsets[subsetIdx] += increment;
-  } else {
-    subsets[subsetIdx] = increment;
-  }
-}
+async function getFullImagePath(fileName, branch = MainBranch) {
+  // Will abort other requests
+  const abort = new AbortController();
 
-/**
- * @param {string} split
- * @param {string} label
- * @param {number} subsetIdx
- */
-function decrementSubsetCount(split, label, subsetIdx, decrement = 1) {
-  const subsets = subsetCounts[split][label];
-  if (subsets[subsetIdx]) subsets[subsetIdx] -= decrement;
+  // If not using the cache, check all splits/labels/subsets
+  const result = await firstResult(AllSplits, async (split) => {
+    const subsets = listFiles({
+      path: `${DataPath}/${split}`,
+      repo: DatasetRepo,
+      revision: branch,
+      credentials,
+    });
+
+    return await firstResult(subsets, async (subset) => {
+      if (subset.type !== 'directory') return;
+      const labels = listFiles({
+        path: subset.path,
+        repo: DatasetRepo,
+        revision: branch,
+        credentials,
+      });
+
+      return await firstResult(labels, async (label) => {
+        if (label.type !== 'directory') return;
+        const filePath = `${label.path}/${fileName}`;
+        
+        const found = await fileExists({
+          path: filePath,
+          repo: DatasetRepo,
+          revision: branch,
+          credentials,
+          fetch: (input, init) =>
+            fetch(input, {
+              ...init,
+              signal: abort.signal,
+            }),
+        });
+
+        if (found) return filePath;
+      });
+    });
+  });
+
+  abort.abort();
+  return result;
 }
 
 /**
@@ -360,5 +280,5 @@ function parseImagePath(path) {
   const splitDir = dirname(subsetDir);
   const split = basename(splitDir);
 
-  return { split, label, subsetIdx };
+  return { split, label, subset, subsetIdx };
 }

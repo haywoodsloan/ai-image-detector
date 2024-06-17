@@ -9,7 +9,6 @@ import {
   TrainSplit,
   getPathForImage,
   isExistingImage,
-  preloadExistingImages,
   setHfAccessToken,
   uploadWithRetry,
 } from 'common/utilities/huggingface.js';
@@ -97,9 +96,6 @@ const scrappedUrls = new Set();
 // Parse local settings for Hugging Face credentials
 const { hfKey } = await loadSettings();
 setHfAccessToken(hfKey);
-
-// Start preloading the existing image names
-preloadExistingImages();
 
 // Determine the train and test paths
 const label = args.real ? RealLabel : AiLabel;
@@ -212,7 +208,7 @@ try {
 
         validationQueue.add(validation);
         if (validationQueue.size >= UploadBatchSize) {
-          const results = await Promise.all(Array.from(validationQueue));
+          const results = await Promise.all([...validationQueue]);
           const uploads = results.filter(Boolean);
 
           // Skip uploading if less than the batch size after validation
@@ -250,7 +246,7 @@ try {
       // Scroll to load more images
       await page.evaluate(
         (selector, remainder) => {
-          const elements = Array.from(document.querySelectorAll(selector));
+          const elements = [...document.querySelectorAll(selector)];
           elements.slice(0, -remainder).forEach((element) => element.remove());
           window.scrollBy(0, document.body.scrollHeight);
         },
@@ -293,7 +289,7 @@ try {
 
 // Upload the remaining files to Hugging Face
 if (validationQueue.size) {
-  const results = await Promise.all(Array.from(validationQueue));
+  const results = await Promise.all([...validationQueue]);
   const uploads = results.filter(Boolean);
 
   pendingUploads.add(
@@ -305,7 +301,7 @@ if (validationQueue.size) {
 }
 
 // Wait for all pending uploads to finish
-await Promise.all(Array.from(pendingUploads));
+await Promise.all([...pendingUploads]);
 
 // Close browser and finish
 await browser.close();

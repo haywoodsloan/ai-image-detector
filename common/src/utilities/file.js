@@ -49,7 +49,7 @@ export async function* readLines(path) {
  */
 export async function appendLines(path, lines) {
   if (Array.isArray(lines)) {
-    await appendFile(path, lines.join(EOL));
+    await appendFile(path, lines.join(EOL) + EOL);
   } else {
     const stream = createWriteStream(path, { flags: 'a' });
     for await (const line of lines) {

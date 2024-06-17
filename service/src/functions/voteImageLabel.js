@@ -4,7 +4,6 @@ import {
   AllLabels,
   TrainSplit,
   getPathForImage,
-  isExistingImage,
   replaceWithRetry,
   uploadWithRetry,
 } from 'common/utilities/huggingface.js';
@@ -90,26 +89,22 @@ async function upload(data, url, label) {
 
   // Get an available upload path for the new image
   const fileName = sanitize(`${hash}${ext}`);
-  const uploadPath = await getPathForImage(TrainSplit, label, fileName, {
-    branch: PendingBranch,
-    skipCache: true,
-  });
+  const uploadPath = await getPathForImage(
+    TrainSplit,
+    label,
+    fileName,
+    PendingBranch
+  );
 
   const upload = { path: uploadPath, content: new Blob([data]) };
-  const isExisting = await isExistingImage(fileName, {
-    branch: PendingBranch,
-    skipCache: true,
-  });
-
-  if (isExisting) {
+  try {
     // If an existing image either replace ir or skip the image (if label is the same)
     (await replaceWithRetry(upload, PendingBranch))
       ? console.log(l`Image replaced on Hugging Face ${{ file: uploadPath }}`)
       : console.log(l`Matching image on Hugging Face ${{ file: uploadPath }}`);
-    return;
+  } catch {
+    // If replace errors then it's a new file to upload
+    await uploadWithRetry([upload], PendingBranch);
+    console.log(l`Image uploaded to Hugging Face ${{ file: uploadPath }}`);
   }
-
-  // If a new image just upload it
-  await uploadWithRetry([upload], PendingBranch);
-  console.log(l`Image uploaded to Hugging Face ${{ file: uploadPath }}`);
 }
