@@ -66,3 +66,4 @@ export class TimeSpan {
     return this.#value;
   }
 }
+export default TimeSpan;

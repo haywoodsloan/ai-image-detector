@@ -3,6 +3,7 @@
  * @param {AbortSignal} signal
  */
 export async function wait(delay, signal = null) {
+  if (!delay) return;
   await new Promise((res, rej) => {
     // Make sure the signal isn't already aborted
     if (signal?.aborted) {

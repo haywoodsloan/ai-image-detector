@@ -1,21 +1,23 @@
-import { TimeSpan } from 'common/utilities/TimeSpan.js';
+import TimeSpan from 'common/utilities/TimeSpan.js';
 import { b, g, r, y } from 'common/utilities/colors.js';
-import { appendLines, readLines } from 'common/utilities/file.js';
 import { hashImage } from 'common/utilities/hash.js';
 import {
   AiLabel,
   RealLabel,
   TestSplit,
   TrainSplit,
+  fetchKnownUrls,
   isExistingImage,
   setHfAccessToken,
   uploadImages,
+  uploadKnownUrls,
 } from 'common/utilities/huggingface.js';
 import { sanitizeImage } from 'common/utilities/image.js';
+import { withRetry } from 'common/utilities/retry.js';
 import { loadSettings } from 'common/utilities/settings.js';
 import { wait } from 'common/utilities/sleep.js';
 import { mkdir, writeFile } from 'fs/promises';
-import { basename, dirname, extname, join } from 'path';
+import { basename, extname, join } from 'path';
 import { launch } from 'puppeteer';
 import sanitize from 'sanitize-filename';
 import { fileURLToPath } from 'url';
@@ -57,8 +59,6 @@ const RealSubReddits = [
 ];
 
 const LogPath = '.log/';
-const UrlCachePath = '.cache/urls.txt';
-
 const WindowHeight = 1250;
 const WindowWidth = 1650;
 const ChromeUA = new UserAgent([
@@ -109,21 +109,14 @@ const browser = await launch({
 const page = await browser.newPage();
 await page.setUserAgent(ChromeUA);
 
-try {
-  // Load the previously scrapped URLs from the cache file
-  const urls = readLines(UrlCachePath);
-  for await (const url of urls) scrappedUrls.add(url);
-} catch {
-  /* file doesn't exists */
-}
+const urls = await fetchKnownUrls();
+for await (const url of urls) scrappedUrls.add(url);
 
 // Browse to multiple Subreddits and scrape files
 const redditUrls = args.real ? RealSubReddits : AiSubReddits;
 let count = 0;
 
 try {
-  // Make sure the cache directory exists
-  await mkdir(dirname(UrlCachePath), { recursive: true });
   for (let i = 0; i < redditUrls.length && count < args.count; i++) {
     // Navigate to the page and wait for network traffic to settle
     const redditUrl = redditUrls[i];
@@ -131,21 +124,17 @@ try {
     await page.goto(redditUrl, { waitUntil: 'networkidle2' });
 
     // Wait for the loader to appear so we know the posts will load.
-    let retryCount = 0;
-    while (true) {
-      try {
+    const retry = withRetry(RetryLimit, RedditErrorDelay);
+    await retry(
+      async () => {
         await page.waitForSelector(LoaderSelector);
         console.log(g`Successfully loaded ${redditUrl}`);
-        break;
-      } catch (error) {
-        if (retryCount >= RetryLimit) throw error;
+      },
+      async () => {
         console.log(r`Subreddit loading failed, refreshing`);
-        await wait(RedditErrorDelay);
-
         await page.reload({ waitUntil: 'networkidle2' });
-        retryCount++;
       }
-    }
+    );
 
     // Start scrapping images and scrolling through the page
     while (true) {
@@ -167,8 +156,8 @@ try {
         const origin = urls[i];
 
         // Skip urls to images that have already been scrapped
-        if (scrappedUrls.has(origin.href)) continue;
-        scrappedUrls.add(origin.href);
+        if (scrappedUrls.has(origin.toString())) continue;
+        scrappedUrls.add(origin.toString());
 
         /** @type {Promise<HfImage?>} */
         const validation = (async () => {
@@ -191,6 +180,7 @@ try {
 
           // Skip existing files
           if (await isExistingImage(fileName)) {
+            await uploadKnownUrls([origin]);
             validationQueue.delete(validation);
             return;
           }
@@ -213,11 +203,9 @@ try {
           // Skip uploading if less than the batch size after validation
           if (images.length < UploadBatchSize) continue;
 
-          const pendingUpload = uploadImages(images).then(async () => {
-            const newUrls = images.map(({ origin }) => origin.href);
-            await appendLines(UrlCachePath, newUrls);
-            pendingUploads.delete(pendingUpload);
-          });
+          const pendingUpload = uploadImages(images).then(async () =>
+            pendingUploads.delete(pendingUpload)
+          );
 
           pendingUploads.add(pendingUpload);
           validationQueue.clear();
@@ -290,13 +278,7 @@ try {
 if (validationQueue.size) {
   const results = await Promise.all([...validationQueue]);
   const uploads = results.filter(Boolean);
-
-  pendingUploads.add(
-    uploadImages(uploads).then(async () => {
-      const newUrls = uploads.map(({ origin }) => origin.href);
-      await appendLines(UrlCachePath, newUrls);
-    })
-  );
+  pendingUploads.add(uploadImages(uploads));
 }
 
 // Wait for all pending uploads to finish

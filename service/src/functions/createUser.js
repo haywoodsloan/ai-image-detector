@@ -1,5 +1,5 @@
 import { app } from '@azure/functions';
-import { TimeSpan } from 'common/utilities/TimeSpan.js';
+import TimeSpan from 'common/utilities/TimeSpan.js';
 import { isLocal } from 'common/utilities/environment.js';
 import { l, randomString } from 'common/utilities/string.js';
 

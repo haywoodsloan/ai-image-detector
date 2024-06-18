@@ -1,5 +1,6 @@
 import {
   deleteFile,
+  downloadFile,
   fileExists,
   listFiles,
   uploadFile,
@@ -11,11 +12,14 @@ import { wait } from 'common/utilities/sleep.js';
 import memoize from 'memoize';
 import { basename, dirname } from 'path';
 
-import { TimeSpan } from './TimeSpan.js';
+import ActionQueue from './ActionQueue.js';
+import TimeSpan from './TimeSpan.js';
 import { firstResult } from './async.js';
+import { withRetry } from './retry.js';
 
 export const MainBranch = 'main';
 export const DataPath = 'data';
+export const UrlListPath = `${DataPath}/urls.txt`;
 
 export const TrainSplit = 'train';
 export const TestSplit = 'test';
@@ -38,6 +42,7 @@ const credentials = {};
 
 /** @type {Set<string>} */
 const pendingPaths = new Set();
+const urlUploadQueue = new ActionQueue();
 
 const getHfInterface = memoize(
   () => new HfInference(credentials?.accessToken),
@@ -70,32 +75,23 @@ export async function replaceImage(image, branch = MainBranch) {
   pendingPaths.add(upload.path);
 
   // First delete the old image
-  let retryCount = 0;
-  while (true) {
-    try {
+  const retry = withRetry(RetryLimit, HuggingFaceErrorDelay);
+  await retry(
+    async () => {
       await deleteFile({
         branch,
         repo: DatasetRepo,
         credentials,
         path: oldPath,
       });
-
       console.log(y`Successfully deleted old file: ${oldPath}`);
-      break;
-    } catch (error) {
-      if (retryCount < RetryLimit) {
-        // Retry after a few seconds for other errors
-        retryCount++;
-        console.warn(r`Retrying delete after error: ${error.message}`);
-        await wait(HuggingFaceErrorDelay * retryCount);
-      } else throw error;
-    }
-  }
+    },
+    (error) => console.warn(r`Retrying delete after error: ${error.message}`)
+  );
 
   // Next upload the new image
-  retryCount = 0;
-  while (true) {
-    try {
+  await retry(
+    async () => {
       await uploadFile({
         file: upload,
         repo: DatasetRepo,
@@ -106,17 +102,9 @@ export async function replaceImage(image, branch = MainBranch) {
 
       console.log(g`Successfully moved file: ${upload.path}`);
       pendingPaths.delete(upload.path);
-
-      break;
-    } catch (error) {
-      if (retryCount < RetryLimit) {
-        // Retry after a few seconds for other errors
-        retryCount++;
-        console.warn(r`Retrying upload after error: ${error.message}`);
-        await wait(HuggingFaceErrorDelay * retryCount);
-      } else throw error;
-    }
-  }
+    },
+    (error) => console.warn(r`Retrying upload after error: ${error.message}`)
+  );
 
   // Return true if successfully replaced
   return true;
@@ -133,9 +121,10 @@ export async function uploadImages(images, branch = MainBranch) {
   for (const { path } of uploads) pendingPaths.add(path);
 
   // Start a retry loop
-  let retryCount = 0;
-  while (true) {
-    try {
+  const retry = withRetry(RetryLimit, HuggingFaceErrorDelay);
+  await retry(
+    async () => {
+      // Upload the images and url update
       await uploadFiles({
         files: uploads,
         repo: DatasetRepo,
@@ -144,24 +133,83 @@ export async function uploadImages(images, branch = MainBranch) {
         useWebWorkers: true,
       });
 
+      // Remove the pending paths once uploaded
       console.log(g`${images.length} files successfully uploaded`);
       for (const { path } of uploads) pendingPaths.delete(path);
 
-      break;
-    } catch (error) {
+      // Add the new URLs too
+      await uploadKnownUrls(images.map(({ origin }) => origin));
+    },
+    async (error, retryCount) => {
       if (error.statusCode === 429) {
         // Warn about rate limiting and wait a few minutes
+        await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
         const delay = RateLimitDelay / 60 / 1000;
         console.warn(r`Rate-limited, waiting ${delay} mins`);
-        await wait(RateLimitDelay);
-      } else if (retryCount < RetryLimit) {
-        // Retry after a few seconds for other errors
-        retryCount++;
-        console.warn(r`Retrying upload after error: ${error.message}`);
-        await wait(HuggingFaceErrorDelay * retryCount);
-      } else throw error;
+      } else console.warn(r`Retrying upload after error: ${error.message}`);
     }
-  }
+  );
+}
+
+export async function fetchKnownUrls(branch = MainBranch) {
+  const retry = withRetry(RetryLimit, HuggingFaceErrorDelay);
+  return await retry(
+    async () => {
+      const exists = await fileExists({
+        path: UrlListPath,
+        repo: DatasetRepo,
+        revision: branch,
+        credentials,
+      });
+
+      // If the file doesn't exists just return an empty array
+      if (!exists) return [];
+
+      // Get the latest url list
+      const urlFile = await downloadFile({
+        path: UrlListPath,
+        repo: DatasetRepo,
+        revision: branch,
+        credentials,
+      });
+
+      // Split the urls by line
+      const urlStr = await urlFile.text();
+      return urlStr.split(/\r?\n/).filter(Boolean);
+    },
+    (error) =>
+      console.warn(r`Retrying url list fetch after error: ${error.message}`)
+  );
+}
+
+/**
+ * @param {(string | URL)[]} urls
+ */
+export async function uploadKnownUrls(urls, branch = MainBranch) {
+  if (!urls.length) return;
+  await urlUploadQueue.queue(async () => {
+    // Get the current list of urls and
+    const allUrls = await fetchKnownUrls(branch);
+    allUrls.push(...urls.map((url) => url.toString()));
+
+    const urlData = new Blob([allUrls.join('\n')]);
+    const urlsUpload = { path: UrlListPath, content: urlData };
+
+    const retry = withRetry(RetryLimit, HuggingFaceErrorDelay);
+    await retry(
+      async () => {
+        await uploadFile({
+          file: urlsUpload,
+          repo: DatasetRepo,
+          branch,
+          credentials,
+          useWebWorkers: true,
+        });
+      },
+      (error) =>
+        console.warn(r`Retrying url list upload after error: ${error.message}`)
+    );
+  });
 }
 
 /**
