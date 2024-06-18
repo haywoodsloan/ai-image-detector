@@ -143,24 +143,25 @@ export async function uploadImages(images, branch = MainBranch) {
       // Create a set of upload for the image
       // Recreate with each retry incase the folders are now full
       const uploads = await createUploads(newImages.filter(Boolean));
-      for (const { path } of uploads) pendingPaths.add(path);
-
-      try {
-        // Upload the images and url update
-        await uploadFiles({
-          files: uploads,
-          repo: DatasetRepo,
-          branch,
-          credentials,
-          useWebWorkers: true,
-        });
-      } finally {
-        // Remove the pending paths either way because we'll get new paths
-        for (const { path } of uploads) pendingPaths.delete(path);
+      if (uploads.length) {
+        for (const { path } of uploads) pendingPaths.add(path);
+        try {
+          // Upload the images and url update
+          await uploadFiles({
+            files: uploads,
+            repo: DatasetRepo,
+            branch,
+            credentials,
+            useWebWorkers: true,
+          });
+        } finally {
+          // Remove the pending paths either way because we'll get new paths
+          for (const { path } of uploads) pendingPaths.delete(path);
+        }
+        console.log(g`${uploads.length} files successfully uploaded`);
       }
 
       // Add all urls to the known list even if we skipped them
-      console.log(g`${uploads.length} files successfully uploaded`);
       await uploadKnownUrls(images.map(({ origin }) => origin));
     },
     async (error, retryCount) => {
