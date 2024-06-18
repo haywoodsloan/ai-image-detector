@@ -10,13 +10,17 @@ export class ActionQueue {
    * @param {() => Promise<T> | T} action
    */
   queue(action) {
-    return new Promise((res) => {
-      this.#actionQueue.push(async () => res(await action()));
+    return new Promise((res, rej) => {
+      this.#actionQueue.push(action);
       if (!this.#actionLoop) {
         this.#actionLoop = (async () => {
           while (this.#actionQueue.length) {
             const action = this.#actionQueue.shift();
-            res(await action());
+            try {
+              res(await action());
+            } catch (error) {
+              rej(error);
+            }
           }
           this.#actionLoop = null;
         })();

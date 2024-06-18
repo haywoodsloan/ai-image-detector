@@ -26,7 +26,7 @@ function interpolate(strs, ...args) {
 
   for (; idx < strs.length; idx++) {
     builder.push(strs[idx]);
-    if (args[idx]) builder.push(`${args[idx]}`);
+    if (args.length > idx) builder.push(`${args[idx]}`);
   }
 
   for (; idx < args.length; idx++) {
