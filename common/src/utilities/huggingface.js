@@ -69,10 +69,7 @@ export async function replaceImage(image, branch = MainBranch) {
   // Return false to indicate no change was made
   const { label: oldLabel } = parsePath(oldPath);
   if (oldLabel === newLabel) return false;
-
-  const [upload] = await createUploads([image], branch);
-  console.log(y`Moving file on HF: ${oldPath} => ${upload.path}`);
-  pendingPaths.add(upload.path);
+  console.log(y`Moving file on HF: ${fileName}`);
 
   // First delete the old image
   const retry = withRetry(RetryLimit, HuggingFaceErrorDelay);
@@ -86,24 +83,36 @@ export async function replaceImage(image, branch = MainBranch) {
       });
       console.log(y`Successfully deleted old file: ${oldPath}`);
     },
-    (error) => console.warn(r`Retrying delete after error: ${error.message}`)
+    (error) => {
+      console.warn(r`Retrying delete after error: ${error.message}`);
+    }
   );
 
   // Next upload the new image
   await retry(
     async () => {
-      await uploadFile({
-        file: upload,
-        repo: DatasetRepo,
-        branch,
-        credentials,
-        useWebWorkers: true,
-      });
+      // Create a new upload for the replacement
+      const [upload] = await createUploads([image], branch);
+      pendingPaths.add(upload.path);
 
+      try {
+        // Upload the file in the new location
+        await uploadFile({
+          file: upload,
+          repo: DatasetRepo,
+          branch,
+          credentials,
+          useWebWorkers: true,
+        });
+      } finally {
+        // Remove the pending paths either way because we'll get new paths
+        pendingPaths.delete(upload.path);
+      }
       console.log(g`Successfully moved file: ${upload.path}`);
-      pendingPaths.delete(upload.path);
     },
-    (error) => console.warn(r`Retrying upload after error: ${error.message}`)
+    (error) => {
+      console.warn(r`Retrying upload after error: ${error.message}`);
+    }
   );
 
   // Return true if successfully replaced
@@ -117,27 +126,41 @@ export async function uploadImages(images, branch = MainBranch) {
   // Skip if no images in the array
   if (!images.length) return;
   console.log(y`Uploading ${images.length} files to HF`);
-  const uploads = await createUploads(images);
-  for (const { path } of uploads) pendingPaths.add(path);
 
   // Start a retry loop
   const retry = withRetry(RetryLimit, HuggingFaceErrorDelay);
   await retry(
     async () => {
-      // Upload the images and url update
-      await uploadFiles({
-        files: uploads,
-        repo: DatasetRepo,
-        branch,
-        credentials,
-        useWebWorkers: true,
-      });
+      // Double check that all the images are new
+      // A duplicate image may have been added since validation
+      const newImages = await Promise.all(
+        images.map(async (image) => {
+          if (!(await isExistingImage(image.fileName))) return image;
+          console.log(y`Skipping: ${image.fileName} [Image already on HF]`);
+        })
+      );
 
-      // Remove the pending paths once uploaded
-      console.log(g`${images.length} files successfully uploaded`);
-      for (const { path } of uploads) pendingPaths.delete(path);
+      // Create a set of upload for the image
+      // Recreate with each retry incase the folders are now full
+      const uploads = await createUploads(newImages.filter(Boolean));
+      for (const { path } of uploads) pendingPaths.add(path);
 
-      // Add the new URLs too
+      try {
+        // Upload the images and url update
+        await uploadFiles({
+          files: uploads,
+          repo: DatasetRepo,
+          branch,
+          credentials,
+          useWebWorkers: true,
+        });
+      } finally {
+        // Remove the pending paths either way because we'll get new paths
+        for (const { path } of uploads) pendingPaths.delete(path);
+      }
+
+      // Add all urls to the known list even if we skipped them
+      console.log(g`${uploads.length} files successfully uploaded`);
       await uploadKnownUrls(images.map(({ origin }) => origin));
     },
     async (error, retryCount) => {
@@ -177,8 +200,9 @@ export async function fetchKnownUrls(branch = MainBranch) {
       const urlStr = await urlFile.text();
       return urlStr.split(/\r?\n/).filter(Boolean);
     },
-    (error) =>
-      console.warn(r`Retrying url list fetch after error: ${error.message}`)
+    (error) => {
+      console.warn(r`Retrying url list fetch after error: ${error.message}`);
+    }
   );
 }
 
@@ -188,11 +212,16 @@ export async function fetchKnownUrls(branch = MainBranch) {
 export async function uploadKnownUrls(urls, branch = MainBranch) {
   if (!urls.length) return;
   await urlUploadQueue.queue(async () => {
-    // Get the current list of urls and
-    const allUrls = await fetchKnownUrls(branch);
-    allUrls.push(...urls.map((url) => url.toString()));
+    // Get the current list of urls and the count
+    const allUrls = new Set(await fetchKnownUrls(branch));
+    const oldSize = allUrls.size;
 
-    const urlData = new Blob([allUrls.join('\n')]);
+    // Add the new urls to the set, don't upload if nothing new
+    for (const url of urls) allUrls.add(url.toString());
+    if (allUrls.size === oldSize) return;
+
+    // Build the url list upload data
+    const urlData = new Blob([[...allUrls].join('\n')]);
     const urlsUpload = { path: UrlListPath, content: urlData };
 
     const retry = withRetry(RetryLimit, HuggingFaceErrorDelay);
@@ -206,8 +235,9 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
           useWebWorkers: true,
         });
       },
-      (error) =>
-        console.warn(r`Retrying url list upload after error: ${error.message}`)
+      (error) => {
+        console.warn(r`Retrying url list upload after error: ${error.message}`);
+      }
     );
   });
 }
@@ -247,16 +277,9 @@ async function getFullImagePath(fileName, branch = MainBranch) {
 
     return await firstResult(subsets, async (subset) => {
       if (subset.type !== 'directory') return;
-      const labels = listFiles({
-        path: subset.path,
-        repo: DatasetRepo,
-        revision: branch,
-        credentials,
-      });
 
-      return await firstResult(labels, async (label) => {
-        if (label.type !== 'directory') return;
-        const filePath = `${label.path}/${fileName}`;
+      return await firstResult(AllLabels, async (label) => {
+        const filePath = `${subset.path}/${label}/${fileName}`;
 
         const found = await fileExists({
           path: filePath,

@@ -7,10 +7,8 @@ import {
   TestSplit,
   TrainSplit,
   fetchKnownUrls,
-  isExistingImage,
   setHfAccessToken,
   uploadImages,
-  uploadKnownUrls,
 } from 'common/utilities/huggingface.js';
 import { sanitizeImage } from 'common/utilities/image.js';
 import { withRetry } from 'common/utilities/retry.js';
@@ -178,15 +176,8 @@ try {
           const ext = extname(origin.pathname);
           const fileName = sanitize(`${hash}${ext}`);
 
-          // Skip existing files
-          if (await isExistingImage(fileName)) {
-            await uploadKnownUrls([origin]);
-            validationQueue.delete(validation);
-            return;
-          }
-
           // Get a split to add the image to
-          console.log(b`Found: ${fileName}`);
+          console.log(b`Found: ${fileName} at ${origin}`);
           const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
 
           // Increase the total count and return an image object
