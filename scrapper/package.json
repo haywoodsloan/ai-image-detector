@@ -22,19 +22,19 @@
   "dependencies": {
     "common": "file:../common",
     "looks-same": "^9.0.0",
-    "puppeteer": "^22.10.0",
+    "puppeteer": "^22.11.2",
     "sanitize-filename": "^1.6.3",
     "sharp": "^0.32.6",
-    "user-agents": "^1.1.223",
+    "user-agents": "^1.1.241",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.2.0",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "eslint": "^9.4.0",
+    "eslint": "^9.5.0",
     "eslint-config-prettier": "^9.1.0",
-    "globals": "^15.3.0",
-    "prettier": "^3.3.0"
+    "globals": "^15.6.0",
+    "prettier": "^3.3.2"
   },
   "engines": {
     "node": ">=20"

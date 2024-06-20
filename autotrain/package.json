@@ -35,17 +35,17 @@
   "license": "ISC",
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "eslint": "^9.4.0",
+    "eslint": "^9.5.0",
     "eslint-config-prettier": "^9.1.0",
-    "globals": "^15.3.0",
-    "prettier": "^3.3.0"
+    "globals": "^15.6.0",
+    "prettier": "^3.3.2"
   },
   "dependencies": {
     "common": "file:../common",
     "deepmerge": "^4.3.1",
     "handlebars": "^4.7.8",
     "npm-run-all": "^4.1.5",
-    "yaml": "^2.4.3",
+    "yaml": "^2.4.5",
     "yargs": "^17.7.2"
   },
   "engines": {

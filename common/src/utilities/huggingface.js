@@ -75,17 +75,18 @@ export async function replaceImage(image, branch = MainBranch) {
   // Error if the files doesn't exists already
   const { fileName, label: newLabel } = image;
   const oldPath = await getFullImagePath(fileName, branch);
-  if (!oldPath) throw new Error('File to replace missing from HF');
+  if (!oldPath) throw new Error('Image to replace missing from HF');
 
   // Skip if the old and new labels are the same
   // Return false to indicate no change was made
   const { label: oldLabel } = parsePath(oldPath);
   if (oldLabel === newLabel) return false;
-  console.log(y`Moving file on HF ${fileName}`);
 
   // Move the image
   await retry(
     async () => {
+      console.log(y`Moving image on HF ${fileName}`);
+
       // Create a new upload for the replacement
       const [upload] = await createUploads([image], branch);
       pendingPaths.add(upload.path);
@@ -108,7 +109,7 @@ export async function replaceImage(image, branch = MainBranch) {
       }
 
       // Add the new image's url
-      console.log(y`Successfully moved file ${oldPath} => ${upload.path}`);
+      console.log(y`Successfully moved image ${oldPath} => ${upload.path}`);
       await uploadKnownUrls([upload.origin], branch);
     },
     (error) => {
@@ -126,17 +127,18 @@ export async function replaceImage(image, branch = MainBranch) {
 export async function uploadImages(images, branch = MainBranch) {
   // Skip if no images in the array
   if (!images.length) return;
-  console.log(y`Uploading ${images.length} file(s) to HF`);
 
   // Start a retry loop
   await retry(
     async () => {
+      console.log(y`Uploading ${images.length} image(s) to HF`);
+
       // Double check that all the images are new
       // A duplicate image may have been added since validation
       const newImages = await Promise.all(
         images.map(async (image) => {
           if (!(await isExistingImage(image.fileName, branch))) return image;
-          console.log(y`Skipping ${image.fileName} [Image already on HF]`);
+          console.log(y`Skipping ${image.fileName} [image already on HF]`);
         })
       );
 
@@ -162,9 +164,9 @@ export async function uploadImages(images, branch = MainBranch) {
           // Remove the pending paths either way because we'll get new paths
           for (const { path } of uploads) pendingPaths.delete(path);
         }
-        
+
         const skippedCt = images.length - uploadCt;
-        console.log(g`${uploadCt} file(s) uploaded [${skippedCt} skipped]`);
+        console.log(g`${uploadCt} image(s) uploaded [${skippedCt} skipped]`);
       }
 
       // Add all urls to the known list even if we skipped them
@@ -250,39 +252,49 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
     (async () => {
       await wait(UrlUploadDelay);
       while (pendingUrls.size) {
-        // Get the current list of urls
-        const allUrls = new Set(await fetchKnownUrls(branch));
-
-        // Add the new urls to the set, don't upload if nothing new
         const newUrls = [];
-        for (const [url, { resolve }] of pendingUrls) {
-          if (allUrls.has(url)) {
-            pendingUrls.delete(url);
-            resolve();
-          } else {
-            allUrls.add(url);
-            newUrls.push(url);
-          }
-        }
-
-        // If no urls are new continue
-        if (!newUrls.length) continue;
-
-        // Build the url list upload data
-        const urlData = new Blob([[...allUrls].join('\n')]);
-        const urlsUpload = { path: UrlListPath, content: urlData };
-
         try {
           await retry(
             async () => {
+              const pendingCt = pendingUrls.size;
+              console.log(y`Uploading ${pendingCt} url(s) to HF`);
+
+              // Get the current list of urls
+              const allUrls = new Set(await fetchKnownUrls(branch));
+
+              // Add the new urls to the set, don't upload if nothing new
+              // Reset the list of new urls for each retry
+              newUrls.length = 0;
+              for (const [url, { resolve }] of pendingUrls) {
+                if (allUrls.has(url)) {
+                  console.log(y`Skipping url ${url} [url already on HF]`);
+                  pendingUrls.delete(url);
+                  resolve();
+                } else {
+                  allUrls.add(url);
+                  newUrls.push(url);
+                }
+              }
+
+              // If no urls are new skip
+              const newCt = newUrls.length;
+              if (!newCt) return;
+
+              // Build the url list upload data
+              const urlData = new Blob([[...allUrls].join('\n')]);
+              const urlsUpload = { path: UrlListPath, content: urlData };
+
+              const skippedCt = pendingCt - newCt;
               await uploadFile({
                 file: urlsUpload,
                 repo: DatasetRepo,
                 branch,
                 credentials,
                 useWebWorkers: true,
-                commitTitle: `Add ${newUrls.length} known URLs`,
+                commitTitle: `Add ${newCt} urls`,
               });
+
+              console.log(g`${newCt} url(s) uploaded [${skippedCt} skipped]`);
             },
             (error) => {
               console.warn(r`Retrying url list upload [${error}]`);
