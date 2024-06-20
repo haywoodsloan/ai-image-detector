@@ -81,7 +81,7 @@ export async function replaceImage(image, branch = MainBranch) {
   // Return false to indicate no change was made
   const { label: oldLabel } = parsePath(oldPath);
   if (oldLabel === newLabel) return false;
-  console.log(y`Moving file on HF: ${fileName}`);
+  console.log(y`Moving file on HF ${fileName}`);
 
   // Move the image
   await retry(
@@ -108,11 +108,11 @@ export async function replaceImage(image, branch = MainBranch) {
       }
 
       // Add the new image's url
-      console.log(y`Successfully moved file: ${oldPath} => ${upload.path}`);
+      console.log(y`Successfully moved file ${oldPath} => ${upload.path}`);
       await uploadKnownUrls([upload.origin], branch);
     },
     (error) => {
-      console.warn(r`Retrying move after: ${error}`);
+      console.warn(r`Retrying move [${error}]`);
     }
   );
 
@@ -126,7 +126,7 @@ export async function replaceImage(image, branch = MainBranch) {
 export async function uploadImages(images, branch = MainBranch) {
   // Skip if no images in the array
   if (!images.length) return;
-  console.log(y`Uploading ${images.length} files to HF`);
+  console.log(y`Uploading ${images.length} file(s) to HF`);
 
   // Start a retry loop
   await retry(
@@ -136,14 +136,17 @@ export async function uploadImages(images, branch = MainBranch) {
       const newImages = await Promise.all(
         images.map(async (image) => {
           if (!(await isExistingImage(image.fileName, branch))) return image;
-          console.log(y`Skipping: ${image.fileName} [Image already on HF]`);
+          console.log(y`Skipping ${image.fileName} [Image already on HF]`);
         })
       );
 
       // Create a set of upload for the image
       // Recreate with each retry incase the folders are now full
       const uploads = await createUploads(newImages.filter(Boolean), branch);
-      if (uploads.length) {
+      const uploadCt = uploads.length;
+
+      // If there are new uploads push them to HF
+      if (uploadCt) {
         for (const { path } of uploads) pendingPaths.add(path);
         try {
           // Upload the images and url update
@@ -153,13 +156,15 @@ export async function uploadImages(images, branch = MainBranch) {
             branch,
             credentials,
             useWebWorkers: true,
-            commitTitle: `Add ${uploads.length} images`,
+            commitTitle: `Add ${uploadCt} images`,
           });
         } finally {
           // Remove the pending paths either way because we'll get new paths
           for (const { path } of uploads) pendingPaths.delete(path);
         }
-        console.log(g`${uploads.length} files successfully uploaded`);
+        
+        const skippedCt = images.length - uploadCt;
+        console.log(g`${uploadCt} file(s) uploaded [${skippedCt} skipped]`);
       }
 
       // Add all urls to the known list even if we skipped them
@@ -174,7 +179,7 @@ export async function uploadImages(images, branch = MainBranch) {
         await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
         const delay = RateLimitDelay / 60 / 1000;
         console.warn(r`Rate-limited, waiting ${delay} mins`);
-      } else console.warn(r`Retrying upload after: ${error}`);
+      } else console.warn(r`Retrying upload [${error}]`);
     }
   );
 }
@@ -205,7 +210,7 @@ export async function fetchKnownUrls(branch = MainBranch) {
       return urlStr.split(/\r?\n/).filter(Boolean);
     },
     (error) => {
-      console.warn(r`Retrying url list fetch after: ${error}`);
+      console.warn(r`Retrying url list fetch [${error}]`);
     }
   );
 }
@@ -280,7 +285,7 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
               });
             },
             (error) => {
-              console.warn(r`Retrying url list upload after: ${error}`);
+              console.warn(r`Retrying url list upload [${error}]`);
             }
           );
 

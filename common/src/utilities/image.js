@@ -34,12 +34,12 @@ export async function getImageData(uri) {
   // If a url was provided, fetch it
   if (isHttpUrl(uri)) {
     const req = await fetch(uri);
-    if (!req.ok) throw new Error(`GET request failed: ${req.statusText}`);
+    if (!req.ok) throw new Error(`GET request failed [${req.statusText}]`);
 
     // Make sure the content type is correct
     const contentType = req.headers.get('Content-Type');
     const validHeader = contentType.startsWith('image/');
-    if (!validHeader) throw new Error(`Invalid MIME type: ${contentType}`);
+    if (!validHeader) throw new Error(`Invalid MIME type ${contentType}`);
 
     return Buffer.from(await req.arrayBuffer());
   }
@@ -59,7 +59,7 @@ export async function sanitizeImage(img) {
     const { equal } = await looksSame(exclude.data, imgData, {
       stopOnFirstFail: true,
     });
-    if (equal) throw new Error(`Matches an excluded image: ${exclude.name}`);
+    if (equal) throw new Error(`Matches excluded image ${exclude.name}`);
   }
 
   // Make sure the image isn't too big

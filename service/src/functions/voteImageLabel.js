@@ -34,7 +34,7 @@ app.http('voteImageLabel', {
 
     // Check the vote is valid
     if (!AllLabels.includes(voteLabel)) {
-      const error = new Error(l`voteLabel must be one of: ${AllLabels}`);
+      const error = new Error(l`voteLabel must be one of ${AllLabels}`);
       context.error(error);
       return createErrorResponse(400, error);
     }

@@ -126,7 +126,7 @@ try {
     await retry(
       async () => {
         await page.waitForSelector(LoaderSelector);
-        console.log(g`Successfully loaded ${redditUrl}`);
+        console.log(g`Finished loading ${redditUrl}`);
       },
       async () => {
         console.log(r`Subreddit loading failed, refreshing`);
@@ -166,7 +166,7 @@ try {
             data = await sanitizeImage(origin);
           } catch (error) {
             // If the image couldn't be sanitized skip it
-            console.log(r`Skipping: ${origin} [${error}]`);
+            console.log(r`Skipping ${origin} [${error}]`);
             validationQueue.delete(validation);
             return;
           }
@@ -177,7 +177,7 @@ try {
           const fileName = sanitize(`${hash}${ext}`);
 
           // Get a split to add the image to
-          console.log(b`Found: ${fileName} at ${origin}`);
+          console.log(b`Found ${fileName} at ${origin}`);
           const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
 
           // Increase the total count and return an image object
@@ -213,7 +213,7 @@ try {
       // If so break, we've reached the end of the Subreddit
       const loader = await page.$(LoaderSelector);
       if (!loader) {
-        console.log(y`Reached end of Subreddit`);
+        console.log(y`Reached end of ${redditUrl}`);
         break;
       }
 

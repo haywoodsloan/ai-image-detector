@@ -52,13 +52,9 @@ if (score <= 50) {
  */
 async function checkAndPrint({ uri, isAI }) {
   if (isHttpUrl(uri)) {
-    console.log(
-      `Checking if the image at this url is AI generated: ${shortenUrl(uri)}`
-    );
+    console.log(`Checking if image is AI generated ${shortenUrl(uri)}`);
   } else {
-    console.log(
-      `Checking if the image at this path is AI generated: ${shortenPath(uri)}`
-    );
+    console.log(`Checking image is AI generated ${shortenPath(uri)}`);
   }
 
   const data = await getImageData(uri);
