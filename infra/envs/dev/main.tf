@@ -1,5 +1,12 @@
 # Configure the Azure provider
 terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 3.109.0"
+    }
+  }
+
   backend "azurerm" {
     resource_group_name  = "tfstate-dev"
     storage_account_name = "tfstateubai7bcvn9"
@@ -13,7 +20,7 @@ provider "azurerm" {
 }
 
 module "eastus2" {
-  source = "./eastus2"
+  source   = "./eastus2"
   env_name = var.env_name
-  hf_key = var.hf_key
+  hf_key   = var.hf_key
 }
