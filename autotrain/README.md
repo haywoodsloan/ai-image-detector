@@ -9,8 +9,12 @@
 
 To run Autotrain locally:
 
+1. Install [Node 20+](https://nodejs.org/en/download/)
+  
 1. Install [Docker Desktop](https://docs.docker.com/guides/getting-started/get-docker-desktop/)
+
 1. Create a file named `.huggingface_key` in this directory, containing your Hugging Face access token
+
 1. Create a file named `.huggingface_user` in this directory, containing your Hugging Face username
 
 ### Installation
