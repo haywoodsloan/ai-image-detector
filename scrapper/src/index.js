@@ -18,7 +18,6 @@ import { mkdir, writeFile } from 'fs/promises';
 import { basename, extname, join } from 'path';
 import { launch } from 'puppeteer';
 import sanitize from 'sanitize-filename';
-import { fileURLToPath } from 'url';
 import UserAgent from 'user-agents';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -260,7 +259,7 @@ try {
 
   // Log the last screenshot
   const errorPng = join(LogPath, 'error.png');
-  await page.screenshot({ path: fileURLToPath(errorPng) });
+  await page.screenshot({ path: errorPng });
 
   throw error;
 }
