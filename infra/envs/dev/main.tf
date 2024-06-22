@@ -20,8 +20,10 @@ provider "azurerm" {
   features {}
 }
 
-module "eastus2" {
-  source   = "./eastus2"
+module "region" {
+  for_each = var.region_names
+  source   = "./region"
+  region_name = each.value
   env_name = var.env_name
   hf_key   = var.hf_key
 }
@@ -29,7 +31,5 @@ module "eastus2" {
 module "db" {
   source       = "../../modules/db"
   env_name     = var.env_name
-  region_names = ["eastus2"]
-  rg_name      = module.eastus2.rg_name
-  rg_location  = module.eastus2.rg_location
+  region_names = var.region_names
 }

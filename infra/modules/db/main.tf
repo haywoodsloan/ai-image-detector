@@ -1,3 +1,8 @@
+resource "azurerm_resource_group" "db_rg" {
+  name     = "ai-image-detector-${var.env_name}-db"
+  location = "eastus2"
+}
+
 resource "random_string" "resource_code" {
   length  = 10
   special = false
@@ -6,8 +11,8 @@ resource "random_string" "resource_code" {
 
 resource "azurerm_cosmosdb_account" "cosmos_account" {
   name                = "cosmos-db-${var.env_name}-${random_string.resource_code.result}"
-  location            = var.rg_location
-  resource_group_name = var.rg_name
+  location            = azurerm_resource_group.db_rg.location
+  resource_group_name = azurerm_resource_group.db_rg.name
   free_tier_enabled   = true
   offer_type          = "Standard"
   kind                = "MongoDB"
@@ -27,6 +32,6 @@ resource "azurerm_cosmosdb_account" "cosmos_account" {
 
 resource "azurerm_cosmosdb_mongo_database" "mongo_db" {
   name                = "cosmos-mongo-db"
-  resource_group_name = var.rg_name
+  resource_group_name = azurerm_resource_group.db_rg.name
   account_name        = azurerm_cosmosdb_account.cosmos_account.name
 }

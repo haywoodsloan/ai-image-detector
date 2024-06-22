@@ -1,6 +1,6 @@
 variable "region_name" {
   type    = string
-  default = "eastus2"
+  description = "The cloud region to deploy to"
 }
 
 variable "env_name" {
