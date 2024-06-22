@@ -8,6 +8,7 @@ resource "azurerm_cosmosdb_account" "cosmos_account" {
   name                = "cosmos-db-${var.env_name}-${random_string.resource_code.result}"
   location            = var.rg_location
   resource_group_name = var.rg_name
+  free_tier_enabled   = true
   offer_type          = "Standard"
   kind                = "MongoDB"
 
