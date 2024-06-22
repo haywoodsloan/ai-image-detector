@@ -90,8 +90,8 @@ const pendingUploads = new Set();
 const scrappedUrls = new Set();
 
 // Parse local settings for Hugging Face credentials
-const { hfKey } = await loadSettings();
-setHfAccessToken(hfKey);
+const { HF_KEY } = await loadSettings();
+setHfAccessToken(HF_KEY);
 
 // Determine the train and test paths
 const label = args.real ? RealLabel : AiLabel;

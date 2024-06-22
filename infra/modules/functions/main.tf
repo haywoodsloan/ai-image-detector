@@ -1,23 +1,11 @@
-terraform {
-  required_version = ">= 1.8.5"
-
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.109.0"
-    }
-  }
-}
-
 resource "random_string" "resource_code" {
   length  = 10
   special = false
   upper   = false
 }
 
-
 resource "azurerm_storage_account" "function_storage" {
-  name                     = "functionapp${random_string.resource_code.result}"
+  name                     = "function${random_string.resource_code.result}"
   resource_group_name      = var.rg_name
   location                 = var.region_name
   account_tier             = "Standard"
@@ -42,7 +30,8 @@ resource "azurerm_linux_function_app" "function_app" {
   service_plan_id            = azurerm_service_plan.function_service_plan.id
 
   app_settings = {
-    hfKey = var.hf_key
+    NODE_ENV = var.env_name
+    HF_KEY   = var.hf_key
   }
 
   site_config {
