@@ -1,4 +1,5 @@
 import { app } from '@azure/functions';
+import { isProd } from 'common/utilities/environment.js';
 import { hashImage } from 'common/utilities/hash.js';
 import {
   AllLabels,
@@ -20,7 +21,7 @@ const PendingBranch = 'pending';
 
 app.http('voteImageLabel', {
   methods: ['POST'],
-  authLevel: 'anonymous',
+  authLevel: isProd ? 'anonymous' : 'function',
   handler: async (request, context) => {
     /** @type {{url: string, userId: string, voteLabel: string}} */
     const { url, userId, voteLabel } = await request.json();

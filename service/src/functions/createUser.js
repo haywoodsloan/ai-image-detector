@@ -1,6 +1,7 @@
 import { app } from '@azure/functions';
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { isLocal } from 'common/utilities/environment.js';
+import { isProd } from 'common/utilities/environment.js';
 import { l, randomString } from 'common/utilities/string.js';
 
 import { insertNewUser, queryLastCreate } from '../services/db/userColl.js';
@@ -11,7 +12,7 @@ const IpCreateTimeout = TimeSpan.fromMinutes(30);
 
 app.http('createUser', {
   methods: ['POST'],
-  authLevel: 'anonymous',
+  authLevel: isProd ? 'anonymous' : 'function',
   handler: async (request, context) => {
     const requestIPs =
       request.headers.get('X-Forwarded-For') ||

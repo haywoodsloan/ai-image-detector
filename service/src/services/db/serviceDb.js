@@ -14,10 +14,21 @@ export const startMockDb = memoize(() =>
 
 export const getServiceDb = memoize(async () => {
   // If local testing use a in memory mongodb instance
-  const mongoUrl = isLocal
-    ? (await startMockDb()).getUri()
-    : process.env.dbConStr;
+  const mongoUrls = isLocal
+    ? [(await startMockDb()).getUri()]
+    : [process.env.DB_CONN_STR, process.env.DB_CONN_STR_2];
 
-  const client = await MongoClient.connect(mongoUrl);
-  return client.db(DbName);
+  // Try each connection URL option
+  const errors = [];
+  for (const url of mongoUrls) {
+    try {
+      const client = await MongoClient.connect(url);
+      return client.db(DbName);
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+
+  // Throw the errors if all URLs were used
+  throw errors.length === 1 ? errors[0] : AggregateError(errors);
 });

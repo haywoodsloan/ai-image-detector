@@ -4,7 +4,7 @@ variable "env_name" {
 }
 
 variable "region_names" {
-  type    = set(string)
+  type    = list(string)
   default = ["eastus2"]
 }
 

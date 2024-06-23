@@ -1,4 +1,5 @@
 import { app } from '@azure/functions';
+import { isProd } from 'common/utilities/environment.js';
 import { l } from 'common/utilities/string.js';
 
 import { queryUser } from '../services/db/userColl.js';
@@ -7,7 +8,7 @@ import { createErrorResponse } from '../utilities/error.js';
 
 app.http('getUserVotes', {
   methods: ['POST'],
-  authLevel: 'anonymous',
+  authLevel: isProd ? 'anonymous' : 'function',
   handler: async (request, context) => {
     const { userId } = await request.json();
 

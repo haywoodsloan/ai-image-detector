@@ -1,10 +1,10 @@
 resource "azurerm_resource_group" "tfstate" {
   name     = "tfstate-${var.env_name}"
-  location = "eastus2"
+  location = var.region_name
 }
 
 resource "random_string" "resource_code" {
-  length  = 10
+  length  = 5
   special = false
   upper   = false
 }
@@ -15,6 +15,7 @@ resource "azurerm_storage_account" "tfstate" {
   location                        = azurerm_resource_group.tfstate.location
   account_tier                    = "Standard"
   account_replication_type        = "LRS"
+  access_tier                     = "Cool"
   allow_nested_items_to_be_public = false
   tags                            = { environment = var.env_name }
 }

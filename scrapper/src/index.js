@@ -36,11 +36,6 @@ const args = await yargs(hideBin(process.argv))
     description: 'Show the browser for debugging',
     default: false,
   })
-  .option('real', {
-    type: 'boolean',
-    description: 'If real (non-AI) images should be scrapped',
-    default: false,
-  })
   .parse();
 // #endregion
 
@@ -54,6 +49,11 @@ const RealSubReddits = [
   'https://www.reddit.com/r/pics/',
   'https://www.reddit.com/r/BookCovers/',
 ];
+
+const SubReddits = {
+  [AiLabel]: AiSubReddits,
+  [RealLabel]: RealSubReddits,
+};
 
 const LogPath = '.log/';
 const WindowHeight = 1250;
@@ -93,9 +93,6 @@ const scrappedUrls = new Set();
 const { HF_KEY } = await loadSettings();
 setHfAccessToken(HF_KEY);
 
-// Determine the train and test paths
-const label = args.real ? RealLabel : AiLabel;
-
 // Launch Puppeteer
 const browser = await launch({
   headless: !args.debug,
@@ -110,141 +107,144 @@ const urls = await fetchKnownUrls();
 for await (const url of urls) scrappedUrls.add(url);
 
 // Browse to multiple Subreddits and scrape files
-const redditUrls = args.real ? RealSubReddits : AiSubReddits;
 let count = 0;
-
 try {
-  for (let i = 0; i < redditUrls.length && count < args.count; i++) {
-    // Navigate to the page and wait for network traffic to settle
-    const redditUrl = redditUrls[i];
-    console.log(y`Navigating to ${redditUrl}`);
-    await page.goto(redditUrl, { waitUntil: 'networkidle2' });
+  for (const [label, scrapeUrls] of SubReddits) {
+    for (let i = 0; i < scrapeUrls.length && count < args.count; i++) {
+      // Navigate to the page and wait for network traffic to settle
+      const scrapeUrl = scrapeUrls[i];
+      console.log(y`Navigating to ${scrapeUrl}`);
+      await page.goto(scrapeUrl, { waitUntil: 'networkidle2' });
 
-    // Wait for the loader to appear so we know the posts will load.
-    const retry = withRetry(RetryLimit, RedditErrorDelay);
-    await retry(
-      async () => {
-        await page.waitForSelector(LoaderSelector);
-        console.log(g`Finished loading ${redditUrl}`);
-      },
-      async () => {
-        console.log(r`Subreddit loading failed, refreshing`);
-        await page.reload({ waitUntil: 'networkidle2' });
-      }
-    );
-
-    // Start scrapping images and scrolling through the page
-    while (true) {
-      // Get the image sources
-      const sources = await page.$$eval(ImageSelector, (images) =>
-        images.map(({ src }) => src)
-      );
-
-      // Replace the preview urls with full image urls
-      const urls = sources.map((src) => {
-        const { pathname } = new URL(src);
-        const fileName = basename(pathname);
-        const shortFileName = fileName.substring(fileName.lastIndexOf('-') + 1);
-        return new URL(`https://i.redd.it/${shortFileName}`);
-      });
-
-      // Queue image uploads to bulk upload to Hugging Face, skip existing files
-      for (let i = 0; i < urls.length && count < args.count; i++) {
-        const origin = urls[i];
-
-        // Skip urls to images that have already been scrapped
-        if (scrappedUrls.has(origin.toString())) continue;
-        scrappedUrls.add(origin.toString());
-
-        /** @type {Promise<HfImage?>} */
-        const validation = (async () => {
-          // Fetch the image, validate it, then determine where to upload it
-          let data;
-          try {
-            // Get the sanitized version of the image
-            data = await sanitizeImage(origin);
-          } catch (error) {
-            // If the image couldn't be sanitized skip it
-            console.log(r`Skipping ${origin} [${error}]`);
-            validationQueue.delete(validation);
-            return;
-          }
-
-          // Build the file name from the hash of the data
-          const hash = hashImage(data);
-          const ext = extname(origin.pathname);
-          const fileName = sanitize(`${hash}${ext}`);
-
-          // Get a split to add the image to
-          console.log(b`Found ${fileName} at ${origin}`);
-          const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
-
-          // Increase the total count and return an image object
-          count++;
-          const content = new Blob([data]);
-          return { split, label, fileName, origin, content };
-        })();
-
-        validationQueue.add(validation);
-        if (validationQueue.size >= UploadBatchSize) {
-          const results = await Promise.all([...validationQueue]);
-          const images = results.filter(Boolean);
-
-          // Skip uploading if less than the batch size after validation
-          if (images.length < UploadBatchSize) continue;
-
-          const pendingUpload = uploadImages(images).then(async () =>
-            pendingUploads.delete(pendingUpload)
-          );
-
-          pendingUploads.add(pendingUpload);
-          validationQueue.clear();
-        }
-      }
-
-      // Break if we've reached the maximum number of images
-      if (count >= args.count) {
-        console.log(y`Reached maximum image count`);
-        break;
-      }
-
-      // Check if the post loader is gone
-      // If so break, we've reached the end of the Subreddit
-      const loader = await page.$(LoaderSelector);
-      if (!loader) {
-        console.log(y`Reached end of ${redditUrl}`);
-        break;
-      }
-
-      // Delay a bit before scrolling to avoid rate-limiting
-      await wait(ScrollDelay);
-
-      // Clean up the downloaded images from the page to save memory
-      // Scroll to load more images
-      await page.evaluate(
-        (selector, remainder) => {
-          const elements = [...document.querySelectorAll(selector)];
-          for (const element of elements.slice(0, -remainder)) element.remove();
-          window.scrollBy(0, document.body.scrollHeight);
+      // Wait for the loader to appear so we know the posts will load.
+      const retry = withRetry(RetryLimit, RedditErrorDelay);
+      await retry(
+        async () => {
+          await page.waitForSelector(LoaderSelector);
+          console.log(g`Finished loading ${scrapeUrl}`);
         },
-        ...[CleanupSelector, CleanupRemainder]
+        async () => {
+          console.log(r`Subreddit loading failed, refreshing`);
+          await page.reload({ waitUntil: 'networkidle2' });
+        }
       );
 
-      // Click the retry button if an errors has occurred
-      if (await page.$(RetrySelector)) {
-        await wait(RedditErrorDelay);
-        const retryButton = await page.$(RetrySelector);
-        await retryButton?.click();
-      }
+      // Start scrapping images and scrolling through the page
+      while (true) {
+        // Get the image sources
+        const sources = await page.$$eval(ImageSelector, (images) =>
+          images.map(({ src }) => src)
+        );
 
-      // Wait for the loader to disappear and the posts to finish loading
-      let loading = await page.$(LoadingSelector);
-      if (await loading?.isVisible()) {
-        try {
-          await waitForHidden(loading, LoadStuckTimeout);
-        } catch {
-          console.warn(r`Post loading failed, refreshing`);
-          await page.reload({ waitUntil: 'networkidle2' });
+        // Replace the preview urls with full image urls
+        const urls = sources.map((src) => {
+          const { pathname } = new URL(src);
+          const fileName = basename(pathname);
+          const shortFileName = fileName.substring(
+            fileName.lastIndexOf('-') + 1
+          );
+          return new URL(`https://i.redd.it/${shortFileName}`);
+        });
+
+        // Queue image uploads to bulk upload to Hugging Face, skip existing files
+        for (let i = 0; i < urls.length && count < args.count; i++) {
+          const origin = urls[i];
+
+          // Skip urls to images that have already been scrapped
+          if (scrappedUrls.has(origin.toString())) continue;
+          scrappedUrls.add(origin.toString());
+
+          /** @type {Promise<HfImage?>} */
+          const validation = (async () => {
+            // Fetch the image, validate it, then determine where to upload it
+            let data;
+            try {
+              // Get the sanitized version of the image
+              data = await sanitizeImage(origin);
+            } catch (error) {
+              // If the image couldn't be sanitized skip it
+              console.log(r`Skipping ${origin} [${error}]`);
+              validationQueue.delete(validation);
+              return;
+            }
+
+            // Build the file name from the hash of the data
+            const hash = hashImage(data);
+            const ext = extname(origin.pathname);
+            const fileName = sanitize(`${hash}${ext}`);
+
+            // Get a split to add the image to
+            console.log(b`Found ${fileName} at ${origin}`);
+            const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
+
+            // Increase the total count and return an image object
+            count++;
+            const content = new Blob([data]);
+            return { split, label, fileName, origin, content };
+          })();
+
+          validationQueue.add(validation);
+          if (validationQueue.size >= UploadBatchSize) {
+            const results = await Promise.all([...validationQueue]);
+            const images = results.filter(Boolean);
+
+            // Skip uploading if less than the batch size after validation
+            if (images.length < UploadBatchSize) continue;
+
+            const pendingUpload = uploadImages(images).then(async () =>
+              pendingUploads.delete(pendingUpload)
+            );
+
+            pendingUploads.add(pendingUpload);
+            validationQueue.clear();
+          }
+        }
+
+        // Break if we've reached the maximum number of images
+        if (count >= args.count) {
+          console.log(y`Reached maximum image count`);
+          break;
+        }
+
+        // Check if the post loader is gone
+        // If so break, we've reached the end of the Subreddit
+        const loader = await page.$(LoaderSelector);
+        if (!loader) {
+          console.log(y`Reached end of ${scrapeUrl}`);
+          break;
+        }
+
+        // Delay a bit before scrolling to avoid rate-limiting
+        await wait(ScrollDelay);
+
+        // Clean up the downloaded images from the page to save memory
+        // Scroll to load more images
+        await page.evaluate(
+          (selector, remainder) => {
+            const elements = [...document.querySelectorAll(selector)];
+            for (const element of elements.slice(0, -remainder))
+              element.remove();
+            window.scrollBy(0, document.body.scrollHeight);
+          },
+          ...[CleanupSelector, CleanupRemainder]
+        );
+
+        // Click the retry button if an errors has occurred
+        if (await page.$(RetrySelector)) {
+          await wait(RedditErrorDelay);
+          const retryButton = await page.$(RetrySelector);
+          await retryButton?.click();
+        }
+
+        // Wait for the loader to disappear and the posts to finish loading
+        let loading = await page.$(LoadingSelector);
+        if (await loading?.isVisible()) {
+          try {
+            await waitForHidden(loading, LoadStuckTimeout);
+          } catch {
+            console.warn(r`Post loading failed, refreshing`);
+            await page.reload({ waitUntil: 'networkidle2' });
+          }
         }
       }
     }

@@ -17,3 +17,13 @@ variable "hf_key" {
   type        = string
   description = "The HuggingFace key to use for the function"
 }
+
+variable "db_connection_string" {
+  type = string
+  description = "The Mongo DB connection string for the function"
+}
+
+variable "db_secondary_connection_string" {
+  type = string
+  description = "The secondary Mongo DB connection string for the function"
+}
