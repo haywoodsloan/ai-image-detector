@@ -109,7 +109,7 @@ for await (const url of urls) scrappedUrls.add(url);
 // Browse to multiple Subreddits and scrape files
 let count = 0;
 try {
-  for (const [label, scrapeUrls] of SubReddits) {
+  for (const [label, scrapeUrls] of Object.entries(SubReddits)) {
     for (let i = 0; i < scrapeUrls.length && count < args.count; i++) {
       // Navigate to the page and wait for network traffic to settle
       const scrapeUrl = scrapeUrls[i];
