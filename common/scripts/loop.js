@@ -9,7 +9,7 @@ import { wait } from '../src/utilities/sleep.js';
 
 await yargs(hideBin(process.argv))
   .command(
-    '$0 <cmd>',
+    '$0 <cmd..>',
     false,
     (yargs) =>
       yargs
@@ -25,13 +25,16 @@ await yargs(hideBin(process.argv))
         })
         .positional('cmd', {
           type: 'string',
+          array: true,
           description: 'The command to execute on a loop',
           demandOption: true,
         }),
     async (args) => {
+      const cmd = args.cmd.join(' ');
       let count = 0;
+
       while (count < args.count) {
-        const child = spawn(args.cmd, { shell: true, stdio: 'inherit' });
+        const child = spawn(cmd, { shell: true, stdio: 'inherit' });
         await new Promise((res) => child.once('close', res));
 
         count++;
