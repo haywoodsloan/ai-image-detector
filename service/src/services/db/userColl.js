@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto';
+import { validate as validateEmail } from 'email-validator';
 import memoize from 'memoize';
 
 import { getServiceDb } from './serviceDb.js';
@@ -8,12 +8,11 @@ export const UserCollName = 'users';
 const getUserCollection = memoize(async () => {
   const db = await getServiceDb();
 
-  /** @type {UserCollection} */
+  /** @type {Collection<UserDocument>} */
   const users = db.collection(UserCollName);
 
   // Set a unique index for each userId.
-  await users.createIndex({ userId: 1 }, { unique: true });
-  await users.createIndex({ createdAt: 1 });
+  await users.createIndex({ email: 1 }, { unique: true });
 
   return users;
 });
@@ -21,60 +20,29 @@ const getUserCollection = memoize(async () => {
 /**
  * @param {string} userId
  */
-export async function queryUser(userId) {
+export async function queryUserById(userId) {
   const users = await getUserCollection();
-  return users.findOneAndUpdate(
-    { userId },
-    { $set: { lastAccess: new Date() } }
-  );
+  return users.findOne({ userId });
 }
 
 /**
- * @param {string} userId
+ * @param {string} email
  */
-export async function queryLastCreate(createdBy) {
+export async function queryUserByEmail(email) {
   const users = await getUserCollection();
-
-  /** @type {UserDocument} */
-  const lastUser = await users
-    .aggregate([
-      { $match: { createdBy } },
-      { $sort: { createdAt: -1 } },
-      { $limit: 1 },
-    ])
-    .tryNext();
-
-  return lastUser?.createdAt;
+  return users.findOne({ email });
 }
 
 /**
- * @param {string} userId
- * @param {Partial<UserDocument>} update
- * @description Always updates the `lastAccess` field to now
+ * @param {string} email
  */
-export async function updateUser(userId, update = null) {
+export async function insertNewUser(email) {
+  if (!validateEmail(email)) throw new Error('Invalid email address');
+
+  /** @type {WithId<UserDocument>} */
+  const newUser = { email, createdAt: new Date() };
+  
   const users = await getUserCollection();
-  await users.updateOne(
-    { userId },
-    { $set: { ...update, lastAccess: new Date() } }
-  );
-}
-
-/**
- * @param {string} createdBy
- * @param {string} userId
- */
-export async function insertNewUser(
-  createdBy,
-  userId = randomBytes(128).toString('base64')
-) {
-  if (!createdBy) throw new Error('Invalid createdBy address');
-
-  const users = await getUserCollection();
-  const now = new Date();
-
-  /** @type {UserDocument} */
-  const newUser = { userId, createdBy, createdAt: now, lastAccess: now };
   await users.insertOne(newUser);
 
   return newUser;

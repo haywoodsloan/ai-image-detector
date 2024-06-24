@@ -17,7 +17,7 @@ import { wait } from 'common/utilities/sleep.js';
 import { mkdir, writeFile } from 'fs/promises';
 import { basename, extname, join } from 'path';
 import { launch } from 'puppeteer';
-import sanitize from 'sanitize-filename';
+import sanitizeFileName from 'sanitize-filename';
 import UserAgent from 'user-agents';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -171,7 +171,7 @@ try {
             // Build the file name from the hash of the data
             const hash = hashImage(data);
             const ext = extname(origin.pathname);
-            const fileName = sanitize(`${hash}${ext}`);
+            const fileName = sanitizeFileName(`${hash}${ext}`);
 
             // Get a split to add the image to
             console.log(b`Found ${fileName} at ${origin}`);

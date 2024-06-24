@@ -23,6 +23,13 @@ export class TimeSpan {
   }
 
   /**
+   * @param {number} days
+   */
+  static fromDays(days) {
+    return new TimeSpan(days * 24 * 60 * 60 * 1000);
+  }
+
+  /**
    * @param {number | TimeSpan} value
    */
   constructor(value = 0) {
@@ -50,6 +57,13 @@ export class TimeSpan {
     this.#value += hours * 60 * 60 * 1000;
   }
 
+  /**
+   * @param {number} days
+   */
+  addDays(days) {
+    this.#value += days * 24 * 60 * 60 * 1000;
+  }
+
   getSeconds() {
     return this.#value / 1000;
   }
@@ -60,6 +74,10 @@ export class TimeSpan {
 
   getHours() {
     return this.#value / 1000 / 60 / 60;
+  }
+
+  getDays() {
+    return this.#value / 1000 / 60 / 60 / 24;
   }
 
   valueOf() {

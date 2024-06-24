@@ -4,8 +4,8 @@ import { getImageData } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
 import { isHttpUrl } from 'common/utilities/url.js';
 
-import { queryUser } from '../services/db/userColl.js';
 import { checkIfAI } from '../services/detector.js';
+import { assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 
 app.http('checkImage', {
@@ -13,7 +13,7 @@ app.http('checkImage', {
   authLevel: isProd ? 'anonymous' : 'function',
   handler: async (request, context) => {
     /** @type {{url: string, userId: string}} */
-    const { url, userId } = await request.json();
+    const { url } = await request.json();
 
     // Check url is valid
     if (!isHttpUrl(url)) {
@@ -22,19 +22,26 @@ app.http('checkImage', {
       return createErrorResponse(400, error);
     }
 
-    // Check the user is valid
-    const user = await queryUser(userId);
-    if (!user) {
-      const error = new Error('Must specify a valid UserID');
+    // Check the access token is valid
+    try {
+      const userId = await assertValidAuth(request);
+      context.log(l`Checking image ${{ url, userId }}`);
+    } catch (error) {
+      context.error(error);
+      createErrorResponse(401, error);
+    }
+
+    // Get the image data
+    let data;
+    try {
+      data = await getImageData(url);
+    } catch (error) {
       context.error(error);
       return createErrorResponse(400, error);
     }
 
     // Get the AI classification score
-    context.log(l`Checking image ${{ url, userId }}`);
-    const data = await getImageData(url);
     const artificial = await checkIfAI(data);
-
     context.log(l`Result ${{ artificial }}`);
     return { jsonBody: { artificial } };
   },

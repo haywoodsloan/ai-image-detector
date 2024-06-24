@@ -11,10 +11,10 @@ import { getImageData, sanitizeImage } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
 import { isHttpUrl } from 'common/utilities/url.js';
 import { extname } from 'path';
-import sanitize from 'sanitize-filename';
+import sanitizeFileName from 'sanitize-filename';
 
-import { queryUser } from '../services/db/userColl.js';
 import { queryVotedLabel, upsertVotedLabel } from '../services/db/voteColl.js';
+import { assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 
 const PendingBranch = 'pending';
@@ -23,8 +23,8 @@ app.http('voteImageLabel', {
   methods: ['POST'],
   authLevel: isProd ? 'anonymous' : 'function',
   handler: async (request, context) => {
-    /** @type {{url: string, userId: string, voteLabel: string}} */
-    const { url, userId, voteLabel } = await request.json();
+    /** @type {{url: string, voteLabel: string}} */
+    const { url, voteLabel } = await request.json();
 
     // Check the url is valid
     if (!isHttpUrl(url)) {
@@ -40,12 +40,13 @@ app.http('voteImageLabel', {
       return createErrorResponse(400, error);
     }
 
-    // Check the user is valid
-    const user = await queryUser(userId);
-    if (!user) {
-      const error = new Error('Must specify a valid UserID');
+    // Check the access token is valid
+    let userId;
+    try {
+      userId = await assertValidAuth(request);
+    } catch (error) {
       context.error(error);
-      return createErrorResponse(400, error);
+      return createErrorResponse(401, error);
     }
 
     // Track the vote by the image's hash
@@ -88,7 +89,7 @@ async function upload(data, url, label) {
   const ext = extname(pathname);
 
   // Build the image properties, always use the train split
-  const fileName = sanitize(`${hash}${ext}`);
+  const fileName = sanitizeFileName(`${hash}${ext}`);
   const split = TrainSplit;
   const content = new Blob([data]);
   const origin = new URL(url);

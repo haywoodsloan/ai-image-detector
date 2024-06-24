@@ -2,22 +2,21 @@ import { app } from '@azure/functions';
 import { isProd } from 'common/utilities/environment.js';
 import { l } from 'common/utilities/string.js';
 
-import { queryUser } from '../services/db/userColl.js';
 import { queryVotesByUser } from '../services/db/voteColl.js';
+import { assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 
 app.http('getUserVotes', {
-  methods: ['POST'],
+  methods: ['GET'],
   authLevel: isProd ? 'anonymous' : 'function',
   handler: async (request, context) => {
-    const { userId } = await request.json();
-
-    // Check the user is valid
-    const user = await queryUser(userId);
-    if (!user) {
-      const error = new Error('Must specify a valid UserID');
+    // Check the access token is valid
+    let userId;
+    try {
+      userId = await assertValidAuth(request);
+    } catch (error) {
       context.error(error);
-      return createErrorResponse(400, error);
+      return createErrorResponse(401, error);
     }
 
     const votes = await queryVotesByUser(userId);

@@ -34,12 +34,14 @@ export async function getImageData(uri) {
   // If a url was provided, fetch it
   if (isHttpUrl(uri)) {
     const req = await fetch(uri);
-    if (!req.ok) throw new Error(`GET request failed [${req.statusText}]`);
+    if (!req.ok) throw new Error(`Image fetch failed [${req.statusText}]`);
 
     // Make sure the content type is correct
     const contentType = req.headers.get('Content-Type');
-    const validHeader = contentType.startsWith('image/');
-    if (!validHeader) throw new Error(`Invalid MIME type ${contentType}`);
+    const validMIME = contentType.startsWith('image/');
+
+    if (!validMIME)
+      throw new Error(`Invalid image MIME type [${contentType}]`);
 
     return Buffer.from(await req.arrayBuffer());
   }

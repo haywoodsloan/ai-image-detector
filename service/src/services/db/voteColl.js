@@ -3,7 +3,7 @@ import { l } from 'common/utilities/string.js';
 import memoize from 'memoize';
 
 import { getServiceDb } from './serviceDb.js';
-import { UserCollName, queryUser, updateUser } from './userColl.js';
+import { UserCollName } from './userColl.js';
 
 export const VoteCollName = 'votes';
 
@@ -12,7 +12,7 @@ const MinVoteCount = 5;
 const getVoteCollection = memoize(async () => {
   const db = await getServiceDb();
 
-  /** @type {VoteCollection} */
+  /** @type {Collection<VoteDocument>} */
   const votes = db.collection(VoteCollName);
 
   // Set a unique index for each hash + userId combo.
@@ -35,7 +35,7 @@ export async function queryVotedLabel(hash) {
         $lookup: {
           from: UserCollName,
           localField: 'userId',
-          foreignField: 'userId',
+          foreignField: '_id',
           as: 'userInfo',
         },
       },
@@ -55,36 +55,26 @@ export async function queryVotedLabel(hash) {
  * @param {string} userId
  */
 export async function queryVotesByUser(userId) {
-  const user = await queryUser(userId);
-  if (!user) throw new Error('Invalid userID');
-
   const votes = await getVoteCollection();
-  const userVotes = await votes.find({ userId }).toArray();
-
-  await updateUser(userId);
-  return userVotes;
+  return await votes.find({ userId }).toArray();
 }
 
 /**
  * @param {string} hash
  * @param {string} userId
  * @param {Partial<VoteDocument>} update
- * @description Always updates the `lastModify` field to now
+ * @description Always updates the `lastChange` field to now
  */
 export async function upsertVotedLabel(hash, userId, update) {
-  const user = await queryUser(userId);
-  if (!user) throw new Error('Invalid userID');
-
   if (update.voteLabel && !AllLabels.includes(update.voteLabel))
     throw new Error(l`voteLabel must be one of ${AllLabels}`);
 
   const votes = await getVoteCollection();
   const vote = await votes.findOneAndUpdate(
     { hash, userId },
-    { $set: { ...update, lastModify: new Date() } },
+    { $set: { ...update, changedAt: new Date() } },
     { upsert: true, returnDocument: 'after' }
   );
 
-  await updateUser(userId);
   return vote;
 }
