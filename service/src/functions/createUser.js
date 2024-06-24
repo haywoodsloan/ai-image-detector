@@ -21,7 +21,7 @@ app.http('createUser', {
     // Get just the IPs without ports
     const requestIPs = requestAddrs
       ?.split(',')
-      ?.map((addr) => addr.split(':')[0]);
+      ?.map((addr) => addr.split(':')[0].trim());
     context.log(l`Request IPs ${requestIPs}`);
 
     // Require a client IP to be provided unless this is local testing

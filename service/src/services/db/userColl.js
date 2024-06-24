@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomBytes } from 'crypto';
 import memoize from 'memoize';
 
 import { getServiceDb } from './serviceDb.js';
@@ -64,7 +64,10 @@ export async function updateUser(userId, update = null) {
  * @param {string} createdBy
  * @param {string} userId
  */
-export async function insertNewUser(createdBy, userId = randomUUID()) {
+export async function insertNewUser(
+  createdBy,
+  userId = randomBytes(128).toString('base64')
+) {
   if (!createdBy) throw new Error('Invalid createdBy address');
 
   const users = await getUserCollection();
