@@ -25,7 +25,7 @@ app.http('createUser', {
     context.log(l`Request IPs ${requestIPs}`);
 
     // Require a client IP to be provided unless this is local testing
-    const clientIp = requestIPs?.[0];
+    const clientIp = requestIPs?.at(-1);
     if (!clientIp && !isLocal) {
       const error = new Error('Client IP missing from request headers');
       context.error(error);
