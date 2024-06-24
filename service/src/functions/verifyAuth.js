@@ -32,5 +32,6 @@ app.http('verifyAuth', {
     }
 
     context.log(l`Verified auth ${{ userId: auth.userId, authId: auth._id }}`);
+    return {body: "Verification successful, this page can now be closed"}
   },
 });
