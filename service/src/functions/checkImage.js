@@ -2,11 +2,11 @@ import { app } from '@azure/functions';
 import { isProd } from 'common/utilities/environment.js';
 import { getImageData } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
+import { isHttpUrl } from 'common/utilities/url.js';
 
 import { queryUser } from '../services/db/userColl.js';
 import { checkIfAI } from '../services/detector.js';
 import { createErrorResponse } from '../utilities/error.js';
-import { isHttpUrl } from '../utilities/url.js';
 
 app.http('checkImage', {
   methods: ['POST'],

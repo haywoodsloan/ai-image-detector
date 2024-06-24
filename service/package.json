@@ -2,7 +2,7 @@
   "name": "ai-image-detector",
   "version": "0.0.1",
   "description": "Analyzes an input image and guesses if it is AI generated.",
-  "main": "src/functions/*.js",
+  "main": "./src/{index.js,functions/*.js}",
   "type": "module",
   "types": "./src/types.d.ts",
   "scripts": {

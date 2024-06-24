@@ -1,16 +1,16 @@
 import { isLocal } from 'common/utilities/environment.js';
 import memoize from 'memoize';
 import { MongoClient } from 'mongodb';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 
 const DbName = 'service';
 const MockDbPort = 8254;
 
-export const startMockDb = memoize(() =>
-  MongoMemoryServer.create({
+export const startMockDb = memoize(async () => {
+  const { MongoMemoryServer } = await import('mongodb-memory-server');
+  return MongoMemoryServer.create({
     instance: { port: MockDbPort },
-  })
-);
+  });
+});
 
 export const getServiceDb = memoize(async () => {
   // If local testing use a in memory mongodb instance

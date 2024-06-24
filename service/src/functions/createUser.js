@@ -14,13 +14,18 @@ app.http('createUser', {
   methods: ['POST'],
   authLevel: isProd ? 'anonymous' : 'function',
   handler: async (request, context) => {
-    const requestIPs =
+    const requestAddrs =
       request.headers.get('X-Forwarded-For') ||
       request.headers.get('X-Forwarded-Client-Ip');
 
+    // Get just the IPs without ports
+    const requestIPs = requestAddrs
+      ?.split(',')
+      ?.map((addr) => addr.split(':')[0]);
+    context.log(l`Request IPs ${requestIPs}`);
+
     // Require a client IP to be provided unless this is local testing
-    context.log(l`Request IPs ${{ IPs: requestIPs }}`);
-    const clientIp = requestIPs?.split(',')?.[0];
+    const clientIp = requestIPs?.[0];
     if (!clientIp && !isLocal) {
       const error = new Error('Client IP missing from request headers');
       context.error(error);

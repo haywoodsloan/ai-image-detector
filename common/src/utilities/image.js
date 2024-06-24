@@ -4,7 +4,7 @@ import memoize from 'memoize';
 import { join } from 'path';
 import sharp from 'sharp';
 
-import { isHttpUrl } from '../../../service/src/utilities/url.js';
+import { isHttpUrl } from './url.js';
 
 // Maximum number of pixels Autotrain will handle
 const MaxPixels = 178_956_970;

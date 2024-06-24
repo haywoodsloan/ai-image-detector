@@ -13,6 +13,7 @@ const getUserCollection = memoize(async () => {
 
   // Set a unique index for each userId.
   await users.createIndex({ userId: 1 }, { unique: true });
+  await users.createIndex({ createdAt: 1 });
 
   return users;
 });

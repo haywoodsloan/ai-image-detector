@@ -208,7 +208,7 @@
       ]
     },
     {
-      "label": "func: start",
+      "label": "Start Azure Function",
       "type": "func",
       "command": "start",
       "problemMatcher": "$func-node-watch",
@@ -219,7 +219,7 @@
       }
     },
     {
-      "label": "npm install (service)",
+      "label": "Restore Service Deps",
       "type": "shell",
       "command": "npm install",
       "options": {
@@ -227,9 +227,9 @@
       }
     },
     {
-      "label": "npm prune (service)",
+      "label": "Prune Service Deps",
       "type": "shell",
-      "command": "npm prune --production",
+      "command": "npm prune --omit=dev",
       "problemMatcher": [],
       "options": {
         "cwd": "${workspaceFolder}/service"

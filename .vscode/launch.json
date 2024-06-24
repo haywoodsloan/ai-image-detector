@@ -9,22 +9,12 @@
       "type": "node",
       "request": "attach",
       "port": 9229,
-      "preLaunchTask": "func: start"
+      "preLaunchTask": "Start Azure Function"
     },
     {
-      "name": "Run Data Scrapper (AI)",
+      "name": "Run Data Scrapper",
       "request": "launch",
       "runtimeArgs": ["run-script", "start", "--", "--debug"],
-      "runtimeExecutable": "npm",
-      "skipFiles": ["<node_internals>/**"],
-      "type": "node",
-      "cwd": "${workspaceFolder}/scrapper",
-      "internalConsoleOptions": "openOnSessionStart"
-    },
-    {
-      "name": "Run Data Scrapper (Real)",
-      "request": "launch",
-      "runtimeArgs": ["run-script", "start", "--", "--real", "--debug"],
       "runtimeExecutable": "npm",
       "skipFiles": ["<node_internals>/**"],
       "type": "node",

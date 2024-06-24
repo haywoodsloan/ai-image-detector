@@ -4,12 +4,12 @@ import { hashImage } from 'common/utilities/hash.js';
 import { AiLabel, RealLabel } from 'common/utilities/huggingface.js';
 import { getImageData } from 'common/utilities/image.js';
 import { loadSettings } from 'common/utilities/settings.js';
+import { isHttpUrl, shortenUrl } from 'common/utilities/url.js';
 
 import { insertNewUser } from './services/db/userColl.js';
 import { upsertVotedLabel } from './services/db/voteColl.js';
 import { checkIfAI } from './services/detector.js';
 import { shortenPath } from './utilities/path.js';
-import { isHttpUrl, shortenUrl } from './utilities/url.js';
 
 // Load settings for Hugging Face key
 await loadSettings();

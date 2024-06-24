@@ -19,11 +19,16 @@ variable "hf_key" {
 }
 
 variable "db_connection_string" {
-  type = string
+  type        = string
   description = "The Mongo DB connection string for the function"
 }
 
 variable "db_secondary_connection_string" {
-  type = string
+  type        = string
   description = "The secondary Mongo DB connection string for the function"
+}
+
+variable "insights_connection_string" {
+  type        = string
+  description = "The application insights instrumentation connection string"
 }

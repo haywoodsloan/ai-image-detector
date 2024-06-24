@@ -9,13 +9,13 @@ import {
 } from 'common/utilities/huggingface.js';
 import { getImageData, sanitizeImage } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
+import { isHttpUrl } from 'common/utilities/url.js';
 import { extname } from 'path';
 import sanitize from 'sanitize-filename';
 
 import { queryUser } from '../services/db/userColl.js';
 import { queryVotedLabel, upsertVotedLabel } from '../services/db/voteColl.js';
 import { createErrorResponse } from '../utilities/error.js';
-import { isHttpUrl } from '../utilities/url.js';
 
 const PendingBranch = 'pending';
 
