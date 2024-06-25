@@ -66,8 +66,8 @@ async function checkAndPrint({ uri, isAI }) {
     return true;
   } else {
     console.error(r(msg));
-    const { userId } = await insertNewUser();
-    await upsertVotedLabel(hashImage(data), userId, {
+    const { _id } = await insertNewUser();
+    await upsertVotedLabel(hashImage(data), _id, {
       voteLabel: result ? RealLabel : AiLabel,
     });
     return false;

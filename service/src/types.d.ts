@@ -21,6 +21,7 @@ declare type VoteDocument = {
 declare type UserDocument = {
   email: string;
   createdAt: Date;
+  lastAccessAt: Date;
 };
 
 declare type AuthDocument = {

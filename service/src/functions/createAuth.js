@@ -30,12 +30,17 @@ app.http('createAuth', {
 
     // Create a new auth for the user
     const auth = await insertNewAuth(user._id);
-    const authLog = { userId: auth.userId, authId: auth._id };
-    context.log(l`Created a new auth ${authLog}`);
+    context.log(
+      l`Created a new auth ${{
+        userId: auth.userId,
+        authId: auth._id,
+      }}`
+    );
 
+    // If the auth verification is pending send an email
     if (auth.verification.status === PendingVerification) {
       // TODO send verification email if verification is pending
-      context.log(l`Sending verification email ${authLog}`);
+      context.log(l`Sending verification email ${{ email, authId: auth._id }}`);
     }
 
     // Only return the accessToken and userId

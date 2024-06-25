@@ -1,4 +1,5 @@
 import { queryValidAuth } from '../services/db/authColl.js';
+import { updateUserActivity } from '../services/db/userColl.js';
 
 export const AuthType = 'Bearer';
 const AuthTypeRegEx = new RegExp(`^${AuthType} (?<accessToken>\\S*)`, 'i');
@@ -13,5 +14,6 @@ export async function assertValidAuth(request) {
   const auth = await queryValidAuth(accessToken);
   if (!auth) throw new Error('Must specify a valid access token');
 
+  await updateUserActivity(auth.userId);
   return auth.userId;
 }

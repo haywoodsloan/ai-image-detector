@@ -18,14 +18,6 @@ const getUserCollection = memoize(async () => {
 });
 
 /**
- * @param {string} userId
- */
-export async function queryUserById(userId) {
-  const users = await getUserCollection();
-  return users.findOne({ userId });
-}
-
-/**
  * @param {string} email
  */
 export async function queryUserByEmail(email) {
@@ -33,15 +25,27 @@ export async function queryUserByEmail(email) {
   return users.findOne({ email });
 }
 
+export async function updateUserActivity(userId) {
+  const users = await getUserCollection();
+
+  const result = await users.updateOne(
+    { _id: userId },
+    { $set: { lastAccessAt: new Date() } }
+  );
+
+  if (!result.matchedCount) throw new Error('Invalid UserID');
+}
+
 /**
  * @param {string} email
  */
 export async function insertNewUser(email) {
   if (!validateEmail(email)) throw new Error('Invalid email address');
+  const now = new Date();
 
   /** @type {WithId<UserDocument>} */
-  const newUser = { email, createdAt: new Date() };
-  
+  const newUser = { email, createdAt: now, lastAccessAt: now };
+
   const users = await getUserCollection();
   await users.insertOne(newUser);
 

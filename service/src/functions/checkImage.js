@@ -12,7 +12,7 @@ app.http('checkImage', {
   methods: ['POST'],
   authLevel: isProd ? 'anonymous' : 'function',
   handler: async (request, context) => {
-    /** @type {{url: string, userId: string}} */
+    /** @type {{url: string}} */
     const { url } = await request.json();
 
     // Check url is valid

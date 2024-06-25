@@ -62,17 +62,17 @@ export async function queryVotesByUser(userId) {
 /**
  * @param {string} hash
  * @param {string} userId
- * @param {Partial<VoteDocument>} update
- * @description Always updates the `lastChange` field to now
+ * @param {LabelType} voteLabel
+ * @description Always updates the `changedAt` field to now
  */
-export async function upsertVotedLabel(hash, userId, update) {
-  if (update.voteLabel && !AllLabels.includes(update.voteLabel))
+export async function upsertVotedLabel(hash, userId, voteLabel) {
+  if (!AllLabels.includes(voteLabel))
     throw new Error(l`voteLabel must be one of ${AllLabels}`);
 
   const votes = await getVoteCollection();
   const vote = await votes.findOneAndUpdate(
     { hash, userId },
-    { $set: { ...update, changedAt: new Date() } },
+    { $set: { voteLabel, changedAt: new Date() } },
     { upsert: true, returnDocument: 'after' }
   );
 
