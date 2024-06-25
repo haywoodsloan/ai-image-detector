@@ -32,3 +32,13 @@ variable "insights_connection_string" {
   type        = string
   description = "The application insights instrumentation connection string"
 }
+
+variable "comm_service_connection_string" {
+  type        = string
+  description = "The communication service connection string"
+}
+
+variable "comm_service_secondary_connection_string" {
+  type        = string
+  description = "The communication service secondary connection string"
+}

@@ -28,18 +28,30 @@ module "rg" {
 
 module "db" {
   source       = "../../modules/envs/db"
-  env_name     = var.env_name
   rg_name      = module.rg.env_rg_name
   region_names = var.region_names
 }
 
+module "dns" {
+  source   = "../../modules/envs/dns"
+  env_name = var.env_name
+  rg_name  = module.rg.env_rg_name
+}
+
+module "comm" {
+  source      = "../../modules/envs/comm"
+  domain_name = module.dns.domain_name
+  rg_name     = module.rg.env_rg_name
+}
 
 module "region" {
-  for_each                       = toset(var.region_names)
-  source                         = "./region"
-  region_name                    = each.value
-  env_name                       = var.env_name
-  hf_key                         = var.hf_key
-  db_connection_string           = module.db.connection_string
-  db_secondary_connection_string = module.db.secondary_connection_string
+  for_each                                 = toset(var.region_names)
+  source                                   = "./region"
+  region_name                              = each.value
+  env_name                                 = var.env_name
+  hf_key                                   = var.hf_key
+  db_connection_string                     = module.db.connection_string
+  db_secondary_connection_string           = module.db.secondary_connection_string
+  comm_service_connection_string           = module.comm.comm_service_connection_string
+  comm_service_secondary_connection_string = module.comm.comm_service_secondary_connection_string
 }
