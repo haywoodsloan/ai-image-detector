@@ -30,13 +30,16 @@ resource "azurerm_windows_function_app" "function_app" {
   service_plan_id            = azurerm_service_plan.function_service_plan.id
   https_only                 = true
 
+  identity {
+    type = "SystemAssigned"
+  }
+
   app_settings = {
-    NODE_ENV        = var.env_name
-    HF_KEY          = var.hf_key
-    DB_CONN_STR     = var.db_connection_string
-    DB_CONN_STR_2   = var.db_secondary_connection_string
-    COMM_CONN_STR   = var.comm_service_connection_string
-    COMM_CONN_STR_2 = var.comm_service_secondary_connection_string
+    NODE_ENV      = var.env_name
+    HF_KEY        = var.hf_key
+    DB_CONN_STR   = var.db_connection_string
+    DB_CONN_STR_2 = var.db_secondary_connection_string
+    COMM_ENDPOINT = var.comm_service_endpoint
   }
 
   site_config {
@@ -60,4 +63,10 @@ resource "azurerm_windows_function_app" "function_app" {
 data "azurerm_function_app_host_keys" "function_keys" {
   name                = azurerm_windows_function_app.function_app.name
   resource_group_name = var.rg_name
+}
+
+resource "azurerm_role_assignment" "function_email_role" {
+  scope                = var.comm_service_id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_windows_function_app.function_app.identity[0].principal_id
 }

@@ -1,9 +1,12 @@
-output "comm_service_connection_string" {
-  sensitive = true
-  value     = azurerm_communication_service.comm_service.primary_connection_string
+locals {
+  location = lower(join("", split(" ", azurerm_communication_service.comm_service.data_location)))
 }
 
-output "comm_service_secondary_connection_string" {
+output "comm_service_endpoint" {
   sensitive = true
-  value     = azurerm_communication_service.comm_service.secondary_connection_string
+  value     = "https://${azurerm_communication_service.comm_service.name}.${local.location}.communication.azure.com"
+}
+
+output "comm_service_id" {
+  value = azurerm_communication_service.comm_service.id
 }

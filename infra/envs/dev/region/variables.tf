@@ -23,12 +23,12 @@ variable "db_secondary_connection_string" {
   description = "The Mongo DB connection string for the function"
 }
 
-variable "comm_service_connection_string" {
+variable "comm_service_endpoint" {
   type        = string
-  description = "The communication service connection string"
+  description = "The communication service endpoint"
+}
+variable "comm_service_id" {
+  type        = string
+  description = "The communication service ID"
 }
 
-variable "comm_service_secondary_connection_string" {
-  type        = string
-  description = "The communication service secondary connection string"
-}
