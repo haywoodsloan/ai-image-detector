@@ -1,5 +1,4 @@
 import { app } from '@azure/functions';
-import { isProd } from 'common/utilities/environment.js';
 import { l } from 'common/utilities/string.js';
 
 import { verifyAuth } from '../services/db/authColl.js';
@@ -8,7 +7,7 @@ import { captureConsole } from '../utilities/log.js';
 
 app.http('verifyAuth', {
   methods: ['GET'],
-  authLevel: isProd ? 'anonymous' : 'function',
+  authLevel: 'anonymous',
   handler: async (request, context) => {
     captureConsole(context);
 
