@@ -1,5 +1,8 @@
 import { wait } from './sleep.js';
 
+/** An error that will not be retried */
+export class NonRetryableError extends Error {}
+
 /**
  * @param {number} retryLimit
  * @param {number | import('./TimeSpan.js').TimeSpan} timeout
@@ -18,6 +21,7 @@ export function withRetry(retryLimit, timeout) {
       try {
         return await action();
       } catch (error) {
+        if (error instanceof NonRetryableError) throw error;
         if (retryCount >= retryLimit) throw error;
         retryCount++;
 

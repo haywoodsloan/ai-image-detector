@@ -1,5 +1,5 @@
 import { app } from '@azure/functions';
-import { isProd } from 'common/utilities/environment.js';
+import { isDev, isLocal, isProd } from 'common/utilities/environment.js';
 import { l } from 'common/utilities/string.js';
 import { validate as validateEmail } from 'email-validator';
 
@@ -35,7 +35,8 @@ app.http('createAuth', {
 
     // Create a new auth for the user
     console.log(l`Creating a new auth ${{ userId: user._id }}`);
-    const auth = await insertNewAuth(user._id);
+    const verified = isLocal || (isDev && request.headers.get('skipVerify'));
+    const auth = await insertNewAuth(user._id, verified);
     console.log(
       l`Created a new auth ${{
         userId: auth.userId,
@@ -55,6 +56,7 @@ app.http('createAuth', {
         accessToken: auth.accessToken,
         expiresAt: auth.expiresAt,
         userId: auth.userId,
+        verification: auth.verification.status,
       },
     };
   },

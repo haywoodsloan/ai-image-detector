@@ -1,28 +1,22 @@
 import { app } from '@azure/functions';
 import { isProd } from 'common/utilities/environment.js';
 import { hashImage } from 'common/utilities/hash.js';
-import {
-  AllLabels,
-  TrainSplit,
-  replaceImage,
-  uploadImages,
-} from 'common/utilities/huggingface.js';
-import { getImageData, sanitizeImage } from 'common/utilities/image.js';
+import { AllLabels } from 'common/utilities/huggingface.js';
+import { getImageData } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
 import { isHttpUrl } from 'common/utilities/url.js';
-import { extname } from 'path';
-import sanitizeFileName from 'sanitize-filename';
+import { EntityId, getClient, input } from 'durable-functions';
 
 import { queryVotedLabel, upsertVotedLabel } from '../services/db/voteColl.js';
 import { assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
-
-const PendingBranch = 'pending';
+import { UploadImageEntity } from './uploadImage.js';
 
 app.http('voteImageLabel', {
   methods: ['POST'],
   authLevel: isProd ? 'anonymous' : 'function',
+  extraInputs: [input.durableClient()],
   handler: async (request, context) => {
     captureConsole(context);
 
@@ -55,58 +49,27 @@ app.http('voteImageLabel', {
     // Track the vote by the image's hash
     console.log(l`Vote image ${{ url, userId, voteLabel }}`);
     const data = await getImageData(url);
-    const hash = hashImage(data);
+    const hash = hashImage(data, { alg: 'sha256', url: true });
 
     // Check what the current voted label is
     const oldLabel = await queryVotedLabel(hash);
+    console.log(l`Original voted label ${{ hash, label: oldLabel }}`);
+
+    // Add the vote and check the new label
     const vote = await upsertVotedLabel(hash, userId, voteLabel);
+    const newLabel = await queryVotedLabel(hash);
+    console.log(l`New voted label ${{ hash, label: newLabel }}`);
 
     // Check if the voted label has changed and upload if so
-    const newLabel = await queryVotedLabel(hash);
     if (newLabel && oldLabel !== newLabel) {
       console.log(l`Voted label changed, uploading ${{ url }}`);
-      upload(data, url, newLabel);
+
+      const entityId = new EntityId(UploadImageEntity, hash);
+      const input = { data, url, label: newLabel };
+
+      await getClient(context).signalEntity(entityId, null, input);
     }
 
     return { jsonBody: vote };
   },
 });
-
-/**
- * @param {Buffer} data
- * @param {string | URL} url
- * @param {string} label
- */
-async function upload(data, url, label) {
-  // Sanitize the image first
-  try {
-    data = await sanitizeImage(data);
-  } catch (error) {
-    console.warn(l`Image validation failed ${{ url, error }}`);
-    return;
-  }
-
-  // Use the hash of the sanitized image to store it
-  const hash = hashImage(data);
-  const { pathname } = new URL(url);
-  const ext = extname(pathname);
-
-  // Build the image properties, always use the train split
-  const fileName = sanitizeFileName(`${hash}${ext}`);
-  const split = TrainSplit;
-  const content = new Blob([data]);
-  const origin = new URL(url);
-
-  /** @type {HfImage} */
-  const image = { fileName, label, split, content, origin };
-  try {
-    // If an existing image either replace ir or skip the image (if label is the same)
-    (await replaceImage(image, PendingBranch))
-      ? console.log(l`Image replaced on Hugging Face ${{ fileName, label }}`)
-      : console.log(l`Matching image on Hugging Face ${{ fileName, label }}`);
-  } catch {
-    // If replace errors then it's a new file to upload
-    await uploadImages([image], PendingBranch);
-    console.log(l`Image uploaded to Hugging Face ${{ fileName, label }}`);
-  }
-}

@@ -2,6 +2,7 @@ import {
   commit,
   downloadFile,
   fileExists,
+  listCommits,
   listFiles,
   uploadFile,
   uploadFiles,
@@ -14,7 +15,7 @@ import { basename, dirname } from 'path';
 
 import TimeSpan from './TimeSpan.js';
 import { firstResult } from './async.js';
-import { withRetry } from './retry.js';
+import { NonRetryableError, withRetry } from './retry.js';
 
 export const MainBranch = 'main';
 export const DataPath = 'data';
@@ -74,21 +75,25 @@ export async function isExistingImage(fileName, branch = MainBranch) {
 export async function replaceImage(image, branch = MainBranch) {
   // Error if the files doesn't exists already
   const { fileName, label: newLabel } = image;
-  const oldPath = await getFullImagePath(fileName, branch);
-  if (!oldPath) throw new Error('Image to replace missing from HF');
-
-  // Skip if the old and new labels are the same
-  // Return false to indicate no change was made
-  const { label: oldLabel } = parsePath(oldPath);
-  if (oldLabel === newLabel) return false;
 
   // Move the image
   await retry(
     async () => {
       console.log(y`Moving image on HF ${fileName}`);
+      const head = await getHeadCommit(branch);
+
+      // If there isn't an existing file skip retries and throw
+      const oldPath = await getFullImagePath(fileName, head.oid);
+      if (!oldPath)
+        throw new NonRetryableError('Image to replace missing from HF');
+
+      // Skip if the old and new labels are the same
+      // Return false to indicate no change was made
+      const { label: oldLabel } = parsePath(oldPath);
+      if (oldLabel === newLabel) return false;
 
       // Create a new upload for the replacement
-      const [upload] = await createUploads([image], branch);
+      const [upload] = await createUploads([image], head.oid);
       pendingPaths.add(upload.path);
 
       try {
@@ -102,6 +107,7 @@ export async function replaceImage(image, branch = MainBranch) {
           credentials,
           useWebWorkers: true,
           title: `Move image ${oldPath} => ${upload.path}`,
+          parentCommit: head.oid,
         });
       } finally {
         // Remove the pending paths either way because we'll get new paths
@@ -212,7 +218,7 @@ export async function fetchKnownUrls(branch = MainBranch) {
       return urlStr.split(/\r?\n/).filter(Boolean);
     },
     (error) => {
-      console.warn(r`Retrying url list fetch [${error}]`);
+      console.warn(r`Retrying URL list fetch [${error}]`);
     }
   );
 }
@@ -257,17 +263,18 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
           await retry(
             async () => {
               const pendingCt = pendingUrls.size;
-              console.log(y`Uploading ${pendingCt} url(s) to HF`);
+              console.log(y`Uploading ${pendingCt} URL(s) to HF`);
 
-              // Get the current list of urls
-              const allUrls = new Set(await fetchKnownUrls(branch));
+              // Get the current list of urls from the HEAD
+              const head = await getHeadCommit(branch);
+              const allUrls = new Set(await fetchKnownUrls(head.oid));
 
               // Add the new urls to the set, don't upload if nothing new
               // Reset the list of new urls for each retry
               newUrls.length = 0;
               for (const [url, { resolve }] of pendingUrls) {
                 if (allUrls.has(url)) {
-                  console.log(y`Skipping url ${url} [url already on HF]`);
+                  console.log(y`Skipping ${url} [URL already on HF]`);
                   pendingUrls.delete(url);
                   resolve();
                 } else {
@@ -284,6 +291,8 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
               const urlData = new Blob([[...allUrls].join('\n')]);
               const urlsUpload = { path: UrlListPath, content: urlData };
 
+              // Upload the new urls requiring the parent commit be
+              // the same as the one we fetched the URLs from
               const skippedCt = pendingCt - newCt;
               await uploadFile({
                 file: urlsUpload,
@@ -291,13 +300,14 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
                 branch,
                 credentials,
                 useWebWorkers: true,
-                commitTitle: `Add ${newCt} urls`,
+                commitTitle: `Add ${newCt} URLs`,
+                parentCommit: head.oid,
               });
 
-              console.log(g`${newCt} url(s) uploaded [${skippedCt} skipped]`);
+              console.log(g`${newCt} URL(s) uploaded [${skippedCt} skipped]`);
             },
             (error) => {
-              console.warn(r`Retrying url list upload [${error}]`);
+              console.warn(r`Retrying URL list upload [${error}]`);
             }
           );
 
@@ -467,4 +477,15 @@ async function createUploads(uploads, branch = MainBranch) {
   }
 
   return uploadsWithPath;
+}
+
+async function getHeadCommit(branch = MainBranch) {
+  /** @type {{value: CommitData}} */
+  const { value: head } = await listCommits({
+    repo: DatasetRepo,
+    revision: branch,
+    batchSize: 1,
+    credentials,
+  }).next();
+  return head;
 }

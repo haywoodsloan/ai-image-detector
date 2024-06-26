@@ -1,5 +1,4 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
-import { isLocal } from 'common/utilities/environment.js';
 import { randomBytes } from 'crypto';
 import memoize from 'memoize';
 
@@ -26,7 +25,7 @@ const getAuthCollection = memoize(async () => {
 /**
  * @param {string} userId
  */
-export async function insertNewAuth(userId) {
+export async function insertNewAuth(userId, verified = false) {
   /** @type {WithId<AuthDocument>} */
   const newAuth = {
     userId,
@@ -35,7 +34,7 @@ export async function insertNewAuth(userId) {
 
     verification: {
       code: randomBytes(128).toString('base64url'),
-      status: isLocal ? VerificationComplete : PendingVerification,
+      status: verified ? VerificationComplete : PendingVerification,
     },
   };
 

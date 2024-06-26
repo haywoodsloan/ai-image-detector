@@ -3,6 +3,8 @@ declare type ClassificationOptions = import('@huggingface/inference').Options;
 declare type ImageClassificationArgs =
   import('@huggingface/inference').ImageClassificationArgs;
 
+declare type CommitData = import('@huggingface/hub').CommitData;
+
 declare type SplitType =
   | typeof import('./utilities/huggingface.js').TrainSplit
   | typeof import('./utilities/huggingface.js').TestSplit;
