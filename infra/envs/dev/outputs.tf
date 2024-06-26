@@ -7,3 +7,7 @@ output "functions" {
     }
   ])
 }
+
+output "nameservers" {
+  value = module.dns.domain_ns
+}

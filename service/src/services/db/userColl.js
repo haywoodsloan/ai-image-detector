@@ -25,6 +25,9 @@ export async function queryUserByEmail(email) {
   return users.findOne({ email });
 }
 
+/**
+ * @param {string} userId 
+ */
 export async function updateUserActivity(userId) {
   const users = await getUserCollection();
 

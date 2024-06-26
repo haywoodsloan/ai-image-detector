@@ -25,6 +25,7 @@ export const getServiceDb = memoize(async () => {
       const client = await MongoClient.connect(url);
       return client.db(DbName);
     } catch (error) {
+      console.warn('Failed to connect to MongoDB', error);
       errors.push(error);
     }
   }

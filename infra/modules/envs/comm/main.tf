@@ -22,7 +22,7 @@ resource "azurerm_email_communication_service_domain" "email_domain" {
 }
 
 resource "azurerm_dns_txt_record" "email_txt" {
-  name                = var.domain_name
+  name                = "@"
   resource_group_name = var.rg_name
   zone_name           = var.domain_name
   ttl                 = azurerm_email_communication_service_domain.email_domain.verification_records[0].domain[0].ttl

@@ -16,6 +16,7 @@ import sanitizeFileName from 'sanitize-filename';
 import { queryVotedLabel, upsertVotedLabel } from '../services/db/voteColl.js';
 import { assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
+import { captureConsole } from '../utilities/log.js';
 
 const PendingBranch = 'pending';
 
@@ -23,20 +24,22 @@ app.http('voteImageLabel', {
   methods: ['POST'],
   authLevel: isProd ? 'anonymous' : 'function',
   handler: async (request, context) => {
+    captureConsole(context);
+
     /** @type {{url: string, voteLabel: string}} */
     const { url, voteLabel } = await request.json();
 
     // Check the url is valid
     if (!isHttpUrl(url)) {
       const error = new Error('Must specify a valid URL');
-      context.error(error);
+      console.error(error);
       return createErrorResponse(400, error);
     }
 
     // Check the vote is valid
     if (!AllLabels.includes(voteLabel)) {
       const error = new Error(l`voteLabel must be one of ${AllLabels}`);
-      context.error(error);
+      console.error(error);
       return createErrorResponse(400, error);
     }
 
@@ -45,18 +48,18 @@ app.http('voteImageLabel', {
     try {
       userId = await assertValidAuth(request);
     } catch (error) {
-      context.error(error);
+      console.error(error);
       return createErrorResponse(401, error);
     }
 
     // Track the vote by the image's hash
-    context.log(l`Vote image ${{ url, userId, voteLabel }}`);
+    console.log(l`Vote image ${{ url, userId, voteLabel }}`);
     const data = await getImageData(url);
     const hash = hashImage(data);
 
     // Check what the current voted label is
     const oldLabel = await queryVotedLabel(hash);
-    const vote = await upsertVotedLabel(hash, userId, { voteLabel });
+    const vote = await upsertVotedLabel(hash, userId, voteLabel);
 
     // Check if the voted label has changed and upload if so
     const newLabel = await queryVotedLabel(hash);
