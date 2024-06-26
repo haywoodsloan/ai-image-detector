@@ -30,8 +30,12 @@ app.http('createAuth', {
     if (!user) {
       console.log(l`Creating a new user ${{ email }}`);
       user = await insertNewUser(email);
+      console.log(l`Created new user ${{ userId: user._id }}`);
     }
 
+    // Create a new auth for the user
+    console.log(l`Creating a new auth ${{ userId: user._id }}`);
+    const auth = await insertNewAuth(user._id);
     console.log(
       l`Created a new auth ${{
         userId: auth.userId,
@@ -39,9 +43,7 @@ app.http('createAuth', {
       }}`
     );
 
-    // Create a new auth for the user
     // If the auth verification is pending send an email
-    const auth = await insertNewAuth(user._id);
     if (auth.verification.status === PendingVerification) {
       console.log(l`Sending verification email ${{ email, authId: auth._id }}`);
       await sendVerificationMail(email, auth.verification.code);

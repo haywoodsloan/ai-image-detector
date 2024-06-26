@@ -1,4 +1,3 @@
-import { app } from '@azure/functions';
 import { isProd } from 'common/utilities/environment.js';
 import { setHfAccessToken } from 'common/utilities/huggingface.js';
 
@@ -8,7 +7,3 @@ export const FunctionEndpoint = isProd
 
 setHfAccessToken(process.env.HF_KEY);
 console.info('Hugging Face Token Set');
-
-app.setup({
-  enableHttpStream: true,
-});
