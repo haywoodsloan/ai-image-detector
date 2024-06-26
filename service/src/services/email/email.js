@@ -25,7 +25,7 @@ export async function sendVerificationMail(email, code) {
   const message = {
     senderAddress: SenderAddress,
     content: {
-      subject: 'AI Image Detector - Verify your Email',
+      subject: 'AI Image Detector - Verify Your Email',
       html:
         'Thank you for using the AI Image Detector! ' +
         'Please use this link to verify your email: ' +
