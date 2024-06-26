@@ -42,6 +42,13 @@ export async function insertNewAuth(userId) {
   const auths = await getAuthCollection();
   await auths.insertOne(newAuth);
 
+  // Remove all other pending verifications for the user
+  await auths.deleteMany({
+    userId,
+    _id: { $ne: newAuth._id },
+    'verification.status': PendingVerification,
+  });
+
   return newAuth;
 }
 
