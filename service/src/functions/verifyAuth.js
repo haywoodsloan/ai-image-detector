@@ -22,7 +22,7 @@ app.http('verifyAuth', {
     if (!auth) {
       const error = new Error('Verification code is no longer valid');
       console.error(error);
-      return createErrorResponse(400, error);
+      return { status: 400, body: error.message };
     }
 
     console.log(l`Verified auth ${{ userId: auth.userId, authId: auth._id }}`);

@@ -66,7 +66,10 @@ export async function queryValidAuth(accessToken) {
 export async function verifyAuth(code) {
   const auths = await getAuthCollection();
   return await auths.findOneAndUpdate(
-    { 'verification.code': code },
+    {
+      'verification.code': code,
+      'verification.status': PendingVerification,
+    },
     {
       $set: {
         expiresAt: new Date(Date.now() + TimeSpan.fromDays(30)),
