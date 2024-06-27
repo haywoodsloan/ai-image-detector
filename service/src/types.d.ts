@@ -20,7 +20,7 @@ declare type VoteDocument = {
 };
 
 declare type UserDocument = {
-  email: string;
+  emailHash: string;
   createdAt: Date;
   lastAccessAt: Date;
 };

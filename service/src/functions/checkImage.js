@@ -40,7 +40,7 @@ app.http('checkImage', {
       data = await getImageData(url);
     } catch (error) {
       console.error(error);
-      return createErrorResponse(400, error);
+      return createErrorResponse(404, error);
     }
 
     // Get the AI classification score

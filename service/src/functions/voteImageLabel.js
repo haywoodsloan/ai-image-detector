@@ -1,6 +1,6 @@
 import { app } from '@azure/functions';
 import { isProd } from 'common/utilities/environment.js';
-import { hashImage } from 'common/utilities/hash.js';
+import { createHash } from 'common/utilities/hash.js';
 import { AllLabels } from 'common/utilities/huggingface.js';
 import { getImageData } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
@@ -49,7 +49,7 @@ app.http('voteImageLabel', {
     // Track the vote by the image's hash
     console.log(l`Vote image ${{ url, userId, voteLabel }}`);
     const data = await getImageData(url);
-    const hash = hashImage(data, { alg: 'sha256', url: true });
+    const hash = createHash(data, { alg: 'sha256', url: true });
 
     // Check what the current voted label is
     const oldLabel = await queryVotedLabel(hash);

@@ -1,4 +1,4 @@
-import { hashImage } from 'common/utilities/hash.js';
+import { createHash } from 'common/utilities/hash.js';
 import { replaceImage } from 'common/utilities/huggingface.js';
 import { TrainSplit } from 'common/utilities/huggingface.js';
 import { uploadImages } from 'common/utilities/huggingface.js';
@@ -31,7 +31,7 @@ df.app.entity(UploadImageEntity, async (context) => {
   }
 
   // Use the hash of the sanitized image to store it
-  const hash = hashImage(data);
+  const hash = createHash(data);
   const { pathname } = new URL(url);
   const ext = extname(pathname);
 

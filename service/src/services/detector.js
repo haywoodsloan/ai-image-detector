@@ -1,4 +1,4 @@
-import { hashImage } from 'common/utilities/hash.js';
+import { createHash } from 'common/utilities/hash.js';
 import {
   AiLabel,
   RealLabel,
@@ -19,7 +19,7 @@ export const DetectorModels = Object.freeze([
  */
 export async function checkIfAI(data) {
   // Check for a cached class from the DB
-  const hash = hashImage(data);
+  const hash = createHash(data);
   const cachedClass = await queryVotedLabel(hash);
   switch (cachedClass) {
     case AiLabel:

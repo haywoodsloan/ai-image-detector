@@ -1,3 +1,5 @@
+declare type Encoding = import('crypto').Encoding;
+
 declare type ClassificationOptions = import('@huggingface/inference').Options;
 
 declare type ImageClassificationArgs =

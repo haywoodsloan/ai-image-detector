@@ -1,6 +1,6 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { b, g, r, y } from 'common/utilities/colors.js';
-import { hashImage } from 'common/utilities/hash.js';
+import { createHash } from 'common/utilities/hash.js';
 import {
   AiLabel,
   RealLabel,
@@ -169,7 +169,7 @@ try {
             }
 
             // Build the file name from the hash of the data
-            const hash = hashImage(data);
+            const hash = createHash(data);
             const ext = extname(origin.pathname);
             const fileName = sanitizeFileName(`${hash}${ext}`);
 

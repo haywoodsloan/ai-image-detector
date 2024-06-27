@@ -1,5 +1,6 @@
 import { app } from '@azure/functions';
 import { isDev, isLocal, isProd } from 'common/utilities/environment.js';
+import { createHash } from 'common/utilities/hash.js';
 import { l } from 'common/utilities/string.js';
 import { validate as validateEmail } from 'email-validator';
 
@@ -25,17 +26,22 @@ app.http('createAuth', {
       return createErrorResponse(400, error);
     }
 
+    // Use a hash of the email to track the user for privacy
+    const emailHash = createHash(email, { alg: 'sha256' });
+
     // Get the existing user or create a new one
-    let user = await queryUserByEmail(email);
+    let user = await queryUserByEmail(emailHash);
     if (!user) {
-      console.log(l`Creating a new user ${{ email }}`);
-      user = await insertNewUser(email);
+      console.log(l`Creating a new user ${{ emailHash }}`);
+      user = await insertNewUser(emailHash);
       console.log(l`Created new user ${{ userId: user._id }}`);
     }
 
-    // Create a new auth for the user
+    // Auto verify if local or dev and SkipVerify header is specified
+    const verified = isLocal || (isDev && request.headers.get('SkipVerify'));
+    console.log(l`Initial verification status ${{ verified }}`);
+
     console.log(l`Creating a new auth ${{ userId: user._id }}`);
-    const verified = isLocal || (isDev && request.headers.get('skipVerify'));
     const auth = await insertNewAuth(user._id, verified);
     console.log(
       l`Created a new auth ${{
@@ -46,7 +52,7 @@ app.http('createAuth', {
 
     // If the auth verification is pending send an email
     if (auth.verification.status === PendingVerification) {
-      console.log(l`Sending verification email ${{ email, authId: auth._id }}`);
+      console.log(l`Emailing verification ${{ emailHash, authId: auth._id }}`);
       await sendVerificationMail(email, auth.verification.code);
     }
 
