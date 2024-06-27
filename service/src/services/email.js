@@ -3,7 +3,10 @@ import { DefaultAzureCredential } from '@azure/identity';
 import { isProd } from 'common/utilities/environment.js';
 import memoize from 'memoize';
 
-import { FunctionEndpoint } from '../../index.js';
+import { FunctionEndpoint } from '../index.js';
+import { getTemplateHtml } from '../utilities/html.js';
+
+const VerifyRequestHtml = 'verifyRequest';
 
 const SenderAddress = isProd
   ? 'donotreply@ai-image-detector.com'
@@ -19,17 +22,15 @@ export const getEmailClient = memoize(() => {
  * @param {string} code
  */
 export async function sendVerificationMail(email, code) {
-  const emailClient = getEmailClient();
+  const emailTemplate = await getTemplateHtml(VerifyRequestHtml);
+  const emailContent = emailTemplate({ link: buildVerificationLink(code) });
 
   /** @type {EmailMessage} */
   const message = {
     senderAddress: SenderAddress,
     content: {
       subject: 'AI Image Detector - Verify Your Email',
-      html:
-        'Thank you for using the AI Image Detector! ' +
-        'Please use this link to verify your email: ' +
-        `<a href="${buildVerificationLink(code)}">Verify Email</a>`,
+      html: emailContent,
     },
     recipients: {
       to: [{ address: email }],
@@ -37,6 +38,7 @@ export async function sendVerificationMail(email, code) {
   };
 
   // Poll for the message to finish sending
+  const emailClient = getEmailClient();
   const poller = await emailClient.beginSend(message);
   const result = await poller.pollUntilDone();
 

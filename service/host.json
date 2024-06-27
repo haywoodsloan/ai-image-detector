@@ -15,6 +15,7 @@
   },
   "extensions": {
     "durableTask": {
+      "hubName": "%HUB_NAME%",
       "storageProvider": {
         "connectionStringName": "AzureWebJobsStorage"
       }

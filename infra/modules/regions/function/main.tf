@@ -34,12 +34,17 @@ resource "azurerm_windows_function_app" "function_app" {
     type = "SystemAssigned"
   }
 
+  sticky_settings {
+    app_setting_names = ["HUB_NAME"]
+  }
+
   app_settings = {
     NODE_ENV      = var.env_name
     HF_KEY        = var.hf_key
     DB_CONN_STR   = var.db_connection_string
     DB_CONN_STR_2 = var.db_secondary_connection_string
     COMM_ENDPOINT = var.comm_service_endpoint
+    HUB_NAME      = "default"
   }
 
   site_config {
@@ -69,4 +74,51 @@ resource "azurerm_role_assignment" "function_email_role" {
   scope                = var.comm_service_id
   role_definition_name = "Contributor"
   principal_id         = azurerm_windows_function_app.function_app.identity[0].principal_id
+}
+
+resource "azurerm_windows_function_app_slot" "function_app_slot" {
+  count           = var.env_name == "prod" ? 1 : 0
+  name            = "slot"
+  function_app_id = azurerm_windows_function_app.function_app.id
+
+  storage_account_access_key = azurerm_windows_function_app.function_app.storage_account_access_key
+  storage_account_name       = azurerm_windows_function_app.function_app.storage_account_name
+  https_only                 = azurerm_windows_function_app.function_app.https_only
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  app_settings = {
+    NODE_ENV      = azurerm_windows_function_app.function_app.app_settings.NODE_ENV
+    HF_KEY        = azurerm_windows_function_app.function_app.app_settings.HF_KEY
+    DB_CONN_STR   = azurerm_windows_function_app.function_app.app_settings.DB_CONN_STR
+    DB_CONN_STR_2 = azurerm_windows_function_app.function_app.app_settings.DB_CONN_STR_2
+    COMM_ENDPOINT = azurerm_windows_function_app.function_app.app_settings.COMM_ENDPOINT
+    HUB_NAME      = "staging"
+  }
+
+  site_config {
+    application_insights_connection_string = azurerm_windows_function_app.function_app.site_config[0].application_insights_connection_string
+    use_32_bit_worker                      = azurerm_windows_function_app.function_app.site_config[0].use_32_bit_worker
+    ftps_state                             = azurerm_windows_function_app.function_app.site_config[0].ftps_state
+
+    application_stack {
+      node_version = azurerm_windows_function_app.function_app.site_config[0].application_stack[0].node_version
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      app_settings["WEBSITE_RUN_FROM_PACKAGE"],
+      app_settings["AzureWebJobsFeatureFlags"],
+    ]
+  }
+}
+
+resource "azurerm_role_assignment" "function_slot_email_role" {
+  count                = var.env_name == "prod" ? 1 : 0
+  scope                = var.comm_service_id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_windows_function_app_slot.function_app_slot[0].identity[0].principal_id
 }

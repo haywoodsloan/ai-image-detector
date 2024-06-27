@@ -5,7 +5,7 @@ import { validate as validateEmail } from 'email-validator';
 
 import { PendingVerification, insertNewAuth } from '../services/db/authColl.js';
 import { insertNewUser, queryUserByEmail } from '../services/db/userColl.js';
-import { sendVerificationMail } from '../services/email/email.js';
+import { sendVerificationMail } from '../services/email.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
 

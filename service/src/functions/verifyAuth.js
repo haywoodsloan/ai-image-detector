@@ -1,15 +1,15 @@
 import { app } from '@azure/functions';
 import { l } from 'common/utilities/string.js';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
 
 import { verifyAuth } from '../services/db/authColl.js';
-import { createErrorResponse } from '../utilities/error.js';
+import { getStaticHtml } from '../utilities/html.js';
 import { captureConsole } from '../utilities/log.js';
 
-const StaticHtmlPath = 'html/static/';
-const VerifySuccessHtml = join(StaticHtmlPath, 'verifySuccess.html');
-const VerifyFailedHtml = join(StaticHtmlPath, 'verifyFailed.html');
+const VerifySuccessHtml = 'verifySuccess';
+const VerifyFailedHtml = 'verifyFailed';
+const VerifyMissingHtml = 'verifyMissing';
+
+const HtmlHeaders = { 'Content-Type': 'text/html' };
 
 app.http('verifyAuth', {
   methods: ['GET'],
@@ -17,21 +17,35 @@ app.http('verifyAuth', {
   handler: async (request, context) => {
     captureConsole(context);
 
+    // Error if the code is missing
     const code = request.query.get('code');
     if (!code) {
       const error = new Error('Must specify a verification code');
       console.error(error);
-      return createErrorResponse(400, error);
+      return {
+        status: 400,
+        body: await getStaticHtml(VerifyMissingHtml),
+        headers: HtmlHeaders,
+      };
     }
 
+    // Try to verify the auth with the code
     const auth = await verifyAuth(code);
     if (!auth) {
       const error = new Error('Verification code is no longer valid');
       console.error(error);
-      return { status: 400, body: await readFile(VerifyFailedHtml) };
+      return {
+        status: 400,
+        body: await getStaticHtml(VerifyFailedHtml),
+        headers: HtmlHeaders,
+      };
     }
 
+    // Return a success page if the auth was verified successfully
     console.log(l`Verified auth ${{ userId: auth.userId, authId: auth._id }}`);
-    return { body: await readFile(VerifySuccessHtml) };
+    return {
+      body: await getStaticHtml(VerifySuccessHtml),
+      headers: HtmlHeaders,
+    };
   },
 });
