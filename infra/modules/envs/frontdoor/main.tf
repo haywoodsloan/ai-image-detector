@@ -26,7 +26,7 @@ resource "azurerm_cdn_frontdoor_origin" "origin" {
   name                           = "origin-${each.key}"
   cdn_frontdoor_origin_group_id  = azurerm_cdn_frontdoor_origin_group.origin_group.id
   host_name                      = each.value
-  certificate_name_check_enabled = false
+  certificate_name_check_enabled = true
   enabled                        = true
 }
 
