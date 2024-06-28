@@ -19,46 +19,56 @@ terraform {
 provider "azurerm" {
   features {}
 }
+locals {
+  env_name     = "dev"
+  region_names = ["eastus2"]
+  domain_name  = "ai-image-detector-dev.com"
+}
 
 module "rg" {
   source      = "../../modules/envs/rg"
-  env_name    = var.env_name
-  region_name = var.region_names[0]
+  env_name    = local.env_name
+  region_name = local.region_names[0]
 }
 
 module "db" {
   source       = "../../modules/envs/db"
   rg_name      = module.rg.env_rg_name
-  region_names = var.region_names
+  region_names = local.region_names
 }
 
 module "dns" {
-  source   = "../../modules/envs/dns"
-  env_name = var.env_name
-  rg_name  = module.rg.env_rg_name
+  source      = "../../modules/envs/dns"
+  env_name    = local.env_name
+  rg_name     = module.rg.env_rg_name
+  domain_name = local.domain_name
 }
 
 module "comm" {
   source      = "../../modules/envs/comm"
-  domain_name = module.dns.domain_name
   rg_name     = module.rg.env_rg_name
+  domain_name = local.domain_name
 }
 
 module "frontdoor" {
   source             = "../../modules/envs/frontdoor"
   rg_name            = module.rg.env_rg_name
   function_hostnames = zipmap(keys(module.region), values(module.region)[*].function_hostname)
+  domain_name        = local.domain_name
 }
 
 module "region" {
-  for_each                       = toset(var.region_names)
+  for_each                       = toset(local.region_names)
   source                         = "./region"
   region_name                    = each.value
-  env_name                       = var.env_name
+  env_name                       = local.env_name
   hf_key                         = var.hf_key
   db_connection_string           = module.db.connection_string
   db_secondary_connection_string = module.db.secondary_connection_string
   comm_service_id                = module.comm.comm_service_id
   comm_service_endpoint          = module.comm.comm_service_endpoint
-  frontdoor_guid                   = module.frontdoor.frontdoor_guid
+  frontdoor_guid                 = module.frontdoor.frontdoor_guid
+  api_subdomain                  = module.frontdoor.api_subdomain
+  domain_name                    = local.domain_name
+  env_rg_name                    = module.rg.env_rg_name
 }

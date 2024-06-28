@@ -1,13 +1,7 @@
-output "functions" {
-  sensitive = true
-  value = zipmap(keys(module.region), [
-    for outputs in values(module.region) : {
-      hostname = outputs.function_hostname
-      key     = outputs.function_keys.default_function_key
-    }
-  ])
+output "api_endpoint" {
+  value = "https://${local.domain_name}/api"
 }
 
-output "nameservers" {
+output "dns_nameservers" {
   value = module.dns.domain_ns
 }

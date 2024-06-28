@@ -84,6 +84,31 @@ resource "azurerm_role_assignment" "function_email_role" {
   principal_id         = azurerm_windows_function_app.function_app.identity[0].principal_id
 }
 
+resource "azurerm_dns_txt_record" "function_txt" {
+  name                = "asuid.${var.api_subdomain}"
+  zone_name           = var.domain_name
+  resource_group_name = var.env_rg_name
+  ttl                 = 3600
+
+  record {
+    value = azurerm_windows_function_app.function_app.custom_domain_verification_id
+  }
+}
+
+resource "time_sleep" "wait_for_txt" {
+  create_duration = "60s"
+  triggers = {
+    txt_id = azurerm_dns_txt_record.function_txt.id
+  }
+}
+
+resource "azurerm_app_service_custom_hostname_binding" "custom_domain" {
+  depends_on          = [time_sleep.wait_for_txt]
+  hostname            = "${var.api_subdomain}.${var.domain_name}"
+  app_service_name    = azurerm_windows_function_app.function_app.name
+  resource_group_name = var.rg_name
+}
+
 resource "azurerm_windows_function_app_slot" "function_app_slot" {
   count           = var.env_name == "prod" ? 1 : 0
   name            = "slot"
@@ -108,14 +133,6 @@ resource "azurerm_windows_function_app_slot" "function_app_slot" {
 
     application_stack {
       node_version = azurerm_windows_function_app.function_app.site_config[0].application_stack[0].node_version
-    }
-
-    ip_restriction_default_action = azurerm_windows_function_app.function_app.site_config[0].ip_restriction_default_action
-    ip_restriction {
-      service_tag = azurerm_windows_function_app.function_app.site_config[0].ip_restriction[0].service_tag
-      headers {
-        x_azure_fdid = azurerm_windows_function_app.function_app.site_config[0].ip_restriction[0].headers[0].x_azure_fdid
-      }
     }
   }
 

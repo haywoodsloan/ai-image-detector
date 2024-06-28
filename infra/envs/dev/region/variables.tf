@@ -36,3 +36,18 @@ variable "frontdoor_guid" {
   type        = string
   description = "The ID of the frontdoor for the function"
 }
+
+variable "api_subdomain" {
+  type        = string
+  description = "The subdomain for API calls"
+}
+
+variable "domain_name" {
+  type        = string
+  description = "The custom domain for API calls"
+}
+
+variable "env_rg_name" {
+  type        = string
+  description = "The name of the environemnt resource group"
+}

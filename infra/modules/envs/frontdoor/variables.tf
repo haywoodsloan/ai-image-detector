@@ -7,3 +7,8 @@ variable "function_hostnames" {
   type        = map(string)
   description = "The hostnames of the regional functions"
 }
+
+variable "domain_name" {
+  type        = string
+  description = "The domain name"
+}
