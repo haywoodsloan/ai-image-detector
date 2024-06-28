@@ -60,18 +60,18 @@ export async function queryVotesByUser(userId) {
 }
 
 /**
- * @param {string} hash
+ * @param {string} imageHash
  * @param {string} userId
  * @param {LabelType} voteLabel
  * @description Always updates the `changedAt` field to now
  */
-export async function upsertVotedLabel(hash, userId, voteLabel) {
+export async function upsertVotedLabel(imageHash, userId, voteLabel) {
   if (!AllLabels.includes(voteLabel))
     throw new Error(l`voteLabel must be one of ${AllLabels}`);
 
   const votes = await getVoteCollection();
   const vote = await votes.findOneAndUpdate(
-    { hash, userId },
+    { imageHash, userId },
     { $set: { voteLabel, changedAt: new Date() } },
     { upsert: true, returnDocument: 'after' }
   );

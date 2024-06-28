@@ -13,7 +13,7 @@ declare type VerificationStatus =
   | typeof import('./services/db/authColl.js').VerificationComplete;
 
 declare type VoteDocument = {
-  hash: string;
+  imageHash: string;
   userId: string;
   voteLabel: LabelType;
   changedAt: Date;

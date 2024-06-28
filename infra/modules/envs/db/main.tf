@@ -12,6 +12,10 @@ resource "azurerm_cosmosdb_account" "cosmos_account" {
   offer_type          = "Standard"
   kind                = "MongoDB"
 
+  capabilities {
+    name = "mongoEnableDocLevelTTL"
+  }
+
   consistency_policy {
     consistency_level = "Strong"
   }

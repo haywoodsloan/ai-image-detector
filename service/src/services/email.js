@@ -39,11 +39,7 @@ export async function sendVerificationMail(email, code) {
 
   // Poll for the message to finish sending
   const emailClient = getEmailClient();
-  const poller = await emailClient.beginSend(message);
-  const result = await poller.pollUntilDone();
-
-  // Throw if the message failed to send
-  if (result.error) throw result.error;
+  await emailClient.beginSend(message);
 }
 
 function buildVerificationLink(code) {
