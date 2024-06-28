@@ -10,8 +10,13 @@
 
     ```json
     {
+      "IsEncrypted": false,
       "Values": {
-        "HF_KEY": "<your Hugging Face access token>"
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "FUNCTIONS_WORKER_RUNTIME": "node",
+        "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
+        "HF_KEY": "<your Hugging Face access token>",
+        "HUB_NAME": "local"
       }
     }
     ```

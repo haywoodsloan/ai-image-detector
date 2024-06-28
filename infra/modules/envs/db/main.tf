@@ -13,6 +13,10 @@ resource "azurerm_cosmosdb_account" "cosmos_account" {
   kind                = "MongoDB"
 
   capabilities {
+    name = "EnableMongo"
+  }
+
+  capabilities {
     name = "mongoEnableDocLevelTTL"
   }
 

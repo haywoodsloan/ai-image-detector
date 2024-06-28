@@ -55,6 +55,14 @@ resource "azurerm_windows_function_app" "function_app" {
     application_stack {
       node_version = "~20"
     }
+
+    ip_restriction_default_action = "Deny"
+    ip_restriction {
+      service_tag = "AzureFrontDoor.Backend"
+      headers {
+        x_azure_fdid = [var.frontdoor_guid]
+      }
+    }
   }
 
   lifecycle {
@@ -89,14 +97,9 @@ resource "azurerm_windows_function_app_slot" "function_app_slot" {
     type = "SystemAssigned"
   }
 
-  app_settings = {
-    NODE_ENV      = azurerm_windows_function_app.function_app.app_settings.NODE_ENV
-    HF_KEY        = azurerm_windows_function_app.function_app.app_settings.HF_KEY
-    DB_CONN_STR   = azurerm_windows_function_app.function_app.app_settings.DB_CONN_STR
-    DB_CONN_STR_2 = azurerm_windows_function_app.function_app.app_settings.DB_CONN_STR_2
-    COMM_ENDPOINT = azurerm_windows_function_app.function_app.app_settings.COMM_ENDPOINT
-    HUB_NAME      = "staging"
-  }
+  app_settings = merge(azurerm_windows_function_app.function_app.app_settings, {
+    HUB_NAME = "staging"
+  })
 
   site_config {
     application_insights_connection_string = azurerm_windows_function_app.function_app.site_config[0].application_insights_connection_string
@@ -105,6 +108,14 @@ resource "azurerm_windows_function_app_slot" "function_app_slot" {
 
     application_stack {
       node_version = azurerm_windows_function_app.function_app.site_config[0].application_stack[0].node_version
+    }
+
+    ip_restriction_default_action = azurerm_windows_function_app.function_app.site_config[0].ip_restriction_default_action
+    ip_restriction {
+      service_tag = azurerm_windows_function_app.function_app.site_config[0].ip_restriction[0].service_tag
+      headers {
+        x_azure_fdid = azurerm_windows_function_app.function_app.site_config[0].ip_restriction[0].headers[0].x_azure_fdid
+      }
     }
   }
 

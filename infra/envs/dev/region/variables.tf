@@ -32,3 +32,7 @@ variable "comm_service_id" {
   description = "The communication service ID"
 }
 
+variable "frontdoor_guid" {
+  type        = string
+  description = "The ID of the frontdoor for the function"
+}

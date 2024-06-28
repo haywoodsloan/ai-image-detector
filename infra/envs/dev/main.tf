@@ -44,6 +44,12 @@ module "comm" {
   rg_name     = module.rg.env_rg_name
 }
 
+module "frontdoor" {
+  source             = "../../modules/envs/frontdoor"
+  rg_name            = module.rg.env_rg_name
+  function_hostnames = zipmap(keys(module.region), values(module.region)[*].function_hostname)
+}
+
 module "region" {
   for_each                       = toset(var.region_names)
   source                         = "./region"
@@ -54,4 +60,5 @@ module "region" {
   db_secondary_connection_string = module.db.secondary_connection_string
   comm_service_id                = module.comm.comm_service_id
   comm_service_endpoint          = module.comm.comm_service_endpoint
+  frontdoor_guid                   = module.frontdoor.frontdoor_guid
 }
