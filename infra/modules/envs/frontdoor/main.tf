@@ -1,3 +1,37 @@
+
+locals {
+  sub_domain = "api"
+  host_name  = "${local.sub_domain}.${var.domain_name}"
+}
+
+resource "time_rotating" "dev_key_refresh" {
+  count           = var.env_name == "prod" ? 0 : 1
+  rotation_months = 1
+}
+
+resource "time_offset" "secondary_rotation_offset" {
+  count       = var.env_name == "prod" ? 0 : 1
+  offset_days = 15
+}
+
+resource "time_rotating" "secondary_dev_key_refresh" {
+  count           = var.env_name == "prod" ? 0 : 1
+  rfc3339         = time_offset.secondary_rotation_offset[0].id
+  rotation_months = 1
+}
+
+resource "random_bytes" "dev_key" {
+  count   = var.env_name == "prod" ? 0 : 1
+  keepers = { refresh = time_rotating.dev_key_refresh[0].id }
+  length  = 64
+}
+
+resource "random_bytes" "secondary_dev_key" {
+  count   = var.env_name == "prod" ? 0 : 1
+  keepers = { refresh = time_rotating.secondary_dev_key_refresh[0].id }
+  length  = 64
+}
+
 resource "azurerm_cdn_frontdoor_profile" "frontdoor" {
   name                = "frontdoor"
   resource_group_name = var.rg_name
@@ -16,11 +50,6 @@ resource "azurerm_cdn_frontdoor_endpoint" "endpoint" {
   enabled                  = true
 }
 
-locals {
-  sub_domain = "api"
-  host_name  = "${local.sub_domain}.${var.domain_name}"
-}
-
 resource "azurerm_cdn_frontdoor_origin" "origin" {
   for_each                       = var.function_hostnames
   name                           = "origin-${each.key}"
@@ -37,13 +66,68 @@ resource "azurerm_cdn_frontdoor_custom_domain" "custom_domain" {
   tls {}
 }
 
+resource "azurerm_cdn_frontdoor_firewall_policy" "dev_key_header" {
+  count = var.env_name == "prod" ? 0 : 1
+
+  name                = "devkeyfirewall"
+  resource_group_name = var.rg_name
+
+  enabled  = true
+  sku_name = "Standard_AzureFrontDoor"
+  mode     = "Prevention"
+
+  custom_block_response_status_code = 403
+
+  custom_rule {
+    name   = "BlockIfMissingKey"
+    action = "Block"
+    type   = "MatchRule"
+
+    match_condition {
+      match_variable     = "RequestHeader"
+      match_values       = [random_bytes.dev_key[0].base64, random_bytes.secondary_dev_key[0].base64]
+      negation_condition = true
+      selector           = "X-Dev-Key"
+      operator           = "Equal"
+    }
+
+    match_condition {
+      match_variable     = "RequestUri"
+      match_values       = ["(?i)\\/verifyAuth"]
+      negation_condition = true
+      operator           = "RegEx"
+    }
+  }
+}
+
+resource "azurerm_cdn_frontdoor_security_policy" "dev_key_header" {
+  count = var.env_name == "prod" ? 0 : 1
+
+  name                     = "require-dev-key"
+  cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.frontdoor.id
+
+  security_policies {
+    firewall {
+      cdn_frontdoor_firewall_policy_id = azurerm_cdn_frontdoor_firewall_policy.dev_key_header[0].id
+      association {
+        patterns_to_match = ["/*"]
+        domain {
+          cdn_frontdoor_domain_id = azurerm_cdn_frontdoor_custom_domain.custom_domain.id
+        }
+      }
+    }
+  }
+}
+
 resource "azurerm_cdn_frontdoor_rule_set" "default" {
   name                     = "default"
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.frontdoor.id
 }
 
-resource "azurerm_cdn_frontdoor_rule" "name" {
-  name                      = "urlRewrite"
+resource "azurerm_cdn_frontdoor_rule" "url_rewrite" {
+  depends_on = [azurerm_cdn_frontdoor_origin.origin, azurerm_cdn_frontdoor_origin_group.origin_group]
+
+  name                      = "UrlRewrite"
   cdn_frontdoor_rule_set_id = azurerm_cdn_frontdoor_rule_set.default.id
   order                     = 1
 
@@ -63,6 +147,7 @@ resource "azurerm_cdn_frontdoor_route" "default" {
   cdn_frontdoor_origin_ids        = values(azurerm_cdn_frontdoor_origin.origin)[*].id
   cdn_frontdoor_custom_domain_ids = [azurerm_cdn_frontdoor_custom_domain.custom_domain.id]
   cdn_frontdoor_rule_set_ids      = [azurerm_cdn_frontdoor_rule_set.default.id]
+  link_to_default_domain          = false
   supported_protocols             = ["Https", "Http"]
   https_redirect_enabled          = true
   patterns_to_match               = ["/*"]

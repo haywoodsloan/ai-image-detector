@@ -55,6 +55,7 @@ module "frontdoor" {
   rg_name            = module.rg.env_rg_name
   function_hostnames = zipmap(keys(module.region), values(module.region)[*].function_hostname)
   domain_name        = local.domain_name
+  env_name           = local.env_name
 }
 
 module "region" {

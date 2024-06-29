@@ -5,12 +5,13 @@ resource "random_string" "resource_code" {
 }
 
 resource "azurerm_cosmosdb_account" "cosmos_account" {
-  name                = "cosmos-db-${random_string.resource_code.result}"
-  location            = var.region_names[0]
-  resource_group_name = var.rg_name
-  free_tier_enabled   = true
-  offer_type          = "Standard"
-  kind                = "MongoDB"
+  name                             = "cosmos-db-${random_string.resource_code.result}"
+  location                         = var.region_names[0]
+  resource_group_name              = var.rg_name
+  free_tier_enabled                = true
+  offer_type                       = "Standard"
+  kind                             = "MongoDB"
+  multiple_write_locations_enabled = true
 
   capabilities {
     name = "EnableMongo"
@@ -21,7 +22,7 @@ resource "azurerm_cosmosdb_account" "cosmos_account" {
   }
 
   consistency_policy {
-    consistency_level = "Strong"
+    consistency_level = "BoundedStaleness"
   }
 
   dynamic "geo_location" {

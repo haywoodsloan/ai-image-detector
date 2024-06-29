@@ -12,3 +12,8 @@ variable "domain_name" {
   type        = string
   description = "The domain name"
 }
+
+variable "env_name" {
+  type        = string
+  description = "The environment name"
+}

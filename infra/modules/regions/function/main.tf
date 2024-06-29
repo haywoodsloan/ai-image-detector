@@ -51,6 +51,7 @@ resource "azurerm_windows_function_app" "function_app" {
     application_insights_connection_string = var.insights_connection_string
     use_32_bit_worker                      = false
     ftps_state                             = "FtpsOnly"
+    http2_enabled                          = true
 
     application_stack {
       node_version = "~20"

@@ -1,5 +1,4 @@
 import { app } from '@azure/functions';
-import { isProd } from 'common/utilities/environment.js';
 import { createHash } from 'common/utilities/hash.js';
 import { AllLabels } from 'common/utilities/huggingface.js';
 import { getImageData } from 'common/utilities/image.js';
@@ -15,7 +14,7 @@ import { UploadImageEntity } from './uploadImage.js';
 
 app.http('voteImageLabel', {
   methods: ['POST'],
-  authLevel: isProd ? 'anonymous' : 'function',
+  authLevel: 'anonymous',
   extraInputs: [input.durableClient()],
   handler: async (request, context) => {
     captureConsole(context);

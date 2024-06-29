@@ -1,5 +1,5 @@
 import { app } from '@azure/functions';
-import { isDev, isLocal, isProd } from 'common/utilities/environment.js';
+import { isDev, isLocal } from 'common/utilities/environment.js';
 import { createHash } from 'common/utilities/hash.js';
 import { l } from 'common/utilities/string.js';
 import { validate as validateEmail } from 'email-validator';
@@ -12,7 +12,7 @@ import { captureConsole } from '../utilities/log.js';
 
 app.http('createAuth', {
   methods: ['POST'],
-  authLevel: isProd ? 'anonymous' : 'function',
+  authLevel: 'anonymous',
   handler: async (request, context) => {
     captureConsole(context);
 
@@ -59,9 +59,10 @@ app.http('createAuth', {
     // Only return the accessToken and userId
     return {
       jsonBody: {
-        accessToken: auth.accessToken,
-        expiresAt: auth.expiresAt,
+        authId: auth._id,
         userId: auth.userId,
+        expiresAt: auth.expiresAt,
+        accessToken: auth.accessToken,
         verification: auth.verification.status,
       },
     };

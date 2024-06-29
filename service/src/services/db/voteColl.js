@@ -16,21 +16,24 @@ const getVoteCollection = memoize(async () => {
   const votes = db.collection(VoteCollName);
 
   // Set a unique index for each hash + userId combo.
-  await votes.createIndex({ hash: 1, userId: 1 }, { unique: true });
+  await votes.createIndex({ imageHash: 1, userId: 1 }, { unique: true });
+  await votes.createIndex({ imageHash: 1 });
+  await votes.createIndex({ userId: 1 });
+  await votes.createIndex({ voteLabel: 1 });
 
   return votes;
 });
 
 /**
- * @param {string} hash
+ * @param {string} imageHash
  */
-export async function queryVotedLabel(hash) {
+export async function queryVotedLabel(imageHash) {
   const votes = await getVoteCollection();
 
   /** @type {{_id: string, count: number}} */
   const result = await votes
     .aggregate([
-      { $match: { hash } },
+      { $match: { imageHash } },
       {
         $lookup: {
           from: UserCollName,

@@ -1,5 +1,4 @@
 import { app } from '@azure/functions';
-import { isProd } from 'common/utilities/environment.js';
 import { getImageData } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
 import { isHttpUrl } from 'common/utilities/url.js';
@@ -11,7 +10,7 @@ import { captureConsole } from '../utilities/log.js';
 
 app.http('checkImage', {
   methods: ['POST'],
-  authLevel: isProd ? 'anonymous' : 'function',
+  authLevel: 'anonymous',
   handler: async (request, context) => {
     captureConsole(context);
 

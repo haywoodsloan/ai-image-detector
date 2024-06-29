@@ -1,5 +1,4 @@
 import { app } from '@azure/functions';
-import { isProd } from 'common/utilities/environment.js';
 import { l } from 'common/utilities/string.js';
 
 import { queryVotesByUser } from '../services/db/voteColl.js';
@@ -9,7 +8,7 @@ import { captureConsole } from '../utilities/log.js';
 
 app.http('getUserVotes', {
   methods: ['GET'],
-  authLevel: isProd ? 'anonymous' : 'function',
+  authLevel: 'anonymous',
   handler: async (request, context) => {
     captureConsole(context);
 
