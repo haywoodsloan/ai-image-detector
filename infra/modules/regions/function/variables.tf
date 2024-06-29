@@ -61,3 +61,8 @@ variable "env_rg_name" {
   type        = string
   description = "The name of the environemnt resource group"
 }
+
+variable "pubsub_endpoint" {
+  type        = string
+  description = "The endpoint of the PubSub service"
+}

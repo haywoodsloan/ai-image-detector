@@ -39,12 +39,13 @@ resource "azurerm_windows_function_app" "function_app" {
   }
 
   app_settings = {
-    NODE_ENV      = var.env_name
-    HF_KEY        = var.hf_key
-    DB_CONN_STR   = var.db_connection_string
-    DB_CONN_STR_2 = var.db_secondary_connection_string
-    COMM_ENDPOINT = var.comm_service_endpoint
-    HUB_NAME      = "default"
+    NODE_ENV        = var.env_name
+    HF_KEY          = var.hf_key
+    DB_CONN_STR     = var.db_connection_string
+    DB_CONN_STR_2   = var.db_secondary_connection_string
+    COMM_ENDPOINT   = var.comm_service_endpoint
+    PUBSUB_ENDPOINT = var.pubsub_endpoint
+    HUB_NAME        = "default"
   }
 
   site_config {

@@ -208,12 +208,46 @@
       ]
     },
     {
+      "label": "Start MongoDB Mock",
+      "type": "npm",
+      "script": "start-mongodb-mock",
+      "path": "service",
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "pattern": { "regexp": "" },
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": "MongoDB test server",
+            "endsPattern": "at mongodb://127.0.0.1"
+          }
+        }
+      ]
+    },
+    {
+      "label": "Start PubSub Mock",
+      "type": "npm",
+      "script": "start-pubsub-mock",
+      "path": "service",
+      "isBackground": true,
+      "problemMatcher": [
+        {
+          "pattern": { "regexp": "" },
+          "background": {
+            "activeOnStart": true,
+            "beginsPattern": "Azure Web PubSub test server",
+            "endsPattern": "at http://127.0.0.1"
+          }
+        }
+      ]
+    },
+    {
       "label": "Start Azure Function",
       "type": "func",
       "command": "start",
       "problemMatcher": "$func-node-watch",
       "isBackground": true,
-      "dependsOn": "Start Azurite",
+      "dependsOn": ["Start Azurite", "Start MongoDB Mock", "Start PubSub Mock"],
       "options": {
         "cwd": "${workspaceFolder}/service"
       }

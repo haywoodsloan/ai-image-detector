@@ -8,24 +8,30 @@ export const AuthCollName = 'auths';
 export const PendingVerification = 'pending';
 export const VerificationComplete = 'verified';
 
-const getAuthCollection = memoize(async () => {
-  const db = await getServiceDb();
+const getAuthCollection = memoize(
+  async () => {
+    const db = await getServiceDb();
 
-  /** @type {Collection<AuthDocument>} */
-  const auths = db.collection(AuthCollName);
+    /** @type {Collection<AuthDocument>} */
+    const auths = db.collection(AuthCollName);
 
-  // Set a unique index for each access token and verification code.
-  await auths.createIndex({ accessToken: 1 }, { unique: true });
-  await auths.createIndex({ 'verification.code': 1 }, { unique: true });
+    // Set a unique index for each access token and verification code.
+    await auths.createIndex({ accessToken: 1 }, { unique: true });
+    await auths.createIndex({ 'verification.code': 1 }, { unique: true });
 
-  await auths.createIndex({ 'verification.code': 1, 'verification.status': 1 });
-  await auths.createIndex({ accessToken: 1, 'verification.status': 1 });
-  await auths.createIndex({ userId: 1, 'verification.status': 1 });
+    await auths.createIndex({
+      'verification.code': 1,
+      'verification.status': 1,
+    });
+    await auths.createIndex({ accessToken: 1, 'verification.status': 1 });
+    await auths.createIndex({ userId: 1, 'verification.status': 1 });
 
-  await auths.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+    await auths.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-  return auths;
-});
+    return auths;
+  },
+  { cacheKey: () => getServiceDb() }
+);
 
 /**
  * @param {string} userId

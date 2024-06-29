@@ -15,6 +15,7 @@
         "AzureWebJobsStorage": "UseDevelopmentStorage=true",
         "FUNCTIONS_WORKER_RUNTIME": "node",
         "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
+        "DB_CONN_STR": "mongodb://127.0.0.1:8254/",
         "HF_KEY": "<your Hugging Face access token>",
         "HUB_NAME": "local"
       }

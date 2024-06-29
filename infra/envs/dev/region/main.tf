@@ -11,6 +11,12 @@ module "insights" {
   rg_name     = module.rg.region_rg_name
 }
 
+module "pubsub" {
+  source      = "../../../modules/regions/pubsub"
+  region_name = var.region_name
+  rg_name     = module.rg.region_rg_name
+}
+
 module "function" {
   source                         = "../../../modules/regions/function"
   env_name                       = var.env_name
@@ -26,4 +32,5 @@ module "function" {
   api_subdomain                  = var.api_subdomain
   domain_name                    = var.domain_name
   env_rg_name                    = var.env_rg_name
+  pubsub_endpoint                = module.pubsub.pubsub_endpoint
 }
