@@ -66,3 +66,8 @@ variable "pubsub_hostname" {
   type        = string
   description = "The endpoint of the PubSub service"
 }
+
+variable "pubsub_id" {
+  type        = string
+  description = "The ID of the PubSub service"
+}

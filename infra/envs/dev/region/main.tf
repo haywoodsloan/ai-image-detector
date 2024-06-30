@@ -33,4 +33,5 @@ module "function" {
   domain_name                    = var.domain_name
   env_rg_name                    = var.env_rg_name
   pubsub_hostname                = module.pubsub.pubsub_hostname
+  pubsub_id                      = module.pubsub.pubsub_id
 }

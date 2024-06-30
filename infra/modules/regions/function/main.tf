@@ -86,6 +86,12 @@ resource "azurerm_role_assignment" "function_email_role" {
   principal_id         = azurerm_windows_function_app.function_app.identity[0].principal_id
 }
 
+resource "azurerm_role_assignment" "function_pubsub_role" {
+  scope                = var.pubsub_id
+  role_definition_name = "Web PubSub Service Owner"
+  principal_id         = azurerm_windows_function_app.function_app.identity[0].principal_id
+}
+
 resource "azurerm_dns_txt_record" "function_txt" {
   name                = "asuid.${var.api_subdomain}"
   zone_name           = var.domain_name
@@ -150,5 +156,12 @@ resource "azurerm_role_assignment" "function_slot_email_role" {
   count                = var.env_name == "prod" ? 1 : 0
   scope                = var.comm_service_id
   role_definition_name = "Contributor"
+  principal_id         = azurerm_windows_function_app_slot.function_app_slot[0].identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "function_slot_pubsub_role" {
+  count                = var.env_name == "prod" ? 1 : 0
+  scope                = var.pubsub_id
+  role_definition_name = "Web PubSub Service Owner"
   principal_id         = azurerm_windows_function_app_slot.function_app_slot[0].identity[0].principal_id
 }
