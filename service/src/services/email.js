@@ -14,7 +14,8 @@ const SenderAddress = isProd
 
 export const getEmailClient = memoize(() => {
   const endpoint = process.env.COMM_ENDPOINT;
-  return new EmailClient(endpoint, new DefaultAzureCredential());
+  const creds = new DefaultAzureCredential();
+  return new EmailClient(endpoint, creds);
 });
 
 /**

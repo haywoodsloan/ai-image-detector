@@ -5,3 +5,7 @@ output "function_hostname" {
 output "function_keys" {
   value = module.function.function_keys
 }
+
+output "pubsub_hostname" {
+  value = module.pubsub.pubsub_hostname
+}

@@ -5,6 +5,7 @@ declare type InvocationContext = import('@azure/functions').InvocationContext;
 declare type HttpRequest = import('@azure/functions').HttpRequest;
 declare type EmailMessage = import('@azure/communication-email').EmailMessage;
 
+declare type ObjectId = import('mongodb').ObjectId;
 declare type WithId<T> = import('mongodb').WithId<T>;
 declare type Collection<T> = import('mongodb').Collection<T>;
 
@@ -14,7 +15,7 @@ declare type VerificationStatus =
 
 declare type VoteDocument = {
   imageHash: string;
-  userId: string;
+  userId: ObjectId;
   voteLabel: LabelType;
   changedAt: Date;
 };
@@ -26,8 +27,9 @@ declare type UserDocument = {
 };
 
 declare type AuthDocument = {
-  userId: string;
-  expiresAt: Date;
+  userId: ObjectId;
   accessToken: string;
-  verification: { code: string; status: VerificationStatus };
+  verifyStatus: VerificationStatus;
+  verifyCode: string;
+  ttl: number;
 };

@@ -44,7 +44,7 @@ resource "azurerm_windows_function_app" "function_app" {
     DB_CONN_STR     = var.db_connection_string
     DB_CONN_STR_2   = var.db_secondary_connection_string
     COMM_ENDPOINT   = var.comm_service_endpoint
-    PUBSUB_ENDPOINT = var.pubsub_endpoint
+    PUBSUB_HOSTNAME = var.pubsub_hostname
     HUB_NAME        = "default"
   }
 

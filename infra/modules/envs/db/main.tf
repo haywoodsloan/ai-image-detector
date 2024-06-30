@@ -40,3 +40,88 @@ resource "azurerm_cosmosdb_mongo_database" "mongo_db" {
   account_name        = azurerm_cosmosdb_account.cosmos_account.name
   throughput          = 1000
 }
+
+resource "azurerm_cosmosdb_mongo_collection" "auths" {
+  name                = "auths"
+  resource_group_name = var.rg_name
+
+  account_name  = azurerm_cosmosdb_account.cosmos_account.name
+  database_name = azurerm_cosmosdb_mongo_database.mongo_db.name
+
+  default_ttl_seconds = -1
+
+  index {
+    keys = ["_id"]
+    unique = true
+  }
+
+  index {
+    keys   = ["accessToken"]
+    unique = true
+  }
+
+  index {
+    keys   = ["verifyCode"]
+    unique = true
+  }
+
+  index {
+    keys = ["userId", "status"]
+  }
+
+  index {
+    keys = ["verifyCode", "status"]
+  }
+
+  index {
+    keys = ["accessToken", "status"]
+  }
+}
+
+resource "azurerm_cosmosdb_mongo_collection" "users" {
+  name                = "users"
+  resource_group_name = var.rg_name
+
+  account_name  = azurerm_cosmosdb_account.cosmos_account.name
+  database_name = azurerm_cosmosdb_mongo_database.mongo_db.name
+
+  index {
+    keys = ["_id"]
+    unique = true
+  }
+
+  index {
+    keys   = ["emailHash"]
+    unique = true
+  }
+}
+
+resource "azurerm_cosmosdb_mongo_collection" "votes" {
+  name                = "votes"
+  resource_group_name = var.rg_name
+
+  account_name  = azurerm_cosmosdb_account.cosmos_account.name
+  database_name = azurerm_cosmosdb_mongo_database.mongo_db.name
+
+  index {
+    keys = ["_id"]
+    unique = true
+  }
+
+  index {
+    keys   = ["imageHash", "userId"]
+    unique = true
+  }
+
+  index {
+    keys = ["imageHash"]
+  }
+
+  index {
+    keys = ["userId"]
+  }
+
+  index {
+    keys = ["voteLabel"]
+  }
+}

@@ -1,4 +1,5 @@
 import { app } from '@azure/functions';
+import TimeSpan from 'common/utilities/TimeSpan.js';
 import { isDev, isLocal } from 'common/utilities/environment.js';
 import { createHash } from 'common/utilities/hash.js';
 import { l } from 'common/utilities/string.js';
@@ -7,6 +8,7 @@ import { validate as validateEmail } from 'email-validator';
 import { PendingVerification, insertNewAuth } from '../services/db/authColl.js';
 import { insertNewUser, queryUserByEmail } from '../services/db/userColl.js';
 import { sendVerificationMail } from '../services/email.js';
+import { getValidationSocketUrl } from '../services/pubsub.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
 
@@ -38,7 +40,7 @@ app.http('createAuth', {
     }
 
     // Auto verify if local or dev and SkipVerify header is specified
-    const verified = isLocal || (isDev && request.headers.get('SkipVerify'));
+    const verified = (isLocal || isDev) && request.headers.get('SkipVerify');
     console.log(l`Initial verification status ${{ verified }}`);
 
     console.log(l`Creating a new auth ${{ userId: user._id }}`);
@@ -51,19 +53,24 @@ app.http('createAuth', {
     );
 
     // If the auth verification is pending send an email
-    if (auth.verification.status === PendingVerification) {
+    let validationSocket = null;
+    if (auth.verifyStatus === PendingVerification) {
       console.log(l`Emailing verification ${{ emailHash, authId: auth._id }}`);
-      await sendVerificationMail(email, auth.verification.code);
+      await sendVerificationMail(email, auth.verifyCode);
+
+      console.log(l`Getting validation socket URL ${{ userId: auth.userId }}`);
+      validationSocket = await getValidationSocketUrl(auth.userId);
     }
 
     // Only return the accessToken and userId
     return {
       jsonBody: {
+        validationSocket,
         authId: auth._id,
         userId: auth.userId,
-        expiresAt: auth.expiresAt,
+        expiresAt: new Date(Date.now() + TimeSpan.fromSeconds(auth.ttl)),
         accessToken: auth.accessToken,
-        verification: auth.verification.status,
+        verification: auth.verifyStatus,
       },
     };
   },

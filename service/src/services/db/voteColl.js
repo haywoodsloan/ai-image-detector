@@ -10,20 +10,8 @@ export const VoteCollName = 'votes';
 const MinVoteCount = 5;
 
 const getVoteCollection = memoize(
-  async () => {
-    const db = await getServiceDb();
-
-    /** @type {Collection<VoteDocument>} */
-    const votes = db.collection(VoteCollName);
-
-    // Set a unique index for each hash + userId combo.
-    await votes.createIndex({ imageHash: 1, userId: 1 }, { unique: true });
-    await votes.createIndex({ imageHash: 1 });
-    await votes.createIndex({ userId: 1 });
-    await votes.createIndex({ voteLabel: 1 });
-
-    return votes;
-  },
+  /** @returns {Promise<Collection<VoteDocument>>} */
+  async () => (await getServiceDb()).collection(VoteCollName),
   { cacheKey: () => getServiceDb() }
 );
 

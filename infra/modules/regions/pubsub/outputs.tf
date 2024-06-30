@@ -1,3 +1,3 @@
-output "pubsub_endpoint" {
+output "pubsub_hostname" {
   value = azurerm_web_pubsub.pubsub.hostname
 }

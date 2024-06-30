@@ -32,5 +32,5 @@ module "function" {
   api_subdomain                  = var.api_subdomain
   domain_name                    = var.domain_name
   env_rg_name                    = var.env_rg_name
-  pubsub_endpoint                = module.pubsub.pubsub_endpoint
+  pubsub_hostname                = module.pubsub.pubsub_hostname
 }

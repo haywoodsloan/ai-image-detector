@@ -7,10 +7,8 @@
   "types": "./src/types.d.ts",
   "scripts": {
     "start-azurite": "npx -y azurite --silent",
-    "start-mongodb-mock": "node mock/mongodb.js",
-    "start-pubsub-mock": "node mock/pubsub.js",
     "start-azure-function": "func start",
-    "start": "run-p -r start-mongodb-mock start-azurite start-pubsub-mock start-azure-function",
+    "start": "run-p -r start-azurite start-azure-function",
     "demo": "node src/demo.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "eslint --fix ./src && prettier -w ./src"
@@ -27,6 +25,7 @@
     "@azure/communication-email": "^1.0.0",
     "@azure/functions": "^4.5.0",
     "@azure/identity": "^4.3.0",
+    "@azure/web-pubsub": "^1.1.1",
     "@huggingface/inference": "^2.7.0",
     "common": "file:../common",
     "durable-functions": "^3.1.0",
@@ -41,11 +40,11 @@
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "eslint": "^9.5.0",
     "eslint-config-prettier": "^9.1.0",
-    "express": "^4.19.2",
     "globals": "^15.6.0",
     "mongodb-memory-server": "^9.3.0",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.3.2"
+    "prettier": "^3.3.2",
+    "ws": "^8.17.1"
   },
   "engines": {
     "node": ">=20"

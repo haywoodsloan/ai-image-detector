@@ -5,17 +5,8 @@ import { getServiceDb } from './serviceDb.js';
 export const UserCollName = 'users';
 
 const getUserCollection = memoize(
-  async () => {
-    const db = await getServiceDb();
-
-    /** @type {Collection<UserDocument>} */
-    const users = db.collection(UserCollName);
-
-    // Set a unique index for each userId.
-    await users.createIndex({ emailHash: 1 }, { unique: true });
-
-    return users;
-  },
+  /** @returns {Promise<Collection<UserDocument>>} */
+  async () => (await getServiceDb()).collection(UserCollName),
   { cacheKey: () => getServiceDb() }
 );
 

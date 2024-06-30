@@ -8,45 +8,28 @@ export const AuthCollName = 'auths';
 export const PendingVerification = 'pending';
 export const VerificationComplete = 'verified';
 
+export const PendingAuthTimeout = TimeSpan.fromMinutes(15);
+export const ValidAuthTimeout = TimeSpan.fromDays(30);
+
 const getAuthCollection = memoize(
-  async () => {
-    const db = await getServiceDb();
-
-    /** @type {Collection<AuthDocument>} */
-    const auths = db.collection(AuthCollName);
-
-    // Set a unique index for each access token and verification code.
-    await auths.createIndex({ accessToken: 1 }, { unique: true });
-    await auths.createIndex({ 'verification.code': 1 }, { unique: true });
-
-    await auths.createIndex({
-      'verification.code': 1,
-      'verification.status': 1,
-    });
-    await auths.createIndex({ accessToken: 1, 'verification.status': 1 });
-    await auths.createIndex({ userId: 1, 'verification.status': 1 });
-
-    await auths.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-
-    return auths;
-  },
+  /** @returns {Promise<Collection<AuthDocument>>} */
+  async () => (await getServiceDb()).collection(AuthCollName),
   { cacheKey: () => getServiceDb() }
 );
 
 /**
- * @param {string} userId
+ * @param {ObjectId} userId
  */
 export async function insertNewAuth(userId, verified = false) {
   /** @type {WithId<AuthDocument>} */
   const newAuth = {
     userId,
-    expiresAt: new Date(Date.now() + TimeSpan.fromMinutes(15)),
-    accessToken: randomBytes(128).toString('base64'),
+    accessToken: randomBytes(256).toString('base64'),
 
-    verification: {
-      code: randomBytes(128).toString('base64url'),
-      status: verified ? VerificationComplete : PendingVerification,
-    },
+    verifyCode: randomBytes(256).toString('base64url'),
+    verifyStatus: verified ? VerificationComplete : PendingVerification,
+
+    ttl: PendingAuthTimeout.getSeconds(),
   };
 
   const auths = await getAuthCollection();
@@ -56,7 +39,7 @@ export async function insertNewAuth(userId, verified = false) {
   await auths.deleteMany({
     userId,
     _id: { $ne: newAuth._id },
-    'verification.status': PendingVerification,
+    verifyStatus: PendingVerification,
   });
 
   return newAuth;
@@ -70,9 +53,9 @@ export async function queryValidAuth(accessToken) {
   return await auths.findOneAndUpdate(
     {
       accessToken,
-      'verification.status': VerificationComplete,
+      verifyStatus: VerificationComplete,
     },
-    { $set: { expiresAt: new Date(Date.now() + TimeSpan.fromDays(30)) } },
+    { $set: { ttl: ValidAuthTimeout.getSeconds() } },
     { returnDocument: 'after' }
   );
 }
@@ -84,13 +67,13 @@ export async function verifyAuth(code) {
   const auths = await getAuthCollection();
   return await auths.findOneAndUpdate(
     {
-      'verification.code': code,
-      'verification.status': PendingVerification,
+      verifyCode: code,
+      verifyStatus: PendingVerification,
     },
     {
       $set: {
-        expiresAt: new Date(Date.now() + TimeSpan.fromDays(30)),
-        'verification.status': VerificationComplete,
+        ttl: ValidAuthTimeout.getSeconds(),
+        verifyStatus: VerificationComplete,
       },
     },
     { returnDocument: 'after' }
