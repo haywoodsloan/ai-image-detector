@@ -1,11 +1,29 @@
+import { CosmosDBManagementClient, KnownKeyKind } from '@azure/arm-cosmosdb';
+import { DefaultAzureCredential } from '@azure/identity';
+import { l } from 'common/utilities/string.js';
 import memoize, { memoizeClear } from 'memoize';
 import { MongoClient } from 'mongodb';
 
 const DbName = 'service';
+const KeyKinds = [KnownKeyKind.Primary, KnownKeyKind.Secondary];
 
 export const getServiceDb = memoize(async () => {
-  // If local testing use a in memory mongodb instance
-  const mongoUrls = [process.env.DB_CONN_STR, process.env.DB_CONN_STR_2];
+  const creds = new DefaultAzureCredential();
+  const client = new CosmosDBManagementClient(creds, process.env.SUB_ID);
+
+  console.log('Getting CosmosDB connection strings');
+  const { connectionStrings } =
+    await client.databaseAccounts.listConnectionStrings(
+      process.env.DB_RG_NAME,
+      process.env.DB_NAME
+    );
+
+  const mongoUrls = connectionStrings
+    .filter(({ keyKind }) => KeyKinds.includes(keyKind.toLowerCase()))
+    .map(({ connectionString }) => connectionString);
+
+  const urlCount = mongoUrls.length;
+  console.log(l`Attempting to connect to CosmosDB ${{ urlCount }}`);
 
   // Try each connection URL option
   const errors = [];

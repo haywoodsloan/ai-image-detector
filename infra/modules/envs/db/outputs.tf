@@ -1,7 +1,7 @@
-output "connection_string" {
-  value = azurerm_cosmosdb_account.cosmos_account.primary_mongodb_connection_string
+output "db_id" {
+  value = azurerm_cosmosdb_account.cosmos_account.id
 }
 
-output "secondary_connection_string" {
-  value = azurerm_cosmosdb_account.cosmos_account.secondary_mongodb_connection_string
+output "db_name" {
+  value = azurerm_cosmosdb_account.cosmos_account.name
 }

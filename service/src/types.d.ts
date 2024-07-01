@@ -31,5 +31,6 @@ declare type AuthDocument = {
   accessToken: string;
   verifyStatus: VerificationStatus;
   verifyCode: string;
+  refreshedAt: Date;
   ttl: number;
 };

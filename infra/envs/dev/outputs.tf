@@ -11,9 +11,16 @@ output "dev_keys" {
   value     = module.frontdoor.dev_keys
 }
 
-output "db_connection_strings" {
-  sensitive = true
-  value     = [module.db.connection_string, module.db.secondary_connection_string]
+output "sub_id" {
+  value = data.azurerm_subscription.current.subscription_id
+}
+
+output "db_name" {
+  value = module.db.db_name
+}
+
+output "db_rg_name" {
+  value = module.rg.env_rg_name
 }
 
 output "comm_endpoint" {

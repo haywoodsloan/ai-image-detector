@@ -8,13 +8,22 @@ const AuthTypeRegEx = new RegExp(`^${AuthType} (?<accessToken>\\S*)`, 'i');
  * @param {HttpRequest} request
  */
 export async function assertValidAuth(request) {
-  const authHeader = request.headers.get('Authorization');
-  const accessToken = AuthTypeRegEx.exec(authHeader)?.groups?.accessToken;
-  if (!accessToken) throw new Error('Must specify an access token');
+  const accessToken = assertAccessToken(request);
 
   const auth = await queryValidAuth(accessToken);
-  if (!auth) throw new Error('Access token is not valid');
+  if (!auth) throw new Error('Invalid access token');
 
   await updateUserActivity(auth.userId);
   return auth.userId;
+}
+
+/**
+ * @param {HttpRequest} request
+ */
+export function assertAccessToken(request) {
+  const authHeader = request.headers.get('Authorization');
+  const accessToken = AuthTypeRegEx.exec(authHeader)?.groups?.accessToken;
+
+  if (!accessToken) throw new Error('No access token specified');
+  return accessToken;
 }

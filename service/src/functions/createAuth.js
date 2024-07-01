@@ -68,9 +68,11 @@ app.http('createAuth', {
         validationSocket,
         authId: auth._id,
         userId: auth.userId,
-        expiresAt: new Date(Date.now() + TimeSpan.fromSeconds(auth.ttl)),
         accessToken: auth.accessToken,
         verification: auth.verifyStatus,
+        expiresAt: new Date(
+          auth.refreshedAt.getTime() + TimeSpan.fromSeconds(auth.ttl)
+        ),
       },
     };
   },

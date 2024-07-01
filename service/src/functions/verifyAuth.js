@@ -2,6 +2,7 @@ import { app } from '@azure/functions';
 import { l } from 'common/utilities/string.js';
 
 import { verifyAuth } from '../services/db/authColl.js';
+import { publishValidation } from '../services/pubsub.js';
 import { getStaticHtml } from '../utilities/html.js';
 import { captureConsole } from '../utilities/log.js';
 
@@ -41,8 +42,11 @@ app.http('verifyAuth', {
       };
     }
 
-    // Return a success page if the auth was verified successfully
+    // Publish a validation message to PubSub
+    await publishValidation(auth.userId, { auth: true });
     console.log(l`Verified auth ${{ userId: auth.userId, authId: auth._id }}`);
+
+    // Return a success page if the auth was verified successfully
     return {
       body: await getStaticHtml(VerifySuccessHtml),
       headers: HtmlHeaders,

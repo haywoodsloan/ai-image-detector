@@ -23,13 +23,13 @@ resource "time_rotating" "secondary_dev_key_refresh" {
 resource "random_bytes" "dev_key" {
   count   = var.env_name == "prod" ? 0 : 1
   keepers = { refresh = time_rotating.dev_key_refresh[0].id }
-  length  = 64
+  length  = 128
 }
 
 resource "random_bytes" "secondary_dev_key" {
   count   = var.env_name == "prod" ? 0 : 1
   keepers = { refresh = time_rotating.secondary_dev_key_refresh[0].id }
-  length  = 64
+  length  = 128
 }
 
 resource "azurerm_cdn_frontdoor_profile" "frontdoor" {

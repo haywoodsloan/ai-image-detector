@@ -13,14 +13,14 @@ variable "hf_key" {
   description = "An access token for Hugging Face"
 }
 
-variable "db_connection_string" {
+variable "db_name" {
   type        = string
-  description = "The Mongo DB connection string for the function"
+  description = "The CosmosDB account name"
 }
 
-variable "db_secondary_connection_string" {
+variable "db_id" {
   type        = string
-  description = "The Mongo DB connection string for the function"
+  description = "The CosmosDB account ID"
 }
 
 variable "comm_service_endpoint" {

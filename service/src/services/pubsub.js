@@ -26,10 +26,10 @@ export async function getValidationSocketUrl(userId) {
 }
 
 /**
- * @param {string} userId
+ * @param {string | ObjectId} userId
  * @param {Record<string, string>} validation
  */
 export async function publishValidation(userId, validation) {
   const client = getValidationPubSub();
-  await client.sendToUser(userId, validation);
+  await client.sendToUser(userId.toString(), validation);
 }

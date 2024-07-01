@@ -1,3 +1,5 @@
+data "azurerm_subscription" "current" {}
+
 resource "random_string" "resource_code" {
   length  = 5
   special = false
@@ -41,8 +43,9 @@ resource "azurerm_windows_function_app" "function_app" {
   app_settings = {
     NODE_ENV        = var.env_name
     HF_KEY          = var.hf_key
-    DB_CONN_STR     = var.db_connection_string
-    DB_CONN_STR_2   = var.db_secondary_connection_string
+    DB_NAME         = var.db_name
+    DB_RG_NAME      = var.env_rg_name
+    SUB_ID          = data.azurerm_subscription.current.subscription_id
     COMM_ENDPOINT   = var.comm_service_endpoint
     PUBSUB_HOSTNAME = var.pubsub_hostname
     HUB_NAME        = "default"
@@ -89,6 +92,12 @@ resource "azurerm_role_assignment" "function_email_role" {
 resource "azurerm_role_assignment" "function_pubsub_role" {
   scope                = var.pubsub_id
   role_definition_name = "Web PubSub Service Owner"
+  principal_id         = azurerm_windows_function_app.function_app.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "function_cosmos_role" {
+  scope                = var.db_id
+  role_definition_name = "DocumentDB Account Contributor"
   principal_id         = azurerm_windows_function_app.function_app.identity[0].principal_id
 }
 
@@ -163,5 +172,12 @@ resource "azurerm_role_assignment" "function_slot_pubsub_role" {
   count                = var.env_name == "prod" ? 1 : 0
   scope                = var.pubsub_id
   role_definition_name = "Web PubSub Service Owner"
+  principal_id         = azurerm_windows_function_app_slot.function_app_slot[0].identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "function_slot_cosmos_role" {
+  count                = var.env_name == "prod" ? 1 : 0
+  scope                = var.pubsub_id
+  role_definition_name = "DocumentDB Account Contributor"
   principal_id         = azurerm_windows_function_app_slot.function_app_slot[0].identity[0].principal_id
 }

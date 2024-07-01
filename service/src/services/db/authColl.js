@@ -29,6 +29,7 @@ export async function insertNewAuth(userId, verified = false) {
     verifyCode: randomBytes(256).toString('base64url'),
     verifyStatus: verified ? VerificationComplete : PendingVerification,
 
+    refreshedAt: new Date(),
     ttl: PendingAuthTimeout.getSeconds(),
   };
 
@@ -45,6 +46,11 @@ export async function insertNewAuth(userId, verified = false) {
   return newAuth;
 }
 
+export async function queryAuth(accessToken) {
+  const auths = await getAuthCollection();
+  return auths.findOne({ accessToken });
+}
+
 /**
  * @param {string} accessToken
  */
@@ -55,7 +61,7 @@ export async function queryValidAuth(accessToken) {
       accessToken,
       verifyStatus: VerificationComplete,
     },
-    { $set: { ttl: ValidAuthTimeout.getSeconds() } },
+    { $set: { refreshedAt: new Date() } },
     { returnDocument: 'after' }
   );
 }
@@ -72,6 +78,7 @@ export async function verifyAuth(code) {
     },
     {
       $set: {
+        refreshedAt: new Date(),
         ttl: ValidAuthTimeout.getSeconds(),
         verifyStatus: VerificationComplete,
       },

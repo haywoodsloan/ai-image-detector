@@ -19,6 +19,9 @@ terraform {
 provider "azurerm" {
   features {}
 }
+
+data "azurerm_subscription" "current" {}
+
 locals {
   env_name     = "dev"
   region_names = ["eastus2"]
@@ -59,17 +62,17 @@ module "frontdoor" {
 }
 
 module "region" {
-  for_each                       = toset(local.region_names)
-  source                         = "./region"
-  region_name                    = each.value
-  env_name                       = local.env_name
-  hf_key                         = var.hf_key
-  db_connection_string           = module.db.connection_string
-  db_secondary_connection_string = module.db.secondary_connection_string
-  comm_service_id                = module.comm.comm_service_id
-  comm_service_endpoint          = module.comm.comm_service_endpoint
-  frontdoor_guid                 = module.frontdoor.frontdoor_guid
-  api_subdomain                  = module.frontdoor.api_subdomain
-  domain_name                    = local.domain_name
-  env_rg_name                    = module.rg.env_rg_name
+  for_each              = toset(local.region_names)
+  source                = "./region"
+  region_name           = each.value
+  env_name              = local.env_name
+  hf_key                = var.hf_key
+  db_id                 = module.db.db_id
+  db_name               = module.db.db_name
+  comm_service_id       = module.comm.comm_service_id
+  comm_service_endpoint = module.comm.comm_service_endpoint
+  frontdoor_guid        = module.frontdoor.frontdoor_guid
+  api_subdomain         = module.frontdoor.api_subdomain
+  domain_name           = local.domain_name
+  env_rg_name           = module.rg.env_rg_name
 }

@@ -18,14 +18,14 @@ variable "hf_key" {
   description = "The HuggingFace key to use for the function"
 }
 
-variable "db_connection_string" {
+variable "db_name" {
   type        = string
-  description = "The Mongo DB connection string for the function"
+  description = "The CosmosDB account name"
 }
 
-variable "db_secondary_connection_string" {
+variable "db_id" {
   type        = string
-  description = "The secondary Mongo DB connection string for the function"
+  description = "The CosmosDB account ID"
 }
 
 variable "insights_connection_string" {
