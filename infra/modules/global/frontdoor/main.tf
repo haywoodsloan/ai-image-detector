@@ -5,31 +5,35 @@ locals {
 }
 
 resource "time_rotating" "dev_key_refresh" {
-  count           = var.env_name == "prod" ? 0 : 1
+  count           = var.env_name != "prod" ? 1 : 0
   rotation_months = 1
 }
 
 resource "time_offset" "secondary_rotation_offset" {
-  count       = var.env_name == "prod" ? 0 : 1
+  count       = var.env_name != "prod" ? 1 : 0
   offset_days = 15
 }
 
 resource "time_rotating" "secondary_dev_key_refresh" {
-  count           = var.env_name == "prod" ? 0 : 1
+  count           = var.env_name != "prod" ? 1 : 0
   rfc3339         = time_offset.secondary_rotation_offset[0].id
   rotation_months = 1
 }
 
 resource "random_bytes" "dev_key" {
-  count   = var.env_name == "prod" ? 0 : 1
+  count   = var.env_name != "prod" ? 1 : 0
   keepers = { refresh = time_rotating.dev_key_refresh[0].id }
   length  = 128
 }
 
 resource "random_bytes" "secondary_dev_key" {
-  count   = var.env_name == "prod" ? 0 : 1
+  count   = var.env_name != "prod" ? 1 : 0
   keepers = { refresh = time_rotating.secondary_dev_key_refresh[0].id }
   length  = 128
+}
+
+locals {
+  dev_keys = var.env_name != "prod" ? [random_bytes.dev_key[0].base64, random_bytes.secondary_dev_key[0].base64] : []
 }
 
 resource "azurerm_cdn_frontdoor_profile" "frontdoor" {
@@ -123,7 +127,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
   }
 
   dynamic "custom_rule" {
-    for_each = var.env_name == "prod" ? [] : [1]
+    for_each = var.env_name != "prod" ? [1] : []
     content {
       name     = "BlockIfMissingKey"
       action   = "Block"
@@ -132,7 +136,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
 
       match_condition {
         match_variable     = "RequestHeader"
-        match_values       = [random_bytes.dev_key[0].base64, random_bytes.secondary_dev_key[0].base64]
+        match_values       = local.dev_keys
         negation_condition = true
         selector           = "X-Dev-Key"
         operator           = "Equal"

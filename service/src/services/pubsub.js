@@ -21,7 +21,7 @@ export async function getValidationSocketUrl(
   const client = getValidationPubSub();
   const { token } = await client.getClientAccessToken({
     userId: userId.toString(),
-    expirationTimeInMinutes: lifetime,
+    expirationTimeInMinutes: lifetime.getMinutes(),
   });
 
   return `wss://${process.env.PUBSUB_HOSTNAME}/client/hubs/${ValidationHub}?access_token=${token}`;

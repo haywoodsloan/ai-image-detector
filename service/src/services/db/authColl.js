@@ -27,9 +27,11 @@ export async function insertNewAuth(userId, verified = false) {
     userId,
     accessToken: randomBytes(256).toString('base64'),
 
-    verifyCode: randomBytes(256).toString('base64url'),
-    verifySocket: await getValidationSocketUrl(userId, PendingAuthTimeout),
     verifyStatus: verified ? VerificationComplete : PendingVerification,
+    verifyCode: randomBytes(256).toString('base64url'),
+    ...(!verified && {
+      verifySocket: await getValidationSocketUrl(userId, PendingAuthTimeout),
+    }),
 
     refreshedAt: new Date(),
     ttl: PendingAuthTimeout.getSeconds(),

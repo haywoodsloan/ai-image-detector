@@ -14,7 +14,7 @@ provider "azurerm" {
 }
 
 module "bootstrap" {
-  source      = "../../../modules/envs/bootstrap"
+  source      = "../../../modules/global/bootstrap"
   env_name    = "dev"
   region_name = "eastus2"
 }

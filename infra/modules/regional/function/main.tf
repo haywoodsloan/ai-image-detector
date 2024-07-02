@@ -31,15 +31,6 @@ resource "azurerm_windows_function_app" "function_app" {
   storage_account_name       = azurerm_storage_account.function_storage.name
   service_plan_id            = azurerm_service_plan.function_service_plan.id
   https_only                 = true
-
-  identity {
-    type = "SystemAssigned"
-  }
-
-  sticky_settings {
-    app_setting_names = ["HUB_NAME"]
-  }
-
   app_settings = {
     NODE_ENV        = var.env_name
     HF_KEY          = var.hf_key
@@ -51,7 +42,13 @@ resource "azurerm_windows_function_app" "function_app" {
     HUB_NAME        = "default"
   }
 
+  identity {
+    type = "SystemAssigned"
+  }
+
   site_config {
+    scm_ip_restriction_default_action = "Deny"
+
     application_insights_connection_string = var.insights_connection_string
     use_32_bit_worker                      = false
     ftps_state                             = "FtpsOnly"
@@ -74,13 +71,12 @@ resource "azurerm_windows_function_app" "function_app" {
     ignore_changes = [
       app_settings["WEBSITE_RUN_FROM_PACKAGE"],
       app_settings["AzureWebJobsFeatureFlags"],
+
+      tags["hidden-link: /app-insights-conn-string"],
+      tags["hidden-link: /app-insights-instrumentation-key"],
+      tags["hidden-link: /app-insights-resource-id"]
     ]
   }
-}
-
-data "azurerm_function_app_host_keys" "function_keys" {
-  name                = azurerm_windows_function_app.function_app.name
-  resource_group_name = var.rg_name
 }
 
 resource "azurerm_role_assignment" "function_email_role" {
@@ -127,26 +123,26 @@ resource "azurerm_app_service_custom_hostname_binding" "custom_domain" {
 }
 
 resource "azurerm_windows_function_app_slot" "function_app_slot" {
-  count           = var.env_name == "prod" ? 1 : 0
-  name            = "slot"
+  name            = "staging"
   function_app_id = azurerm_windows_function_app.function_app.id
 
   storage_account_access_key = azurerm_windows_function_app.function_app.storage_account_access_key
   storage_account_name       = azurerm_windows_function_app.function_app.storage_account_name
   https_only                 = azurerm_windows_function_app.function_app.https_only
+  app_settings               = azurerm_windows_function_app.function_app.app_settings
 
   identity {
-    type = "SystemAssigned"
+    type = azurerm_windows_function_app.function_app.identity[0].type
   }
 
-  app_settings = merge(azurerm_windows_function_app.function_app.app_settings, {
-    HUB_NAME = "staging"
-  })
-
   site_config {
+    auto_swap_slot_name           = "production"
+    ip_restriction_default_action = "Deny"
+
     application_insights_connection_string = azurerm_windows_function_app.function_app.site_config[0].application_insights_connection_string
     use_32_bit_worker                      = azurerm_windows_function_app.function_app.site_config[0].use_32_bit_worker
     ftps_state                             = azurerm_windows_function_app.function_app.site_config[0].ftps_state
+    http2_enabled                          = azurerm_windows_function_app.function_app.site_config[0].http2_enabled
 
     application_stack {
       node_version = azurerm_windows_function_app.function_app.site_config[0].application_stack[0].node_version
@@ -157,27 +153,28 @@ resource "azurerm_windows_function_app_slot" "function_app_slot" {
     ignore_changes = [
       app_settings["WEBSITE_RUN_FROM_PACKAGE"],
       app_settings["AzureWebJobsFeatureFlags"],
+
+      tags["hidden-link: /app-insights-conn-string"],
+      tags["hidden-link: /app-insights-instrumentation-key"],
+      tags["hidden-link: /app-insights-resource-id"]
     ]
   }
 }
 
 resource "azurerm_role_assignment" "function_slot_email_role" {
-  count                = var.env_name == "prod" ? 1 : 0
-  scope                = var.comm_service_id
-  role_definition_name = "Contributor"
-  principal_id         = azurerm_windows_function_app_slot.function_app_slot[0].identity[0].principal_id
+  scope              = azurerm_role_assignment.function_email_role.scope
+  role_definition_id = azurerm_role_assignment.function_email_role.role_definition_id
+  principal_id       = azurerm_windows_function_app_slot.function_app_slot.identity[0].principal_id
 }
 
 resource "azurerm_role_assignment" "function_slot_pubsub_role" {
-  count                = var.env_name == "prod" ? 1 : 0
-  scope                = var.pubsub_id
-  role_definition_name = "Web PubSub Service Owner"
-  principal_id         = azurerm_windows_function_app_slot.function_app_slot[0].identity[0].principal_id
+  scope              = azurerm_role_assignment.function_pubsub_role.scope
+  role_definition_id = azurerm_role_assignment.function_pubsub_role.role_definition_id
+  principal_id       = azurerm_windows_function_app_slot.function_app_slot.identity[0].principal_id
 }
 
 resource "azurerm_role_assignment" "function_slot_cosmos_role" {
-  count                = var.env_name == "prod" ? 1 : 0
-  scope                = var.pubsub_id
-  role_definition_name = "DocumentDB Account Contributor"
-  principal_id         = azurerm_windows_function_app_slot.function_app_slot[0].identity[0].principal_id
+  scope              = azurerm_role_assignment.function_cosmos_role.scope
+  role_definition_id = azurerm_role_assignment.function_cosmos_role.role_definition_id
+  principal_id       = azurerm_windows_function_app_slot.function_app_slot.identity[0].principal_id
 }

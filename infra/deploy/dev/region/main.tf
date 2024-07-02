@@ -1,24 +1,24 @@
 module "rg" {
-  source      = "../../../modules/regions/rg"
+  source      = "../../../modules/regional/rg"
   env_name    = var.env_name
   region_name = var.region_name
 }
 
 module "insights" {
-  source      = "../../../modules/regions/insights"
+  source      = "../../../modules/regional/insights"
   env_name    = var.env_name
   region_name = var.region_name
   rg_name     = module.rg.region_rg_name
 }
 
 module "pubsub" {
-  source      = "../../../modules/regions/pubsub"
+  source      = "../../../modules/regional/pubsub"
   region_name = var.region_name
   rg_name     = module.rg.region_rg_name
 }
 
 module "function" {
-  source                     = "../../../modules/regions/function"
+  source                     = "../../../modules/regional/function"
   env_name                   = var.env_name
   region_name                = var.region_name
   rg_name                    = module.rg.region_rg_name

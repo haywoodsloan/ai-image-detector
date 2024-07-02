@@ -8,5 +8,5 @@ output "api_subdomain" {
 
 output "dev_keys" {
   sensitive = true
-  value     = [random_bytes.dev_key[0].base64, random_bytes.secondary_dev_key[0].base64]
+  value     = local.dev_keys
 }

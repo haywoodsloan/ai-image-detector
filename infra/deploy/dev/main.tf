@@ -29,34 +29,34 @@ locals {
 }
 
 module "rg" {
-  source      = "../../modules/envs/rg"
+  source      = "../../modules/global/rg"
   env_name    = local.env_name
   region_name = local.region_names[0]
 }
 
 module "db" {
-  source       = "../../modules/envs/db"
+  source       = "../../modules/global/db"
   rg_name      = module.rg.env_rg_name
   region_names = local.region_names
 }
 
 module "dns" {
-  source      = "../../modules/envs/dns"
+  source      = "../../modules/global/dns"
   env_name    = local.env_name
   rg_name     = module.rg.env_rg_name
   domain_name = local.domain_name
 }
 
 module "comm" {
-  source      = "../../modules/envs/comm"
+  source      = "../../modules/global/comm"
   rg_name     = module.rg.env_rg_name
   domain_name = local.domain_name
 }
 
 module "frontdoor" {
-  source             = "../../modules/envs/frontdoor"
+  source             = "../../modules/global/frontdoor"
   rg_name            = module.rg.env_rg_name
-  function_hostnames = zipmap(keys(module.region), values(module.region)[*].function_hostname)
+  function_hostnames = { for name, region in module.region : name => region.function_hostname }
   domain_name        = local.domain_name
   env_name           = local.env_name
 }
