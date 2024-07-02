@@ -33,19 +33,16 @@
     "email-validator": "^2.0.4",
     "handlebars": "^4.7.8",
     "memoize": "^10.0.0",
-    "mongodb": "^6.7.0",
+    "mongodb": "^6.8.0",
     "sanitize-filename": "^1.6.3"
   },
   "devDependencies": {
-    "@azure/web-pubsub-express": "^1.0.5",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "eslint": "^9.5.0",
+    "eslint": "^9.6.0",
     "eslint-config-prettier": "^9.1.0",
-    "globals": "^15.6.0",
-    "mongodb-memory-server": "^9.3.0",
+    "globals": "^15.7.0",
     "npm-run-all": "^4.1.5",
-    "prettier": "^3.3.2",
-    "ws": "^8.17.1"
+    "prettier": "^3.3.2"
   },
   "engines": {
     "node": ">=20"

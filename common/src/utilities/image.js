@@ -4,6 +4,7 @@ import memoize from 'memoize';
 import { join } from 'path';
 import sharp from 'sharp';
 
+import { l } from './string.js';
 import { isHttpUrl } from './url.js';
 
 // Maximum number of pixels Autotrain will handle
@@ -12,6 +13,8 @@ const MaxPixels = 178_956_970;
 const getExcludedImages = memoize(async () => {
   // Read each excluded file return the name and data
   const excludePath = join(import.meta.dirname, '../../exclude');
+  console.log(l`Getting excluded images ${{ path: excludePath }}`);
+
   const excludeEntries = await readdir(excludePath, {
     withFileTypes: true,
     recursive: true,
@@ -20,10 +23,18 @@ const getExcludedImages = memoize(async () => {
   return await Promise.all(
     excludeEntries
       .filter((entry) => entry.isFile())
-      .map(async (entry) => ({
-        name: entry.name,
-        data: await readFile(join(entry.parentPath, entry.name)),
-      }))
+      .map(async (entry) => {
+        console.log(l`Exclude entry ${entry}`);
+
+        // Azure Functions don't have the latest Node v20
+        // So we need to also check for the old path prop
+        const parent = entry.parentPath ?? entry.path;
+
+        return {
+          name: entry.name,
+          data: await readFile(join(parent, entry.name)),
+        };
+      })
   );
 });
 

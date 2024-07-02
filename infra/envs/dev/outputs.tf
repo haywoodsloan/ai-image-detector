@@ -2,6 +2,13 @@ output "api_endpoint" {
   value = "https://${module.frontdoor.api_subdomain}.${local.domain_name}"
 }
 
+output "function_slot_hostnames" {
+  value = {
+    for name, region in module.region : name => region.function_slot_hostname
+    if region.function_slot_hostname != null
+  }
+}
+
 output "dns_nameservers" {
   value = module.dns.domain_ns
 }

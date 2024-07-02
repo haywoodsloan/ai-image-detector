@@ -26,6 +26,7 @@ module "function" {
   hf_key                     = var.hf_key
   db_id                      = var.db_id
   db_name                    = var.db_name
+  db_role_id                 = var.db_role_id
   comm_service_endpoint      = var.comm_service_endpoint
   comm_service_id            = var.comm_service_id
   frontdoor_guid             = var.frontdoor_guid

@@ -4,6 +4,16 @@ resource "random_string" "resource_code" {
   upper   = false
 }
 
+resource "azurerm_role_definition" "cosmos_role" {
+  name              = "CosmosDB Connection String Reader"
+  scope             = azurerm_cosmosdb_account.cosmos_account.id
+  assignable_scopes = [azurerm_cosmosdb_account.cosmos_account.id]
+
+  permissions {
+    actions = ["Microsoft.DocumentDB/databaseAccounts/listConnectionStrings/*"]
+  }
+}
+
 resource "azurerm_cosmosdb_account" "cosmos_account" {
   name                             = "cosmos-db-${random_string.resource_code.result}"
   location                         = var.region_names[0]
@@ -51,7 +61,7 @@ resource "azurerm_cosmosdb_mongo_collection" "auths" {
   default_ttl_seconds = -1
 
   index {
-    keys = ["_id"]
+    keys   = ["_id"]
     unique = true
   }
 
@@ -86,7 +96,7 @@ resource "azurerm_cosmosdb_mongo_collection" "users" {
   database_name = azurerm_cosmosdb_mongo_database.mongo_db.name
 
   index {
-    keys = ["_id"]
+    keys   = ["_id"]
     unique = true
   }
 
@@ -104,7 +114,7 @@ resource "azurerm_cosmosdb_mongo_collection" "votes" {
   database_name = azurerm_cosmosdb_mongo_database.mongo_db.name
 
   index {
-    keys = ["_id"]
+    keys   = ["_id"]
     unique = true
   }
 

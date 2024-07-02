@@ -2,6 +2,7 @@ import TimeSpan from 'common/utilities/TimeSpan.js';
 import { randomBytes } from 'crypto';
 import memoize from 'memoize';
 
+import { getValidationSocketUrl } from '../pubsub.js';
 import { getServiceDb } from './serviceDb.js';
 
 export const AuthCollName = 'auths';
@@ -27,6 +28,7 @@ export async function insertNewAuth(userId, verified = false) {
     accessToken: randomBytes(256).toString('base64'),
 
     verifyCode: randomBytes(256).toString('base64url'),
+    verifySocket: await getValidationSocketUrl(userId, PendingAuthTimeout),
     verifyStatus: verified ? VerificationComplete : PendingVerification,
 
     refreshedAt: new Date(),
@@ -81,6 +83,10 @@ export async function verifyAuth(code) {
         refreshedAt: new Date(),
         ttl: ValidAuthTimeout.getSeconds(),
         verifyStatus: VerificationComplete,
+      },
+      $unset: {
+        verifyCode: 1,
+        verifySocket: 1,
       },
     },
     { returnDocument: 'after' }

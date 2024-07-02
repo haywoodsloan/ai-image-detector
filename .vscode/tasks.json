@@ -180,12 +180,23 @@
       "problemMatcher": []
     },
     {
+      "label": "Format Infra",
+      "type": "shell",
+      "options": { "cwd": "${workspaceFolder}/infra" },
+      "command": "terraform fmt",
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Format All",
       "dependsOn": [
         "Format Common",
         "Format Scrapper",
         "Format Service",
-        "Format Autotrain"
+        "Format Autotrain",
+        "Format Infra"
       ],
       "dependsOrder": "parallel",
       "problemMatcher": []
@@ -214,26 +225,20 @@
       "problemMatcher": "$func-node-watch",
       "isBackground": true,
       "dependsOn": ["Start Azurite"],
-      "options": {
-        "cwd": "${workspaceFolder}/service"
-      }
+      "options": { "cwd": "${workspaceFolder}/service" }
     },
     {
       "label": "Restore Service Deps",
       "type": "shell",
       "command": "npm install",
-      "options": {
-        "cwd": "${workspaceFolder}/service"
-      }
+      "options": { "cwd": "${workspaceFolder}/service" }
     },
     {
       "label": "Prune Service Deps",
       "type": "shell",
       "command": "npm prune --omit=dev",
       "problemMatcher": [],
-      "options": {
-        "cwd": "${workspaceFolder}/service"
-      }
+      "options": { "cwd": "${workspaceFolder}/service" }
     }
   ],
   "inputs": [

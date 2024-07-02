@@ -53,7 +53,7 @@ app.http('createAuth', {
     );
 
     // If the auth verification is pending send an email
-    let validationSocket = null;
+    let validationSocket;
     if (auth.verifyStatus === PendingVerification) {
       console.log(l`Emailing verification ${{ emailHash, authId: auth._id }}`);
       await sendVerificationMail(email, auth.verifyCode);

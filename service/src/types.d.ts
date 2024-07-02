@@ -30,7 +30,8 @@ declare type AuthDocument = {
   userId: ObjectId;
   accessToken: string;
   verifyStatus: VerificationStatus;
-  verifyCode: string;
+  verifyCode?: string;
+  verifySocket?: string;
   refreshedAt: Date;
   ttl: number;
 };

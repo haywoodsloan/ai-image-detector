@@ -26,8 +26,8 @@ df.app.entity(UploadImageEntity, async (context) => {
   try {
     data = await sanitizeImage(Buffer.from(rawData));
   } catch (error) {
-    console.warn(l`Image validation failed ${{ url, error }}`);
-    return;
+    console.error(l`Image validation failed ${{ url, error }}`);
+    throw error;
   }
 
   // Use the hash of the sanitized image to store it

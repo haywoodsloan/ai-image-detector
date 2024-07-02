@@ -28,6 +28,11 @@ variable "db_id" {
   description = "The CosmosDB account ID"
 }
 
+variable "db_role_id" {
+  type        = string
+  description = "The CosmosDB role for fetching connection strings"
+}
+
 variable "insights_connection_string" {
   type        = string
   description = "The application insights instrumentation connection string"

@@ -96,9 +96,9 @@ resource "azurerm_role_assignment" "function_pubsub_role" {
 }
 
 resource "azurerm_role_assignment" "function_cosmos_role" {
-  scope                = var.db_id
-  role_definition_name = "DocumentDB Account Contributor"
-  principal_id         = azurerm_windows_function_app.function_app.identity[0].principal_id
+  scope              = var.db_id
+  role_definition_id = var.db_role_id
+  principal_id       = azurerm_windows_function_app.function_app.identity[0].principal_id
 }
 
 resource "azurerm_dns_txt_record" "function_txt" {

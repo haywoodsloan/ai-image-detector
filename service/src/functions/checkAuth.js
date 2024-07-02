@@ -2,8 +2,7 @@ import { app } from '@azure/functions';
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { l } from 'common/utilities/string.js';
 
-import { PendingVerification, queryAuth } from '../services/db/authColl.js';
-import { getValidationSocketUrl } from '../services/pubsub.js';
+import { queryAuth } from '../services/db/authColl.js';
 import { assertAccessToken } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
@@ -38,23 +37,16 @@ app.http('checkAuth', {
       }}`
     );
 
-    // Start the base response
+    // Response shouldn't include the verifyCode
+    const refreshedAt = auth.refreshedAt.getTime();
     const response = {
       authId: auth._id,
       userId: auth.userId,
       verification: auth.verifyStatus,
-      expiresAt: new Date(
-        auth.refreshedAt.getTime() + TimeSpan.fromSeconds(auth.ttl)
-      ),
+      verificationSocket: auth.verifySocket,
+      expiresAt: new Date(refreshedAt + TimeSpan.fromSeconds(auth.ttl)),
     };
 
-    // If not verified create a socket
-    if (auth.verifyStatus === PendingVerification) {
-      console.log(`Getting validation socket ${{ userId: auth.userId }}`);
-      response.validationSocket = await getValidationSocketUrl(auth.userId);
-    }
-
-    // Get a validation socket for the user
     return { jsonBody: response };
   },
 });

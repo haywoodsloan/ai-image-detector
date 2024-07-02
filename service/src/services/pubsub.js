@@ -1,8 +1,7 @@
 import { DefaultAzureCredential } from '@azure/identity';
 import { WebPubSubServiceClient } from '@azure/web-pubsub';
+import TimeSpan from 'common/utilities/TimeSpan.js';
 import memoize from 'memoize';
-
-import { PendingAuthTimeout } from './db/authColl.js';
 
 const ValidationHub = 'validations';
 
@@ -15,11 +14,14 @@ export const getValidationPubSub = memoize(() => {
 /**
  * @param {string | ObjectId} userId
  */
-export async function getValidationSocketUrl(userId) {
+export async function getValidationSocketUrl(
+  userId,
+  lifetime = TimeSpan.fromHours(1)
+) {
   const client = getValidationPubSub();
   const { token } = await client.getClientAccessToken({
     userId: userId.toString(),
-    expirationTimeInMinutes: PendingAuthTimeout.getMinutes(),
+    expirationTimeInMinutes: lifetime,
   });
 
   return `wss://${process.env.PUBSUB_HOSTNAME}/client/hubs/${ValidationHub}?access_token=${token}`;

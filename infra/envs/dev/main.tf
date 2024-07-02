@@ -75,4 +75,5 @@ module "region" {
   api_subdomain         = module.frontdoor.api_subdomain
   domain_name           = local.domain_name
   env_rg_name           = module.rg.env_rg_name
+  db_role_id            = module.db.db_role_id
 }
