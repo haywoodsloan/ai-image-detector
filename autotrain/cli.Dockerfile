@@ -18,7 +18,7 @@ ENV CUTLASS_PATH=/workspace/cutlass
 RUN mkdir /workspace/.cache
 ENV HF_HOME="/workspace/.cache"
 
-RUN conda install -y nvidia/label/cuda-12.1.1::cuda-nvcc
+RUN conda install -y nvidia/label/cuda-12.5.0::cuda-nvcc
 RUN conda install -y xformers::xformers
 RUN conda clean -y --all
 

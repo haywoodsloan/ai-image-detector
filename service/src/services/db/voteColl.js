@@ -1,3 +1,4 @@
+import { isProd } from 'common/utilities/environment.js';
 import { AllLabels } from 'common/utilities/huggingface.js';
 import { l } from 'common/utilities/string.js';
 import memoize from 'memoize';
@@ -7,7 +8,7 @@ import { UserCollName } from './userColl.js';
 
 export const VoteCollName = 'votes';
 
-const MinVoteCount = 5;
+const MinVoteCount = isProd ? 5 : 1;
 
 const getVoteCollection = memoize(
   /** @returns {Promise<Collection<VoteDocument>>} */

@@ -4,6 +4,6 @@ variable "rg_name" {
 }
 
 variable "domain_name" {
-  type = string
+  type        = string
   description = "The custom domain for the email service"
 }

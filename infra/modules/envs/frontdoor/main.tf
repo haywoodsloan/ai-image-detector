@@ -66,51 +66,99 @@ resource "azurerm_cdn_frontdoor_custom_domain" "custom_domain" {
   tls {}
 }
 
-resource "azurerm_cdn_frontdoor_firewall_policy" "dev_key_header" {
-  count = var.env_name == "prod" ? 0 : 1
-
-  name                = "devkeyfirewall"
+resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
+  name                = "firewall"
   resource_group_name = var.rg_name
 
   enabled  = true
   sku_name = "Standard_AzureFrontDoor"
   mode     = "Prevention"
 
-  custom_block_response_status_code = 403
+  custom_rule {
+    name     = "AuthCreateLimit"
+    action   = "Block"
+    type     = "RateLimitRule"
+    priority = 1
+
+    rate_limit_duration_in_minutes = 1
+    rate_limit_threshold           = 3
+
+    match_condition {
+      match_variable = "RequestUri"
+      operator       = "RegEx"
+      match_values   = ["(?i)\\/createAuth"]
+    }
+  }
 
   custom_rule {
-    name   = "BlockIfMissingKey"
-    action = "Block"
-    type   = "MatchRule"
+    name     = "VoteImageLabelLimit"
+    action   = "Block"
+    type     = "RateLimitRule"
+    priority = 2
+
+    rate_limit_duration_in_minutes = 1
+    rate_limit_threshold           = 10
 
     match_condition {
-      match_variable     = "RequestHeader"
-      match_values       = [random_bytes.dev_key[0].base64, random_bytes.secondary_dev_key[0].base64]
-      negation_condition = true
-      selector           = "X-Dev-Key"
-      operator           = "Equal"
+      match_variable = "RequestUri"
+      operator       = "RegEx"
+      match_values   = ["(?i)\\/voteImageLabel"]
     }
+  }
+
+  custom_rule {
+    name     = "DefaultLimit"
+    action   = "Block"
+    type     = "RateLimitRule"
+    priority = 3
+
+    rate_limit_duration_in_minutes = 1
+    rate_limit_threshold           = 200
 
     match_condition {
-      match_variable     = "RequestUri"
-      match_values       = ["(?i)\\/verifyAuth"]
-      negation_condition = true
-      operator           = "RegEx"
+      match_variable = "RequestUri"
+      operator       = "Any"
+      match_values   = []
+    }
+  }
+
+  dynamic "custom_rule" {
+    for_each = var.env_name == "prod" ? [] : [1]
+    content {
+      name     = "BlockIfMissingKey"
+      action   = "Block"
+      type     = "MatchRule"
+      priority = 4
+
+      match_condition {
+        match_variable     = "RequestHeader"
+        match_values       = [random_bytes.dev_key[0].base64, random_bytes.secondary_dev_key[0].base64]
+        negation_condition = true
+        selector           = "X-Dev-Key"
+        operator           = "Equal"
+      }
+
+      match_condition {
+        match_variable     = "RequestUri"
+        match_values       = ["(?i)\\/verifyAuth"]
+        negation_condition = true
+        operator           = "RegEx"
+      }
     }
   }
 }
 
-resource "azurerm_cdn_frontdoor_security_policy" "dev_key_header" {
-  count = var.env_name == "prod" ? 0 : 1
-
-  name                     = "require-dev-key"
+resource "azurerm_cdn_frontdoor_security_policy" "security_policy" {
+  name                     = "security-policy"
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.frontdoor.id
 
   security_policies {
     firewall {
-      cdn_frontdoor_firewall_policy_id = azurerm_cdn_frontdoor_firewall_policy.dev_key_header[0].id
+      cdn_frontdoor_firewall_policy_id = azurerm_cdn_frontdoor_firewall_policy.firewall_policy.id
+
       association {
         patterns_to_match = ["/*"]
+
         domain {
           cdn_frontdoor_domain_id = azurerm_cdn_frontdoor_custom_domain.custom_domain.id
         }

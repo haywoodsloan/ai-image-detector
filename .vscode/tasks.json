@@ -183,7 +183,7 @@
       "label": "Format Infra",
       "type": "shell",
       "options": { "cwd": "${workspaceFolder}/infra" },
-      "command": "terraform fmt",
+      "command": "terraform fmt -recursive",
       "presentation": {
         "reveal": "silent"
       },
