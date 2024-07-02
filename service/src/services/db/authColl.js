@@ -86,10 +86,7 @@ export async function verifyAuth(code) {
         ttl: ValidAuthTimeout.getSeconds(),
         verifyStatus: VerificationComplete,
       },
-      $unset: {
-        verifyCode: 1,
-        verifySocket: 1,
-      },
+      $unset: { verifySocket: 1 },
     },
     { returnDocument: 'after' }
   );
