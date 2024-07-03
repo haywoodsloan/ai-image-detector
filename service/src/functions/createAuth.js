@@ -28,7 +28,7 @@ app.http('createAuth', {
     }
 
     // Use a hash of the email to track the user for privacy
-    const emailHash = createHash(email, { alg: 'sha256' });
+    const emailHash = createHash(email.toLowerCase(), { alg: 'sha256' });
 
     // Get the existing user or create a new one
     let user = await queryUserByEmail(emailHash);

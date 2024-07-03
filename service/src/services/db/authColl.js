@@ -1,9 +1,9 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
+import { cryptoString } from 'common/utilities/string.js';
 import memoize from 'memoize';
 
 import { getValidationSocketUrl } from '../pubsub.js';
 import { getServiceDb } from './serviceDb.js';
-import { cryptoString } from 'common/utilities/string.js';
 
 export const AuthCollName = 'auths';
 export const PendingVerification = 'pending';
@@ -34,7 +34,9 @@ export async function insertNewAuth(userId, verified = false) {
     }),
 
     refreshedAt: new Date(),
-    ttl: PendingAuthTimeout.getSeconds(),
+    ttl: verified
+      ? ValidAuthTimeout.getSeconds()
+      : PendingAuthTimeout.getSeconds(),
   };
 
   const auths = await getAuthCollection();

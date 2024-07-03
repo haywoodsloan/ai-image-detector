@@ -12,7 +12,7 @@ const MaxPixels = 178_956_970;
 
 const getExcludedImages = memoize(async () => {
   // Read each excluded file return the name and data
-  const excludePath = join(import.meta.dirname, '../../exclude');
+  const excludePath = new URL("../../exclude", import.meta.url);
   console.log(l`Getting excluded images ${{ path: excludePath }}`);
 
   const excludeEntries = await readdir(excludePath, {
