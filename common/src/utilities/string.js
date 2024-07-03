@@ -31,10 +31,10 @@ export function l(strs, ...args) {
 /**
  * @param {number} length
  */
-export function randomString(length) {
-  return randomBytes(Math.ceil(length / 2))
-    .toString('hex')
-    .substring(0, length);
+export function cryptoString(length) {
+  const byteCount = Math.ceil((length * 3) / 4);
+  const str = randomBytes(byteCount).toString('base64url');
+  return str.substring(0, length);
 }
 
 function stringify(val) {

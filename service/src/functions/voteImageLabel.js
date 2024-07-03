@@ -48,7 +48,7 @@ app.http('voteImageLabel', {
     // Track the vote by the image's hash
     console.log(l`Vote image ${{ url, userId, voteLabel }}`);
     const data = await getImageData(url);
-    const hash = createHash(data, { alg: 'sha256', url: true });
+    const hash = createHash(data, { alg: 'sha256' });
 
     // Check what the current voted label is
     const oldLabel = await queryVotedLabel(hash);

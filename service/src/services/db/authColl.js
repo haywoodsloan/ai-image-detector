@@ -1,9 +1,9 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
-import { randomBytes } from 'crypto';
 import memoize from 'memoize';
 
 import { getValidationSocketUrl } from '../pubsub.js';
 import { getServiceDb } from './serviceDb.js';
+import { cryptoString } from 'common/utilities/string.js';
 
 export const AuthCollName = 'auths';
 export const PendingVerification = 'pending';
@@ -25,10 +25,10 @@ export async function insertNewAuth(userId, verified = false) {
   /** @type {WithId<AuthDocument>} */
   const newAuth = {
     userId,
-    accessToken: randomBytes(256).toString('base64'),
+    accessToken: cryptoString(256),
 
     verifyStatus: verified ? VerificationComplete : PendingVerification,
-    verifyCode: randomBytes(256).toString('base64url'),
+    verifyCode: cryptoString(256),
     ...(!verified && {
       verifySocket: await getValidationSocketUrl(userId, PendingAuthTimeout),
     }),
