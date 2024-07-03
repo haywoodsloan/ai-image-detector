@@ -31,6 +31,11 @@ resource "azurerm_windows_function_app" "function_app" {
   storage_account_name       = azurerm_storage_account.function_storage.name
   service_plan_id            = azurerm_service_plan.function_service_plan.id
   https_only                 = true
+
+  sticky_settings {
+    app_setting_names = ["HUB_NAME"]
+  }
+
   app_settings = {
     NODE_ENV        = var.env_name
     HF_KEY          = var.hf_key
@@ -39,7 +44,7 @@ resource "azurerm_windows_function_app" "function_app" {
     SUB_ID          = data.azurerm_subscription.current.subscription_id
     COMM_ENDPOINT   = var.comm_service_endpoint
     PUBSUB_HOSTNAME = var.pubsub_hostname
-    HUB_NAME        = "default"
+    HUB_NAME        = "live"
   }
 
   identity {
@@ -129,7 +134,10 @@ resource "azurerm_windows_function_app_slot" "function_app_slot" {
   storage_account_access_key = azurerm_windows_function_app.function_app.storage_account_access_key
   storage_account_name       = azurerm_windows_function_app.function_app.storage_account_name
   https_only                 = azurerm_windows_function_app.function_app.https_only
-  app_settings               = azurerm_windows_function_app.function_app.app_settings
+
+  app_settings = merge(azurerm_windows_function_app.function_app.app_settings, {
+    HUB_NAME = "staging"
+  })
 
   identity {
     type = azurerm_windows_function_app.function_app.identity[0].type
