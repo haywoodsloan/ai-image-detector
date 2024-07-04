@@ -37,7 +37,7 @@ export const yl = (...args) => y(l(...args));
 function interpolate(strs, ...args) {
   // Check if this was called as a tagged template
   const isTag =
-    strs?.length > 0 &&
+    strs?.length &&
     strs?.length === strs?.raw?.length &&
     strs?.length === args?.length + 1;
 
