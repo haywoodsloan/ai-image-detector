@@ -4,7 +4,7 @@ import memoize from 'memoize';
 import { join } from 'path';
 import sharp from 'sharp';
 
-import { l } from './string.js';
+import { bl, yl } from './colors.js';
 import { isHttpUrl } from './url.js';
 
 // Maximum number of pixels Autotrain will handle
@@ -12,8 +12,8 @@ const MaxPixels = 178_956_970;
 
 const getExcludedImages = memoize(async () => {
   // Read each excluded file return the name and data
-  const excludePath = new URL("../../exclude", import.meta.url);
-  console.log(l`Getting excluded images ${{ path: excludePath }}`);
+  const excludePath = new URL('../../exclude', import.meta.url);
+  console.log(yl`Getting excluded images ${{ path: excludePath }}`);
 
   const excludeEntries = await readdir(excludePath, {
     withFileTypes: true,
@@ -24,7 +24,7 @@ const getExcludedImages = memoize(async () => {
     excludeEntries
       .filter((entry) => entry.isFile())
       .map(async (entry) => {
-        console.log(l`Exclude entry ${entry}`);
+        console.log(bl`Exclude entry ${entry}`);
 
         // Azure Functions don't have the latest Node v20
         // So we need to also check for the old path prop
