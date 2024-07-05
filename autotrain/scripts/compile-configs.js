@@ -1,4 +1,3 @@
-import { TimeSpan } from 'common/utilities/TimeSpan.js';
 import merge from 'deepmerge';
 import {
   mkdir,
@@ -16,7 +15,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 const DatetimeRegex = /{{\s*datetime\s*}}/;
-const AutoRefreshInterval = TimeSpan.fromMinutes(5);
+const AutoRefreshInterval = 5 * 60 * 1000;
 const MaxModTimeDiff = 5000;
 
 const CompilePath = '.compiled/';
@@ -44,6 +43,7 @@ const refreshModels = new Set();
 const args = await yargs(hideBin(process.argv))
   .boolean('watch')
   .string('model')
+  .string('out')
   .parse();
 
 // If a specific model is requested just compile that
@@ -187,7 +187,7 @@ async function compile(model, baseConfig = null) {
   }
 
   const output = YAML.stringify(merged);
-  const outputPath = join(CompilePath, fileName);
+  const outputPath = join(args.out ?? CompilePath, fileName);
   const parentPath = dirname(outputPath);
 
   await mkdir(parentPath, { recursive: true });

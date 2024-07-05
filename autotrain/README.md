@@ -31,7 +31,7 @@ To immediately run a command on the Autotrain CLI once it starts use `npm run ru
 
 ### Clean and Rebuild Autotrain CLI
 
-To rebuild a clean version of the Autotrain CLI use `npm run recreate-autotrain-cli`. This will rebuild the docker container and start it.
+To rebuild a clean version of the Autotrain CLI use `npm run rebuild-autotrain-cli`. This will rebuild the docker container and start it.
 
 ### Autotrain GUI
 

@@ -446,22 +446,22 @@ async function createUploads(uploads, branch = MainBranch) {
         ).length;
 
         // Check how many images are in the folder
-        let images;
         try {
-          images = listFiles({
+          const images = listFiles({
             path: prefix,
             repo: DatasetRepo,
             revision: branch,
             credentials,
           });
-        } catch {
-          // If the list fails this subset is new
-          break;
-        }
 
-        // Add any found images to the count
-        for await (const image of images) {
-          if (image.type === 'file') subsets[subsetIdx]++;
+          // Add any found images to the count
+          for await (const image of images) {
+            if (image.type === 'file') subsets[subsetIdx]++;
+          }
+        } catch (error) {
+          // If a 404 the subset is new
+          if (error?.statusCode === 404) break;
+          throw error;
         }
 
         // Use this subset if the count isn't at max
