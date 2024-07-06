@@ -14,13 +14,14 @@ data:
 
 params:
   epochs: 20
-  batch_size: 100
+  batch_size: 40
   auto_find_batch_size: true
   lr: 2e-5
   optimizer: adamw_torch
   scheduler: linear
   gradient_accumulation: 1
   mixed_precision: fp16
+  early_stopping_threshold: 0
 
 hub:
   username: ${HF_USERNAME}

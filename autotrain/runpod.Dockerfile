@@ -22,7 +22,7 @@ ENV PATH="$NVM_DIR/versions/node/v$NODE_VERSION/bin/:$PATH"
 
 ENV CONFIG_TOOL=/home/tools/config
 COPY package.json $CONFIG_TOOL/
-COPY config/* $CONFIG_TOOL/config/
+COPY config/ $CONFIG_TOOL/config/
 COPY scripts/compile-configs.js $CONFIG_TOOL/scripts/
 
 RUN npm --prefix $CONFIG_TOOL --production install
