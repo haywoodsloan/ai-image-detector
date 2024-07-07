@@ -29,5 +29,9 @@ RUN npm --prefix $CONFIG_TOOL --production install
 RUN echo "npm --prefix $CONFIG_TOOL run compile-autotrain-configs -- --out /workspace" >> ~/.bash_profile
 RUN echo "npm --prefix $CONFIG_TOOL run compile-autotrain-configs -- --out /workspace" >> ~/.bashrc
 
+RUN apt-get update
+RUN apt-get install -y tmux
+RUN apt-get autoremove && apt-get autoclean && apt-get clean
+
 WORKDIR /workspace
 CMD pip install -U autotrain-advanced && sleep infinity
