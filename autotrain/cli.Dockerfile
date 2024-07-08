@@ -15,8 +15,8 @@ RUN git lfs install
 RUN git clone --depth 1 --branch v3.5.0 https://github.com/NVIDIA/cutlass.git /workspace/cutlass
 ENV CUTLASS_PATH=/workspace/cutlass
 
-RUN mkdir /workspace/.cache
 ENV HF_HOME="/workspace/.cache"
+RUN mkdir -p $HF_HOME
 
 RUN conda install -y nvidia/label/cuda-12.1.1::cuda-nvcc
 RUN conda install -y xformers::xformers

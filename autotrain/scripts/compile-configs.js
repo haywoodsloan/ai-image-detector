@@ -14,13 +14,19 @@ import YAML from 'yaml';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
+const args = await yargs(hideBin(process.argv))
+  .boolean('watch')
+  .string('model')
+  .string('out')
+  .parse();
+
 const DatetimeRegex = /{{\s*datetime\s*}}/;
 const AutoRefreshInterval = 5 * 60 * 1000;
 const MaxModTimeDiff = 5000;
 
 const CompilePath = '.compiled/';
 const ConfigPath = 'config/';
-const CompileConfigPath = join(CompilePath, ConfigPath);
+const OutputConfigPath = join(args.out ?? CompilePath, ConfigPath);
 
 const BasePath = join(ConfigPath, 'base.yml.hbs');
 const ModelsPath = join(ConfigPath, 'models.yml');
@@ -40,11 +46,6 @@ Handlebars.registerHelper('datetime', () => {
 
 /** @type {Set<string>} */
 const refreshModels = new Set();
-const args = await yargs(hideBin(process.argv))
-  .boolean('watch')
-  .string('model')
-  .string('out')
-  .parse();
 
 // If a specific model is requested just compile that
 if (args.model) {
@@ -54,7 +55,7 @@ if (args.model) {
 }
 
 // Clear old configs and compile new ones
-await rm(CompileConfigPath, { force: true, recursive: true });
+await rm(OutputConfigPath, { force: true, recursive: true });
 await compileAll();
 
 // If not watching end after compiling
@@ -116,7 +117,7 @@ async function compileAll() {
 async function compileDiff() {
   const newModels = await getModelList();
 
-  const configEntries = await readdir(CompileConfigPath, {
+  const configEntries = await readdir(OutputConfigPath, {
     recursive: true,
     withFileTypes: true,
   });
@@ -126,7 +127,7 @@ async function compileDiff() {
     .filter((entry) => entry.isFile())
     .map((entry) => {
       const { name } = parse(entry.name);
-      const prefix = relative(CompileConfigPath, entry.parentPath);
+      const prefix = relative(OutputConfigPath, entry.parentPath);
       return `${prefix.replaceAll('\\', '/')}/${name}`;
     });
 
@@ -136,7 +137,7 @@ async function compileDiff() {
   );
 
   for (const model of removeModels) {
-    const modelPath = join(CompileConfigPath, `${model}.yml`);
+    const modelPath = join(OutputConfigPath, `${model}.yml`);
     await rm(modelPath, { force: true });
   }
 
