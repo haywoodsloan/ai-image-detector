@@ -1,5 +1,5 @@
 {
-  "name": "ai-image-detector",
+  "name": "ai-image-detector-service",
   "version": "0.0.1",
   "description": "Analyzes an input image and guesses if it is AI generated.",
   "main": "./src/{index.js,functions/*.js}",
@@ -9,7 +9,6 @@
     "start-azurite": "npx -y azurite --silent",
     "start-azure-function": "func start",
     "start": "run-p -r start-azurite start-azure-function",
-    "demo": "node src/demo.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "eslint --fix ./src && prettier -w ./src"
   },
