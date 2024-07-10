@@ -14,6 +14,7 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "query-selector-shadow-dom": "^1.0.1",
     "vue": "^3.4.31"
   },
   "devDependencies": {

@@ -30,6 +30,26 @@
       "type": "node",
       "cwd": "${workspaceFolder}/service",
       "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "name": "Debug Chrome Extension",
+      "request": "launch",
+      "runtimeArgs": ["run-script", "dev"],
+      "runtimeExecutable": "npm",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "node",
+      "cwd": "${workspaceFolder}/extension",
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "name": "Debug Firefox Extension",
+      "request": "launch",
+      "runtimeArgs": ["run-script", "dev:firefox"],
+      "runtimeExecutable": "npm",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "node",
+      "cwd": "${workspaceFolder}/extension",
+      "internalConsoleOptions": "openOnSessionStart"
     }
   ]
 }
