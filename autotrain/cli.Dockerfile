@@ -12,16 +12,14 @@ RUN apt-get upgrade -y
 RUN apt-get autoremove && apt-get autoclean && apt-get clean
 
 RUN git lfs install
-RUN git clone --depth 1 --branch v3.5.0 https://github.com/NVIDIA/cutlass.git /workspace/cutlass
-ENV CUTLASS_PATH=/workspace/cutlass
-
-ENV HF_HOME="/workspace/.cache"
-RUN mkdir -p $HF_HOME
+ENV CUTLASS_PATH="$HOME/cutlass"
+RUN git clone --depth 1 --branch v3.5.0 https://github.com/NVIDIA/cutlass.git "$CUTLASS_PATH"
 
 RUN conda install -y nvidia/label/cuda-12.1.1::cuda-nvcc
 RUN conda install -y xformers::xformers
 RUN conda clean -y --all
 
+ENV HF_HOME="$HOME/.cache"
 RUN pip install -U autotrain-advanced
 RUN python -m nltk.downloader punkt
 RUN pip install -U flash-attn --no-build-isolation

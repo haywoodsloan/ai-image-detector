@@ -21,19 +21,21 @@ services:
   cli:
     build:
       dockerfile: cli.Dockerfile
+      shm_size: 2gb
     environment:
       HF_TOKEN_FILE: /run/secrets/hf_key
       HF_USER_FILE: /hf_user
     volumes:
       - ./.compiled/config:/workspace/configs:ro
       - ai-images:/workspace/haywoodsloan:rw
+      - hf-cache:/workspace/.cache:rw
     configs:
       - hf_user
     secrets:
       - hf_key
     stdin_open: true
     tty: true
-    shm_size: 1gb
+    shm_size: 2gb
     deploy:
       resources:
         reservations:
@@ -44,6 +46,7 @@ services:
 
 volumes:
   ai-images:
+  hf-cache:
 
 configs:
   hf_user:
