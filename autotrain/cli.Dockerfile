@@ -31,4 +31,6 @@ RUN pip cache purge
 RUN echo 'export HF_USERNAME=$(cat $HF_USER_FILE)' >> ~/.bashrc
 RUN echo 'export HF_TOKEN=$(cat $HF_TOKEN_FILE)' >> ~/.bashrc
 
-CMD pip install -U autotrain-advanced && bash
+CMD pip install -U autotrain-advanced && \
+  git -C haywoodsloan/ai-images pull || git clone https://huggingface.co/datasets/haywoodsloan/ai-images haywoodsloan/ai-images && \
+  bash

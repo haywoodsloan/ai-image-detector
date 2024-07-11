@@ -8,6 +8,7 @@
 - microsoft/beit-large-patch16-384
 - microsoft/beit-large-patch16-224
 - microsoft/resnet-50
+- microsoft/resnet-101
 - microsoft/swinv2-large-patch4-window12to24-192to384-22kto1k-ft
 - microsoft/swinv2-large-patch4-window12to16-192to256-22kto1k-ft
 - microsoft/swinv2-large-patch4-window12-192-22k

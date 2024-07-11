@@ -26,7 +26,7 @@ services:
       HF_USER_FILE: /hf_user
     volumes:
       - ./.compiled/config:/workspace/configs:ro
-      - ./images/data:/workspace/haywoodsloan/ai-images/data:ro
+      - ai-images:/workspace/haywoodsloan:rw
     configs:
       - hf_user
     secrets:
@@ -41,6 +41,9 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+
+volumes:
+  ai-images:
 
 configs:
   hf_user:
