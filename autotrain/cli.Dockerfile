@@ -32,6 +32,6 @@ RUN echo 'export HF_USERNAME=$(cat $HF_USER_FILE)' >> ~/.bashrc
 RUN echo 'export HF_TOKEN=$(cat $HF_TOKEN_FILE)' >> ~/.bashrc
 
 CMD pip install -U autotrain-advanced && \
-  (git -C haywoodsloan/ai-images fetch && git -C reset origin/main --hard) || \
+  (git -C haywoodsloan/ai-images fetch && git -C haywoodsloan/ai-images reset origin/main --hard) || \
   git clone https://huggingface.co/datasets/haywoodsloan/ai-images haywoodsloan/ai-images && \
   bash
