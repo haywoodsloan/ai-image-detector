@@ -10,7 +10,7 @@ import { queryVotedLabel } from './db/voteColl.js';
 // Use the detector version for db lookups
 export const DetectorVersion = '1';
 export const DetectorModels = Object.freeze([
-  'haywoodsloan/autotrain-ai-image-detect-20240607-0006',
+  'haywoodsloan/autotrain-ai-image-detect-20240716-0057',
 ]);
 
 /**
@@ -21,6 +21,7 @@ export async function checkIfAI(data) {
   // Check for a cached class from the DB
   const hash = createHash(data);
   const cachedClass = await queryVotedLabel(hash);
+
   switch (cachedClass) {
     case AiLabel:
       return 1;

@@ -16,6 +16,7 @@ import { basename, dirname } from 'path';
 import TimeSpan from './TimeSpan.js';
 import { firstResult } from './async.js';
 import { NonRetryableError, withRetry } from './retry.js';
+import { isRateLimitError } from './error.js';
 
 export const MainBranch = 'main';
 export const DataPath = 'data';
@@ -34,7 +35,7 @@ const MaxSubsetSize = 10_000;
 
 const UrlUploadDelay = 100;
 const HuggingFaceErrorDelay = TimeSpan.fromSeconds(10);
-const RateLimitDelay = TimeSpan.fromMinutes(10);
+const RateLimitDelay = TimeSpan.fromMinutes(15);
 
 const DatasetRepo = { name: 'haywoodsloan/ai-images', type: 'dataset' };
 
@@ -134,23 +135,27 @@ export async function uploadImages(images, branch = MainBranch) {
   // Skip if no images in the array
   if (!images.length) return;
 
+  // Copy a set of the images to track if some can be skipped
+  const newImages = new Set(images);
+
   // Start a retry loop
   await retry(
     async () => {
-      console.log(y`Uploading ${images.length} image(s) to HF`);
+      console.log(y`Uploading ${newImages.size} image(s) to HF`);
 
       // Double check that all the images are new
       // A duplicate image may have been added since validation
-      const newImages = await Promise.all(
-        images.map(async (image) => {
-          if (!(await isExistingImage(image.fileName, branch))) return image;
+      await Promise.all(
+        [...newImages].map(async (image) => {
+          if (!(await isExistingImage(image.fileName, branch))) return;
           console.log(y`Skipping ${image.fileName} [image already on HF]`);
+          newImages.delete(image);
         })
       );
 
       // Create a set of upload for the image
       // Recreate with each retry incase the folders are now full
-      const uploads = await createUploads(newImages.filter(Boolean), branch);
+      const uploads = await createUploads([...newImages], branch);
       const uploadCt = uploads.length;
 
       // If there are new uploads push them to HF
@@ -182,7 +187,7 @@ export async function uploadImages(images, branch = MainBranch) {
       );
     },
     async (error, retryCount) => {
-      if (error.statusCode === 429) {
+      if (isRateLimitError(error)) {
         // Warn about rate limiting and wait a few minutes
         await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
         const delay = RateLimitDelay / 60 / 1000;
@@ -262,12 +267,12 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
         try {
           await retry(
             async () => {
-              const pendingCt = pendingUrls.size;
-              console.log(y`Uploading ${pendingCt} URL(s) to HF`);
-
               // Get the current list of urls from the HEAD
               const head = await getHeadCommit(branch);
               const allUrls = new Set(await fetchKnownUrls(head.oid));
+
+              const pendingCt = pendingUrls.size;
+              console.log(y`Uploading ${pendingCt} URL(s) to HF`);
 
               // Add the new urls to the set, don't upload if nothing new
               // Reset the list of new urls for each retry
@@ -306,8 +311,13 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
 
               console.log(g`${newCt} URL(s) uploaded [${skippedCt} skipped]`);
             },
-            (error) => {
-              console.warn(r`Retrying URL list upload [${error}]`);
+            async (error, retryCount) => {
+              if (isRateLimitError(error)) {
+                // Warn about rate limiting and wait a few minutes
+                await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
+                const delay = RateLimitDelay / 60 / 1000;
+                console.warn(r`Rate-limited, waiting ${delay} mins`);
+              } else console.warn(r`Retrying URL list upload [${error}]`);
             }
           );
 

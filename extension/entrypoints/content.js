@@ -5,22 +5,28 @@ const VisibilityThresh = 0.7;
 
 export default defineContentScript({
   matches: ['<all_urls>'],
+
   runAt: 'document_idle',
-  main() {
+  cssInjectionMode: 'ui',
+
+  main(ctx) {
     console.log('Content script running');
-    const visibleImages = new Set();
+
+    /** @type {Map<Element, ShadowRootContentScriptUi>} */
+    const indicatorUis = new Map();
+
     const intersectionObs = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
+      async (entries) => {
+        for (const { intersectionRatio, target } of entries) {
           if (
-            entry.intersectionRatio < VisibilityThresh &&
-            visibleImages.has(entry.target)
+            intersectionRatio < VisibilityThresh &&
+            indicatorUis.has(target)
           ) {
-            console.log('image became non-visible', entry);
-            visibleImages.delete(entry.target);
-          } else if (entry.intersectionRatio >= VisibilityThresh) {
-            console.log('new image became visible', entry);
-            visibleImages.add(entry.target);
+            console.log('image became non-visible', target);
+            indicatorUis.get(target).remove();
+          } else if (intersectionRatio >= VisibilityThresh) {
+            console.log('new image became visible', target);
+            indicatorUis.set(target, await createIndicatorUi(ctx, target));
           }
         }
       },
@@ -66,4 +72,24 @@ function isImageElement(ele) {
     CssUrlRegex.test(getComputedStyle(ele, ':after').backgroundImage) ||
     CssUrlRegex.test(getComputedStyle(ele, ':before').backgroundImage)
   );
+}
+
+/**
+ * @param {ContentScriptContext} ctx
+ * @param {Element} ele
+ */
+async function createIndicatorUi(ctx, ele) {
+  const ui = await createShadowRootUi(ctx, {
+    name: 'detector-indicator',
+
+    position: 'overlay',
+    anchor: ele,
+
+    onMount(container, shadow, host) {
+      console.log('mounting indicator', container, shadow, host);
+    },
+  });
+
+  ui.mount();
+  return ui;
 }
