@@ -3,7 +3,7 @@ import { createHash } from 'common/utilities/hash.js';
 import { AllLabels } from 'common/utilities/huggingface.js';
 import { getImageData } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
-import { isHttpUrl } from 'common/utilities/url.js';
+import { isDataUrl, isHttpUrl } from 'common/utilities/url.js';
 import { EntityId, getClient, input } from 'durable-functions';
 
 import { queryVotedLabel, upsertVotedLabel } from '../services/db/voteColl.js';
@@ -19,11 +19,11 @@ app.http('voteImageLabel', {
   handler: async (request, context) => {
     captureConsole(context);
 
-    /** @type {{url: string, voteLabel: string}} */
-    const { url, voteLabel } = await request.json();
+    /** @type {{url: string, voteLabel: string, skipUpload?: boolean}} */
+    const { url, voteLabel, skipUpload = false } = await request.json();
 
     // Check the url is valid
-    if (!isHttpUrl(url)) {
+    if (!isHttpUrl(url) && !isDataUrl(url)) {
       const error = new Error('Must specify a valid URL');
       console.error(error);
       return createErrorResponse(400, error);
@@ -60,12 +60,12 @@ app.http('voteImageLabel', {
     console.log(l`New voted label ${{ hash, label: newLabel }}`);
 
     // Check if the voted label has changed and upload if so
-    if (newLabel && oldLabel !== newLabel) {
-      console.log(l`Voted label changed, uploading ${{ url }}`);
-
+    // Skip upload if requested in vote
+    if (skipUpload) {
+      console.log(l`Skip upload requested ${{ url }}`);
+    } else if (newLabel) {
       const entityId = new EntityId(UploadImageEntity, hash);
       const input = { data, url, label: newLabel };
-
       await getClient(context).signalEntity(entityId, null, input);
     }
 

@@ -5,7 +5,7 @@ import { join } from 'path';
 import sharp from 'sharp';
 
 import { bl, yl } from './colors.js';
-import { isHttpUrl } from './url.js';
+import { isDataUrl, isHttpUrl } from './url.js';
 
 // Maximum number of pixels Autotrain will handle
 const MaxPixels = 178_956_970;
@@ -43,7 +43,7 @@ const getExcludedImages = memoize(async () => {
  */
 export async function getImageData(uri) {
   // If a url was provided, fetch it
-  if (isHttpUrl(uri)) {
+  if (isHttpUrl(uri) || isDataUrl(uri)) {
     const req = await fetch(uri);
     if (!req.ok) throw new Error(`Image fetch failed [${req.statusText}]`);
 

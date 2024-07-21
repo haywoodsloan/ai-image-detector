@@ -17,6 +17,7 @@ import TimeSpan from './TimeSpan.js';
 import { firstResult } from './async.js';
 import { isRateLimitError } from './error.js';
 import { NonRetryableError, withRetry } from './retry.js';
+import { isHttpUrl } from './url.js';
 
 export const MainBranch = 'main';
 export const DataPath = 'data';
@@ -88,7 +89,7 @@ export async function replaceImage(image, branch = MainBranch) {
   const { fileName, label: newLabel } = image;
 
   // Move the image
-  await retry(
+  return await retry(
     async () => {
       console.log(y`Moving image on HF ${fileName}`);
       const head = await getHeadCommit(branch);
@@ -97,7 +98,7 @@ export async function replaceImage(image, branch = MainBranch) {
       const oldPath = await getFullImagePath(fileName, head.oid);
       if (!oldPath) {
         const error = new NonRetryableError('Image to replace missing from HF');
-        console.warn(y`${error.message}`)
+        console.warn(y`${error.message}`);
         throw error;
       }
 
@@ -131,14 +132,14 @@ export async function replaceImage(image, branch = MainBranch) {
       // Add the new image's url
       console.log(y`Successfully moved image ${oldPath} => ${upload.path}`);
       await uploadKnownUrls([upload.origin], branch);
+
+      // Return true if successfully replaced
+      return true;
     },
     (error) => {
       console.warn(rl`Retrying move ${error}`);
     }
   );
-
-  // Return true if successfully replaced
-  return true;
 }
 
 /**
@@ -227,7 +228,7 @@ export async function uploadImages(images, branch = MainBranch) {
                   credentials,
                   useWebWorkers: true,
                   commitTitle: `Add ${newCt} images`,
-                  parentCommit: head.oid
+                  parentCommit: head.oid,
                 });
               } finally {
                 // Remove the pending paths either way because we'll get new paths
@@ -308,16 +309,20 @@ export async function fetchKnownUrls(branch = MainBranch) {
  * @param {(string | URL)[]} urls
  */
 export async function uploadKnownUrls(urls, branch = MainBranch) {
-  // Skip if no urls are specified
-  if (!urls.length) return;
-  urls = urls.map((url) => url.toString());
+  // Skip data urls
+  const validUrls = urls
+    .filter((url) => isHttpUrl(url))
+    .map((url) => url.toString());
+
+  // Skip if no valid urls are specified
+  if (!validUrls.length) return;
 
   // If there aren't any pending urls well start a new loop
   const shouldRun = !pendingUrls.size;
 
   // Track the existing pending uploads and what's missing
   const pending = [];
-  for (const url of urls) {
+  for (const url of validUrls) {
     if (pendingUrls.has(url)) {
       const { promise } = pendingUrls.get(url);
       pending.push(promise);
