@@ -8,15 +8,15 @@ import {
   uploadFiles,
 } from '@huggingface/hub';
 import { HfInference } from '@huggingface/inference';
-import { g, r, y } from 'common/utilities/colors.js';
+import { g, r, rl, y } from 'common/utilities/colors.js';
 import { wait } from 'common/utilities/sleep.js';
 import memoize from 'memoize';
 import { basename, dirname } from 'path';
 
 import TimeSpan from './TimeSpan.js';
 import { firstResult } from './async.js';
-import { NonRetryableError, withRetry } from './retry.js';
 import { isRateLimitError } from './error.js';
+import { NonRetryableError, withRetry } from './retry.js';
 
 export const MainBranch = 'main';
 export const DataPath = 'data';
@@ -33,7 +33,7 @@ export const AllLabels = [RealLabel, AiLabel];
 const RetryLimit = 10;
 const MaxSubsetSize = 10_000;
 
-const UrlUploadDelay = 100;
+const UploadDelay = TimeSpan.fromSeconds(1);
 const HuggingFaceErrorDelay = TimeSpan.fromSeconds(10);
 const RateLimitDelay = TimeSpan.fromMinutes(15);
 
@@ -53,6 +53,16 @@ const pendingPaths = new Set();
  * }>}
  */
 const pendingUrls = new Map();
+
+/**
+ * @type {Map<string, {
+ *   image: HfImage
+ *   promise: Promise<void>,
+ *   resolve: () => void,
+ *   reject: (error: Error) => void
+ * }>}
+ */
+const pendingUploads = new Map();
 
 // Share a retry invoker for all operations
 const retry = withRetry(RetryLimit, HuggingFaceErrorDelay);
@@ -120,7 +130,7 @@ export async function replaceImage(image, branch = MainBranch) {
       await uploadKnownUrls([upload.origin], branch);
     },
     (error) => {
-      console.warn(r`Retrying move [${error}]`);
+      console.warn(rl`Retrying move ${error}`);
     }
   );
 
@@ -135,66 +145,125 @@ export async function uploadImages(images, branch = MainBranch) {
   // Skip if no images in the array
   if (!images.length) return;
 
-  // Copy a set of the images to track if some can be skipped
-  const newImages = new Set(images);
+  // If there aren't any pending uploads well start a new loop
+  const shouldRun = !pendingUploads.size;
 
-  // Start a retry loop
-  await retry(
-    async () => {
-      console.log(y`Uploading ${newImages.size} image(s) to HF`);
+  // Track the existing pending uploads and what's missing
+  const pending = [];
+  for (const image of images) {
+    const fileName = image.fileName;
 
-      // Double check that all the images are new
-      // A duplicate image may have been added since validation
-      await Promise.all(
-        [...newImages].map(async (image) => {
-          if (!(await isExistingImage(image.fileName, branch))) return;
-          console.log(y`Skipping ${image.fileName} [image already on HF]`);
-          newImages.delete(image);
-        })
-      );
+    if (pendingUploads.has(fileName)) {
+      const { promise } = pendingUploads.get(fileName);
+      pending.push(promise);
+    } else {
+      let resolve, reject;
+      const promise = new Promise((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
 
-      // Create a set of upload for the image
-      // Recreate with each retry incase the folders are now full
-      const uploads = await createUploads([...newImages], branch);
-      const uploadCt = uploads.length;
-
-      // If there are new uploads push them to HF
-      if (uploadCt) {
-        for (const { path } of uploads) pendingPaths.add(path);
-        try {
-          // Upload the images and url update
-          await uploadFiles({
-            files: uploads,
-            repo: DatasetRepo,
-            branch,
-            credentials,
-            useWebWorkers: true,
-            commitTitle: `Add ${uploadCt} images`,
-          });
-        } finally {
-          // Remove the pending paths either way because we'll get new paths
-          for (const { path } of uploads) pendingPaths.delete(path);
-        }
-
-        const skippedCt = images.length - uploadCt;
-        console.log(g`${uploadCt} image(s) uploaded [${skippedCt} skipped]`);
-      }
-
-      // Add all urls to the known list even if we skipped them
-      await uploadKnownUrls(
-        images.map(({ origin }) => origin),
-        branch
-      );
-    },
-    async (error, retryCount) => {
-      if (isRateLimitError(error)) {
-        // Warn about rate limiting and wait a few minutes
-        await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
-        const delay = RateLimitDelay / 60 / 1000;
-        console.warn(r`Rate-limited, waiting ${delay} mins`);
-      } else console.warn(r`Retrying upload [${error}]`);
+      // Add a new pending url
+      pending.push(promise);
+      pendingUploads.set(fileName, { image, resolve, reject, promise });
     }
-  );
+  }
+
+  if (shouldRun) {
+    // Run an async loop uploading any pending urls
+    (async () => {
+      await wait(UploadDelay);
+      while (pendingUploads.size) {
+        // Copy a set of the images to track if some can be skipped
+        const newImages = [];
+        try {
+          // Start a retry loop
+          await retry(
+            async () => {
+              const pendingCt = pendingUploads.size;
+              console.log(y`Uploading ${pendingCt} image(s) to HF`);
+
+              // capture the current pendingUploads for
+              // the secondary url upload after images
+              const initialUploads = [...pendingUploads.values()];
+
+              // Double check that all the images are new
+              // A duplicate image may have been added since validation
+              newImages.length = 0;
+              await Promise.all(
+                initialUploads.map(async ({ resolve, image }) => {
+                  const name = image.fileName;
+                  if (await isExistingImage(name, branch)) {
+                    console.log(y`Skipping ${name} [image already on HF]`);
+                    pendingUploads.delete(name);
+                    resolve();
+                  } else {
+                    newImages.push(image);
+                  }
+                })
+              );
+
+              const newCt = newImages.length;
+              if (!newCt) return;
+
+              // Create a set of upload for the image
+              // Recreate with each retry incase the folders are now full
+              const uploads = await createUploads(newImages, branch);
+
+              // If there are new uploads push them to HF
+              for (const { path } of uploads) pendingPaths.add(path);
+              try {
+                // Upload the images and url update
+                await uploadFiles({
+                  files: uploads,
+                  repo: DatasetRepo,
+                  branch,
+                  credentials,
+                  useWebWorkers: true,
+                  commitTitle: `Add ${newCt} images`,
+                });
+              } finally {
+                // Remove the pending paths either way because we'll get new paths
+                for (const { path } of uploads) pendingPaths.delete(path);
+              }
+
+              const skippedCt = pendingCt - newCt;
+              console.log(g`${newCt} image(s) uploaded [${skippedCt} skipped]`);
+
+              // Add all urls to the known list even if we skipped them
+              uploadKnownUrls(
+                initialUploads.map(({ image }) => image.origin),
+                branch
+              );
+            },
+            async (error, retryCount) => {
+              if (isRateLimitError(error)) {
+                // Warn about rate limiting and wait a few minutes
+                await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
+                const delay = RateLimitDelay / 60 / 1000;
+                console.warn(r`Rate-limited, waiting ${delay} mins`);
+              } else console.warn(rl`Retrying upload ${error}`);
+            }
+          );
+
+          // Resolve the uploaded images
+          for (const { fileName } of newImages) {
+            pendingUploads.get(fileName).resolve();
+            pendingUploads.delete(fileName);
+          }
+        } catch (error) {
+          // If the retry failed reject the urls for this upload
+          for (const { fileName } of newImages) {
+            pendingUploads.get(fileName).reject(error);
+            pendingUploads.delete(fileName);
+          }
+        }
+      }
+    })();
+  }
+
+  // Return a promise that resolves once all the images are uploaded
+  return Promise.all(pending);
 }
 
 export async function fetchKnownUrls(branch = MainBranch) {
@@ -223,7 +292,7 @@ export async function fetchKnownUrls(branch = MainBranch) {
       return urlStr.split(/\r?\n/).filter(Boolean);
     },
     (error) => {
-      console.warn(r`Retrying URL list fetch [${error}]`);
+      console.warn(rl`Retrying URL list fetch ${error}`);
     }
   );
 }
@@ -261,7 +330,7 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
   if (shouldRun) {
     // Run an async loop uploading any pending urls
     (async () => {
-      await wait(UrlUploadDelay);
+      await wait(UploadDelay);
       while (pendingUrls.size) {
         const newUrls = [];
         try {
@@ -298,7 +367,6 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
 
               // Upload the new urls requiring the parent commit be
               // the same as the one we fetched the URLs from
-              const skippedCt = pendingCt - newCt;
               await uploadFile({
                 file: urlsUpload,
                 repo: DatasetRepo,
@@ -309,6 +377,7 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
                 parentCommit: head.oid,
               });
 
+              const skippedCt = pendingCt - newCt;
               console.log(g`${newCt} URL(s) uploaded [${skippedCt} skipped]`);
             },
             async (error, retryCount) => {
@@ -317,7 +386,7 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
                 await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
                 const delay = RateLimitDelay / 60 / 1000;
                 console.warn(r`Rate-limited, waiting ${delay} mins`);
-              } else console.warn(r`Retrying URL list upload [${error}]`);
+              } else console.warn(rl`Retrying URL list upload ${error}`);
             }
           );
 

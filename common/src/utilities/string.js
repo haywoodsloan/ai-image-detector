@@ -42,8 +42,12 @@ function stringify(val) {
     case 'string':
       return val;
     case 'object':
-      if (val instanceof Error) return val.message;
       if (Array.isArray(val)) return `[${val.join(', ')}]`;
+      if (val instanceof Error) {
+        const [errMsg, errLoc] = val.stack.split(/\r?\n\s*/);
+        return `[${errMsg} ${errLoc}]`;
+      }
+
       return `(${Object.entries(val)
         .map(([k, v]) => `${capitalize(k)}=${v}`)
         .join(', ')})`;
