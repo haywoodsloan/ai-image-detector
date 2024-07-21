@@ -190,13 +190,24 @@
       "problemMatcher": []
     },
     {
+      "label": "Format Extension",
+      "type": "npm",
+      "script": "format",
+      "path": "extension",
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Format All",
       "dependsOn": [
         "Format Common",
         "Format Scrapper",
         "Format Service",
         "Format Autotrain",
-        "Format Infra"
+        "Format Infra",
+        "Format Extension"
       ],
       "dependsOrder": "parallel",
       "problemMatcher": []

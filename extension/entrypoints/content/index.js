@@ -1,6 +1,9 @@
+import IndicatorOverlay from '@/components/IndicatorOverlay.vue';
 import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 
-const CssUrlRegex = /url\((?<url>[^\)]+)\)/;
+import './style.css';
+
+const CssUrlRegex = /url\((?<url>[^)]+)\)/;
 const VisibilityThresh = 0.7;
 
 export default defineContentScript({
@@ -80,13 +83,23 @@ function isImageElement(ele) {
  */
 async function createIndicatorUi(ctx, ele) {
   const ui = await createShadowRootUi(ctx, {
-    name: 'detector-indicator',
+    name: 'indicator-overlay',
 
     position: 'overlay',
+    alignment: "top-left",
+    append: "before",
+    zIndex: 999999,
     anchor: ele,
 
     onMount(container, shadow, host) {
       console.log('mounting indicator', container, shadow, host);
+      const app = createApp(IndicatorOverlay, { parent: ele });
+      app.mount(container);
+      return app;
+    },
+
+    onRemove(app) {
+      app?.unmount();
     },
   });
 
