@@ -18,7 +18,7 @@ export const b = (...args) =>
   isLocal
     ? colors.blue(...interpolate(...args))
     : colors(...interpolate(...args));
-    
+
 export const y = (...args) =>
   isLocal
     ? colors.yellow(...interpolate(...args))

@@ -43,7 +43,7 @@ export async function queryVotedLabel(imageHash) {
     ])
     .tryNext();
 
-  return result?._id ?? null;
+  return result ? { label: result._id, count: result.count } : null;
 }
 
 /**

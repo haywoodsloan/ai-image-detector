@@ -95,8 +95,11 @@ export async function replaceImage(image, branch = MainBranch) {
 
       // If there isn't an existing file skip retries and throw
       const oldPath = await getFullImagePath(fileName, head.oid);
-      if (!oldPath)
-        throw new NonRetryableError('Image to replace missing from HF');
+      if (!oldPath) {
+        const error = new NonRetryableError('Image to replace missing from HF');
+        console.warn(y`${error.message}`)
+        throw error;
+      }
 
       // Skip if the old and new labels are the same
       // Return false to indicate no change was made
@@ -180,6 +183,9 @@ export async function uploadImages(images, branch = MainBranch) {
           // Start a retry loop
           await retry(
             async () => {
+              // Track the last commit so we avoid redundant uploads
+              const head = await getHeadCommit(branch);
+
               const pendingCt = pendingUploads.size;
               console.log(y`Uploading ${pendingCt} image(s) to HF`);
 
@@ -193,7 +199,7 @@ export async function uploadImages(images, branch = MainBranch) {
               await Promise.all(
                 initialUploads.map(async ({ resolve, image }) => {
                   const name = image.fileName;
-                  if (await isExistingImage(name, branch)) {
+                  if (await isExistingImage(name, head.oid)) {
                     console.log(y`Skipping ${name} [image already on HF]`);
                     pendingUploads.delete(name);
                     resolve();
@@ -208,7 +214,7 @@ export async function uploadImages(images, branch = MainBranch) {
 
               // Create a set of upload for the image
               // Recreate with each retry incase the folders are now full
-              const uploads = await createUploads(newImages, branch);
+              const uploads = await createUploads(newImages, head.oid);
 
               // If there are new uploads push them to HF
               for (const { path } of uploads) pendingPaths.add(path);
@@ -221,6 +227,7 @@ export async function uploadImages(images, branch = MainBranch) {
                   credentials,
                   useWebWorkers: true,
                   commitTitle: `Add ${newCt} images`,
+                  parentCommit: head.oid
                 });
               } finally {
                 // Remove the pending paths either way because we'll get new paths
@@ -231,7 +238,7 @@ export async function uploadImages(images, branch = MainBranch) {
               console.log(g`${newCt} image(s) uploaded [${skippedCt} skipped]`);
 
               // Add all urls to the known list even if we skipped them
-              uploadKnownUrls(
+              await uploadKnownUrls(
                 initialUploads.map(({ image }) => image.origin),
                 branch
               );

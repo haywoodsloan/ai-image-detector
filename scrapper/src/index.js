@@ -46,13 +46,13 @@ const AiSubReddits = [
   'https://www.reddit.com/r/AIGenArt/',
   'https://www.reddit.com/r/AiArtLounge/',
   'https://www.reddit.com/r/midjourney',
-  'https://www.reddit.com/r/dalle2'
+  'https://www.reddit.com/r/dalle2',
 ];
 const RealSubReddits = [
   'https://www.reddit.com/r/Art/',
   'https://www.reddit.com/r/pics/',
   'https://www.reddit.com/r/BookCovers/',
-  'https://www.reddit.com/r/Illustration/'
+  'https://www.reddit.com/r/Illustration/',
 ];
 
 const SubReddits = {

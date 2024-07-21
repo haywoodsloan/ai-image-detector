@@ -1,11 +1,7 @@
-import { createHash } from 'common/utilities/hash.js';
 import {
   AiLabel,
-  RealLabel,
   getImageClassification,
 } from 'common/utilities/huggingface.js';
-
-import { queryVotedLabel } from './db/voteColl.js';
 
 // Use the detector version for db lookups
 export const DetectorVersion = '1';
@@ -17,18 +13,7 @@ export const DetectorModels = Object.freeze([
  * @param {Buffer} data
  * @param {string} hash
  */
-export async function checkIfAI(data) {
-  // Check for a cached class from the DB
-  const hash = createHash(data);
-  const cachedClass = await queryVotedLabel(hash);
-
-  switch (cachedClass) {
-    case AiLabel:
-      return 1;
-    case RealLabel:
-      return 0;
-  }
-
+export async function classifyIfAi(data) {
   // Check several AI related classifications
   const results = await Promise.all(
     DetectorModels.map((model) => getImageClassification({ model, data }))

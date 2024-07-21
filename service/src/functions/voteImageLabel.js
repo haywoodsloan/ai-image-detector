@@ -51,12 +51,12 @@ app.http('voteImageLabel', {
     const hash = createHash(data, { alg: 'sha256' });
 
     // Check what the current voted label is
-    const oldLabel = await queryVotedLabel(hash);
+    const { label: oldLabel } = await queryVotedLabel(hash);
     console.log(l`Original voted label ${{ hash, label: oldLabel }}`);
 
     // Add the vote and check the new label
     const vote = await upsertVotedLabel(hash, userId, voteLabel);
-    const newLabel = await queryVotedLabel(hash);
+    const { label: newLabel } = await queryVotedLabel(hash);
     console.log(l`New voted label ${{ hash, label: newLabel }}`);
 
     // Check if the voted label has changed and upload if so
