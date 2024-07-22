@@ -21,10 +21,14 @@ export default defineContentScript({
     const intersectionObs = new IntersectionObserver(
       async (entries) => {
         for (const { intersectionRatio, target } of entries) {
+          console.log('intersection event', target);
           const overlayId = target.dataset?.aidOverlayId;
-          if (intersectionRatio < VisibilityThresh && overlayId) {
+          if (
+            intersectionRatio < VisibilityThresh &&
+            indicatorUis.has(overlayId)
+          ) {
             delete target.dataset.aidOverlayId;
-            indicatorUis.get(overlayId)?.remove();
+            indicatorUis.get(overlayId).remove();
             indicatorUis.delete(overlayId);
           } else if (intersectionRatio >= VisibilityThresh && !overlayId) {
             target.dataset.aidOverlayId = randomId(8);
@@ -54,7 +58,6 @@ export default defineContentScript({
 
         for (const newNode of allNewNodes) {
           if (isImageElement(newNode)) {
-            console.log('observing', newNode);
             intersectionObs.observe(newNode);
           }
         }
@@ -64,7 +67,6 @@ export default defineContentScript({
     mutationObs.observe(document.body, { subtree: true, childList: true });
     for (const element of collectAllElementsDeep(null, document.body)) {
       if (isImageElement(element)) {
-        console.log('observing', element);
         intersectionObs.observe(element);
       }
     }
