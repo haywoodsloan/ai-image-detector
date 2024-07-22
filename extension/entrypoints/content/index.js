@@ -15,21 +15,31 @@ export default defineContentScript({
   main(ctx) {
     console.log('Content script running');
 
-    /** @type {Map<Element, ShadowRootContentScriptUi>} */
+    /** @type {Map<string, ShadowRootContentScriptUi>} */
     const indicatorUis = new Map();
 
     const intersectionObs = new IntersectionObserver(
       async (entries) => {
         for (const { intersectionRatio, target } of entries) {
+          const overlayId = target.dataset?.aidOverlayId;
           if (
             intersectionRatio < VisibilityThresh &&
-            indicatorUis.has(target)
+            indicatorUis.has(overlayId)
           ) {
-            console.log('image became non-visible', target);
-            indicatorUis.get(target).remove();
-          } else if (intersectionRatio >= VisibilityThresh) {
-            console.log('new image became visible', target);
-            indicatorUis.set(target, await createIndicatorUi(ctx, target));
+            console.log('image became non-visible', target, overlayId, indicatorUis);
+            indicatorUis.get(overlayId).remove();
+            indicatorUis.delete(overlayId);
+            delete target.dataset.aidOverlayId;
+          } else if (
+            intersectionRatio >= VisibilityThresh &&
+            !indicatorUis.has(overlayId)
+          ) {
+            console.log('new image became visible', target, overlayId, indicatorUis);
+            target.dataset.aidOverlayId = randomId(8);
+            indicatorUis.set(
+              target.dataset.aidOverlayId,
+              await createIndicatorUi(ctx, target)
+            );
           }
         }
       },
@@ -82,22 +92,26 @@ function isImageElement(ele) {
  * @param {Element} ele
  */
 async function createIndicatorUi(ctx, ele) {
+  const wrapper = document.createElement('div');
+  ele.parentNode.insertBefore(wrapper, ele);
+  wrapper.appendChild(ele);
+
+  wrapper.style.display = 'contents';
+  wrapper.style.position = 'relative';
+
   const ui = await createShadowRootUi(ctx, {
     name: 'indicator-overlay',
 
     position: 'overlay',
-    alignment: 'top-left',
-    zIndex: 99999,
-
-    anchor: ele,
-    append: 'before',
+    anchor: wrapper,
+    append: 'last',
 
     onMount(container, shadow, host) {
       console.log('mounting indicator', container, shadow, host);
 
-      host.style.position = 'absolute';
-      host.style.top = '0';
-      host.style.left = '0';
+      host.style.position = "absolute";
+      host.style.top = "0";
+      host.style.left = "0";
 
       const app = createApp(IndicatorOverlay, { parent: ele });
       app.mount(container);
@@ -111,4 +125,16 @@ async function createIndicatorUi(ctx, ele) {
 
   ui.mount();
   return ui;
+}
+
+function randomId(length = 8) {
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+  const result = [];
+  for (let i = 0; i < length; i++) {
+    result.push(chars.charAt(Math.floor(Math.random() * chars.length)));
+  }
+
+  return result.join('');
 }

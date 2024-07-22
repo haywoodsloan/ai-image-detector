@@ -9,3 +9,13 @@ export function isRateLimitError(error) {
   if (!(error instanceof AggregateError)) return false;
   return error.errors.some((nested) => isRateLimitError(nested));
 }
+
+/**
+ * @param {AggregateError} error
+ * @returns {any[]}
+ */
+export function flattenAggregateError(error) {
+  return error.errors.flatMap((e) =>
+    e instanceof AggregateError ? flattenAggregateError(e) : e
+  );
+}

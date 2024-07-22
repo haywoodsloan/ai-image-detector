@@ -1,5 +1,7 @@
 import { randomBytes } from 'crypto';
 
+import { flattenAggregateError } from './error.js';
+
 /**
  * @param {string} str
  */
@@ -44,8 +46,15 @@ function stringify(val) {
     case 'object':
       if (Array.isArray(val)) return `[${val.join(', ')}]`;
       if (val instanceof Error) {
-        const [errMsg, errLoc] = val.stack.split(/\r?\n\s*/);
-        return `[${errMsg} ${errLoc}]`;
+        const errors =
+          val instanceof AggregateError ? flattenAggregateError(val) : [val];
+
+        return `[\n${errors
+          .map(({ stack }) => {
+            const [errMsg, errLoc] = stack.split(/\r?\n\s*/);
+            return `    ${errMsg} ${errLoc}`;
+          })
+          .join(',\n')}\n]`;
       }
 
       return `(${Object.entries(val)
