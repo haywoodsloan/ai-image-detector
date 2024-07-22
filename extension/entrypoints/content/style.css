@@ -1,3 +1,5 @@
-:root {
+body {
+  all: initial !important;
+  position: absolute;
   margin: 0;
 }

@@ -17,11 +17,8 @@ onMounted(() => {
 
 <style scoped>
 .circle {
-  visibility: visible !important;
-  display: inline-block;
-
-  width: 25px;
-  height: 25px;
+  width: 8px;
+  height: 8px;
 
   border-radius: 50%;
   background-color: red;

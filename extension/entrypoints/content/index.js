@@ -86,13 +86,19 @@ async function createIndicatorUi(ctx, ele) {
     name: 'indicator-overlay',
 
     position: 'overlay',
-    alignment: "top-left",
-    append: "before",
-    zIndex: 999999,
+    alignment: 'top-left',
+    zIndex: 99999,
+
     anchor: ele,
+    append: 'before',
 
     onMount(container, shadow, host) {
       console.log('mounting indicator', container, shadow, host);
+
+      host.style.position = 'absolute';
+      host.style.top = '0';
+      host.style.left = '0';
+
       const app = createApp(IndicatorOverlay, { parent: ele });
       app.mount(container);
       return app;
