@@ -4,7 +4,7 @@ import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 import './style.css';
 
 const CssUrlRegex = /url\((?<url>[^)]+)\)/;
-const VisibilityThresh = 0.7;
+const VisibilityThresh = 0.5;
 
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -22,19 +22,11 @@ export default defineContentScript({
       async (entries) => {
         for (const { intersectionRatio, target } of entries) {
           const overlayId = target.dataset?.aidOverlayId;
-          if (
-            intersectionRatio < VisibilityThresh &&
-            indicatorUis.has(overlayId)
-          ) {
-            console.log('image became non-visible', target, overlayId, indicatorUis);
-            indicatorUis.get(overlayId).remove();
-            indicatorUis.delete(overlayId);
+          if (intersectionRatio < VisibilityThresh && overlayId) {
             delete target.dataset.aidOverlayId;
-          } else if (
-            intersectionRatio >= VisibilityThresh &&
-            !indicatorUis.has(overlayId)
-          ) {
-            console.log('new image became visible', target, overlayId, indicatorUis);
+            indicatorUis.get(overlayId)?.remove();
+            indicatorUis.delete(overlayId);
+          } else if (intersectionRatio >= VisibilityThresh && !overlayId) {
             target.dataset.aidOverlayId = randomId(8);
             indicatorUis.set(
               target.dataset.aidOverlayId,
@@ -62,6 +54,7 @@ export default defineContentScript({
 
         for (const newNode of allNewNodes) {
           if (isImageElement(newNode)) {
+            console.log('observing', newNode);
             intersectionObs.observe(newNode);
           }
         }
@@ -70,7 +63,10 @@ export default defineContentScript({
 
     mutationObs.observe(document.body, { subtree: true, childList: true });
     for (const element of collectAllElementsDeep(null, document.body)) {
-      if (isImageElement(element)) intersectionObs.observe(element);
+      if (isImageElement(element)) {
+        console.log('observing', element);
+        intersectionObs.observe(element);
+      }
     }
   },
 });
@@ -106,12 +102,10 @@ async function createIndicatorUi(ctx, ele) {
     anchor: wrapper,
     append: 'last',
 
-    onMount(container, shadow, host) {
-      console.log('mounting indicator', container, shadow, host);
-
-      host.style.position = "absolute";
-      host.style.top = "0";
-      host.style.left = "0";
+    onMount(container, _, host) {
+      host.style.position = 'absolute';
+      host.style.top = '0';
+      host.style.left = '0';
 
       const app = createApp(IndicatorOverlay, { parent: ele });
       app.mount(container);
@@ -119,6 +113,8 @@ async function createIndicatorUi(ctx, ele) {
     },
 
     onRemove(app) {
+      wrapper.parentNode.insertBefore(ele, wrapper);
+      wrapper.remove();
       app?.unmount();
     },
   });
