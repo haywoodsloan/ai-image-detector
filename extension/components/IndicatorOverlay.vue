@@ -1,14 +1,10 @@
 <script setup>
-const props = defineProps({
-  parent: {
+defineProps({
+  imageEle: {
     type: HTMLElement,
     required: true
   }
-})
-
-onMounted(() => {
-  console.log('parent of indicator', props.parent);
-})
+});
 </script>
 
 <template>

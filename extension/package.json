@@ -17,6 +17,7 @@
   "dependencies": {
     "common": "file:../common",
     "query-selector-shadow-dom": "^1.0.1",
+    "vite-plugin-node-polyfills": "^0.22.0",
     "vue": "^3.4.31"
   },
   "devDependencies": {
@@ -30,7 +31,6 @@
     "icon-gen": "^4.0.0",
     "prettier": "^3.3.3",
     "typescript": "^5.5.3",
-    "vite-plugin-node-polyfills": "^0.22.0",
     "vue-tsc": "^2.0.26",
     "wxt": "^0.18.12"
   }

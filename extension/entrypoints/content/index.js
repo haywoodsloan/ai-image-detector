@@ -1,41 +1,36 @@
 import IndicatorOverlay from '@/components/IndicatorOverlay.vue';
+import { randomId } from 'common/utilities/string.js';
 import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 
 import './style.css';
 
+const MutObsOpts = { subtree: true, childList: true };
 const CssUrlRegex = /url\((?<url>[^)]+)\)/;
-const VisibilityThresh = 0.5;
+const VisibilityThresh = 0.2;
 
 export default defineContentScript({
   matches: ['<all_urls>'],
 
-  runAt: 'document_idle',
+  runAt: 'document_start',
   cssInjectionMode: 'ui',
 
   main(ctx) {
     console.log('Content script running');
 
     /** @type {Map<string, ShadowRootContentScriptUi>} */
-    const indicatorUis = new Map();
-
+    const uis = new Map();
     const intersectionObs = new IntersectionObserver(
       async (entries) => {
         for (const { intersectionRatio, target } of entries) {
-          console.log('intersection event', target);
           const overlayId = target.dataset?.aidOverlayId;
-          if (
-            intersectionRatio < VisibilityThresh &&
-            indicatorUis.has(overlayId)
-          ) {
+          if (intersectionRatio < VisibilityThresh && uis.has(overlayId)) {
             delete target.dataset.aidOverlayId;
-            indicatorUis.get(overlayId).remove();
-            indicatorUis.delete(overlayId);
+            uis.get(overlayId).remove();
+            uis.delete(overlayId);
           } else if (intersectionRatio >= VisibilityThresh && !overlayId) {
             target.dataset.aidOverlayId = randomId(8);
-            indicatorUis.set(
-              target.dataset.aidOverlayId,
-              await createIndicatorUi(ctx, target)
-            );
+            const ui = await createIndicatorUi(ctx, target);
+            uis.set(target.dataset.aidOverlayId, ui);
           }
         }
       },
@@ -48,27 +43,25 @@ export default defineContentScript({
           .filter((node) => node instanceof Element)
           .flatMap((node) => [...collectAllElementsDeep(null, node), node]);
 
-        for (const removedNode of allRemovedNodes) {
-          intersectionObs.unobserve(removedNode);
+        for (const node of allRemovedNodes) {
+          intersectionObs.unobserve(node);
         }
 
         const allNewNodes = [...mutation.addedNodes]
           .filter((node) => node instanceof Element)
           .flatMap((node) => [...collectAllElementsDeep(null, node), node]);
 
-        for (const newNode of allNewNodes) {
-          if (isImageElement(newNode)) {
-            intersectionObs.observe(newNode);
-          }
+        for (const node of allNewNodes) {
+          if (node.shadowRoot) mutationObs.observe(node.shadowRoot, MutObsOpts);
+          if (isImageElement(node)) intersectionObs.observe(node);
         }
       }
     });
 
-    mutationObs.observe(document.body, { subtree: true, childList: true });
-    for (const element of collectAllElementsDeep(null, document.body)) {
-      if (isImageElement(element)) {
-        intersectionObs.observe(element);
-      }
+    mutationObs.observe(document.body, MutObsOpts);
+    for (const node of collectAllElementsDeep(null, document.body)) {
+      if (node.shadowRoot) mutationObs.observe(node.shadowRoot, MutObsOpts);
+      if (isImageElement(node)) intersectionObs.observe(node);
     }
   },
 });
@@ -78,7 +71,7 @@ export default defineContentScript({
  */
 function isImageElement(ele) {
   return (
-    ele.nodeName === 'IMG' ||
+    ele.nodeName.toLowerCase() === 'img' ||
     CssUrlRegex.test(getComputedStyle(ele).backgroundImage) ||
     CssUrlRegex.test(getComputedStyle(ele, ':after').backgroundImage) ||
     CssUrlRegex.test(getComputedStyle(ele, ':before').backgroundImage)
@@ -87,52 +80,40 @@ function isImageElement(ele) {
 
 /**
  * @param {ContentScriptContext} ctx
- * @param {Element} ele
+ * @param {HTMLElement} ele
  */
 async function createIndicatorUi(ctx, ele) {
-  const wrapper = document.createElement('div');
-  ele.parentNode.insertBefore(wrapper, ele);
-  wrapper.appendChild(ele);
-
-  wrapper.style.display = 'contents';
-  wrapper.style.position = 'relative';
-
   const ui = await createShadowRootUi(ctx, {
     name: 'indicator-overlay',
 
     position: 'overlay',
-    anchor: wrapper,
-    append: 'last',
+    anchor: ele,
+    append: 'after',
 
     onMount(container, _, host) {
-      host.style.position = 'absolute';
-      host.style.top = '0';
-      host.style.left = '0';
+      const eleRect = ele.getBoundingClientRect();
+      const offsetRect = ele.offsetParent.getBoundingClientRect();
 
-      const app = createApp(IndicatorOverlay, { parent: ele });
+      const top = eleRect.top - offsetRect.top;
+      const left = eleRect.left - offsetRect.left;
+
+      host.style.position = 'absolute';
+      host.style.top = `${top}px`;
+      host.style.left = `${left}px`;
+
+      const app = createApp(IndicatorOverlay, {
+        imageEle: ele,
+      });
+
       app.mount(container);
       return app;
     },
 
     onRemove(app) {
-      wrapper.parentNode.insertBefore(ele, wrapper);
-      wrapper.remove();
       app?.unmount();
     },
   });
 
   ui.mount();
   return ui;
-}
-
-function randomId(length = 8) {
-  const chars =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-  const result = [];
-  for (let i = 0; i < length; i++) {
-    result.push(chars.charAt(Math.floor(Math.random() * chars.length)));
-  }
-
-  return result.join('');
 }
