@@ -10,8 +10,6 @@ const VisibilityThresh = 0.2;
 
 export default defineContentScript({
   matches: ['<all_urls>'],
-
-  runAt: 'document_start',
   cssInjectionMode: 'ui',
 
   main(ctx) {
@@ -58,11 +56,13 @@ export default defineContentScript({
       }
     });
 
-    mutationObs.observe(document.body, MutObsOpts);
-    for (const node of collectAllElementsDeep(null, document.body)) {
-      if (node.shadowRoot) mutationObs.observe(node.shadowRoot, MutObsOpts);
-      if (isImageElement(node)) intersectionObs.observe(node);
-    }
+    requestAnimationFrame(() => {
+      mutationObs.observe(document.body, MutObsOpts);
+      for (const node of collectAllElementsDeep(null, document.body)) {
+        if (node.shadowRoot) mutationObs.observe(node.shadowRoot, MutObsOpts);
+        if (isImageElement(node)) intersectionObs.observe(node);
+      }
+    });
   },
 });
 
@@ -71,40 +71,27 @@ export default defineContentScript({
  */
 function isImageElement(ele) {
   return (
-    ele.nodeName.toLowerCase() === 'img' ||
-    CssUrlRegex.test(getComputedStyle(ele).backgroundImage) ||
-    CssUrlRegex.test(getComputedStyle(ele, ':after').backgroundImage) ||
-    CssUrlRegex.test(getComputedStyle(ele, ':before').backgroundImage)
+    ele.nodeName.toLowerCase() === 'img' // ||
+    // CssUrlRegex.test(getComputedStyle(ele).backgroundImage) ||
+    // CssUrlRegex.test(getComputedStyle(ele, ':after').backgroundImage) ||
+    // CssUrlRegex.test(getComputedStyle(ele, ':before').backgroundImage)
   );
 }
 
 /**
  * @param {ContentScriptContext} ctx
- * @param {HTMLElement} ele
+ * @param {HTMLElement} image
  */
-async function createIndicatorUi(ctx, ele) {
+async function createIndicatorUi(ctx, image) {
   const ui = await createShadowRootUi(ctx, {
     name: 'indicator-overlay',
 
     position: 'overlay',
-    anchor: ele,
+    anchor: image,
     append: 'after',
 
     onMount(container, _, host) {
-      const eleRect = ele.getBoundingClientRect();
-      const offsetRect = ele.offsetParent.getBoundingClientRect();
-
-      const top = eleRect.top - offsetRect.top;
-      const left = eleRect.left - offsetRect.left;
-
-      host.style.position = 'absolute';
-      host.style.top = `${top}px`;
-      host.style.left = `${left}px`;
-
-      const app = createApp(IndicatorOverlay, {
-        imageEle: ele,
-      });
-
+      const app = createApp(IndicatorOverlay, { image, host });
       app.mount(container);
       return app;
     },
