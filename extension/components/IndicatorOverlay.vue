@@ -40,14 +40,15 @@ useResizeObserver([image, image.offsetParent], () => {
   }
 });
 
-const colorMap = interpolate(['red', 'yellow', 'lawngreen']);
+const colors = ['red', 'orange', 'gold', 'greenyellow', 'lawngreen'];
+const colorMap = interpolate(colors);
 const iconColor = computed(() => colorMap(Math.random()));
 </script>
 
 <template>
   <div class="container" :class="size">
     <DetectorSvg v-if="size === 'large'" class="icon" :class="size" />
-    <div v-else class="icon" :class="size"></div>
+    <div v-else-if="size === 'medium'" class="icon" :class="size"></div>
   </div>
 </template>
 
@@ -59,15 +60,15 @@ const iconColor = computed(() => colorMap(Math.random()));
 
     margin-top: 6px;
     margin-left: 6px;
-  }
 
-  :deep(path) {
-    stroke: v-bind(iconColor);
-    fill: v-bind(iconColor);
+    :deep(path) {
+      stroke: v-bind(iconColor);
+      fill: v-bind(iconColor);
 
-    &.unknown {
-      stroke: grey;
-      fill: grey;
+      &.unknown {
+        stroke: grey;
+        fill: grey;
+      }
     }
   }
 
@@ -92,11 +93,11 @@ const iconColor = computed(() => colorMap(Math.random()));
     transition: opacity 0.25s;
     clip-path: polygon(100% 0, 0 0, 0 100%);
 
-    opacity: 0.65;
+    opacity: 0.6;
     background-image: linear-gradient(
       135deg,
-      rgba(0, 0, 0, 0.8) 0%,
-      rgba(0, 0, 0, 0.4) 35%,
+      rgba(0, 0, 0, 0.9) 0%,
+      rgba(0, 0, 0, 0.5) 35%,
       rgba(0, 0, 0, 0) 50%
     );
 
