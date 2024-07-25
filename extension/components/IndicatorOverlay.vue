@@ -46,54 +46,73 @@ const iconColor = computed(() => colorMap(Math.random()));
 </script>
 
 <template>
-  <div class="container" :class="size">
-    <DetectorSvg v-if="size === 'large'" class="icon" :class="size" />
-    <div v-else-if="size === 'medium'" class="icon" :class="size"></div>
+  <div v-if="size !== 'small'" class="container" :class="size">
+    <button class="button" :class="size">
+      <DetectorSvg v-if="size === 'large'" class="icon large" />
+      <div v-else-if="size === 'medium'" class="icon medium"></div>
+    </button>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .icon {
   &.large {
-    height: 25px;
-    width: 25px;
-
-    margin-top: 6px;
-    margin-left: 6px;
+    height: 24px;
+    width: 24px;
 
     :deep(path) {
       stroke: v-bind(iconColor);
       fill: v-bind(iconColor);
-
-      &.unknown {
-        stroke: grey;
-        fill: grey;
-      }
     }
   }
 
   &.medium {
-    height: 8px;
-    width: 8px;
-
-    margin-top: 2px;
-    margin-left: 2px;
+    height: 6px;
+    width: 6px;
 
     border-radius: 50%;
     background-color: v-bind(iconColor);
   }
 }
 
+.button {
+  display: block;
+  cursor: pointer;
+
+  will-change: transform;
+  transition: transform 0.3s;
+
+  background: none;
+  border: none;
+
+  padding: 0;
+  margin: 0;
+
+  &.large {
+    transform-origin: center;
+    margin-top: 6px;
+    margin-left: 6px;
+  }
+
+  &.medium {
+    transform-origin: 0 0;
+    margin-top: 6px;
+    margin-left: 6px;
+  }
+}
+
 .container {
+  position: absolute;
+  clip-path: polygon(100% 0, 0 0, 0 100%);
+
   &.large {
     width: 70px;
     height: 70px;
 
     will-change: opacity;
-    transition: opacity 0.25s;
-    clip-path: polygon(100% 0, 0 0, 0 100%);
+    transition: opacity 0.3s;
 
-    opacity: 0.6;
+    opacity: 0.5;
     background-image: linear-gradient(
       135deg,
       rgba(0, 0, 0, 0.9) 0%,
@@ -103,6 +122,21 @@ const iconColor = computed(() => colorMap(Math.random()));
 
     &:hover {
       opacity: 1;
+
+      .button {
+        transform: scale(1.1);
+      }
+    }
+  }
+
+  &.medium {
+    width: 35px;
+    height: 35px;
+
+    &:hover {
+      .button {
+        transform: scale(2.5);
+      }
     }
   }
 }
