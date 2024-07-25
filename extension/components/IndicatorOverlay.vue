@@ -72,7 +72,7 @@ const iconColor = computed(() => colorMap(Math.random()));
     }
   }
 
-  &.small {
+  &.medium {
     height: 8px;
     width: 8px;
 
