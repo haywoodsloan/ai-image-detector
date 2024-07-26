@@ -1,9 +1,9 @@
 import IndicatorOverlay from '@/components/IndicatorOverlay.vue';
+import { createAppEx } from '@/utilities/vue.js';
 import { randomId } from 'common/utilities/string.js';
 import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 
 import './style.css';
-import { createAppEx } from '@/utilities/vue.js';
 
 const MutObsOpts = { subtree: true, childList: true };
 //const CssUrlRegex = /url\((?<url>[^)]+)\)/;
@@ -44,6 +44,13 @@ export default defineContentScript({
 
         for (const node of allRemovedNodes) {
           intersectionObs.unobserve(node);
+          const overlayId = node.dataset?.aidOverlayId;
+
+          if (uis.has(overlayId)) {
+            delete node.dataset.aidOverlayId;
+            uis.get(overlayId).remove();
+            uis.delete(overlayId);
+          }
         }
 
         const allNewNodes = [...mutation.addedNodes]

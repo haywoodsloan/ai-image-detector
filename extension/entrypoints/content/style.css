@@ -1,7 +1,8 @@
 html {
-  overflow: visible !important;
+  all: initial !important;
 }
 
 body {
-  all: initial !important;
+  height: 100%;
+  width: 100%;
 }

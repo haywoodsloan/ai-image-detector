@@ -1,8 +1,8 @@
-<!-- eslint-disable vue/no-mutating-props -->
 <script setup>
 import DetectorSvg from '@/assets/detector.svg';
 import { useResizeObserver } from '@vueuse/core';
 import interpolate from 'color-interpolate';
+import { mergeProps } from 'vue';
 
 const { value: host } = defineModel('host', {
   type: HTMLElement,
@@ -22,14 +22,19 @@ onMounted(() => {
 
 const size = ref('medium');
 useResizeObserver([image, image.offsetParent], () => {
-  const imgRect = image.getBoundingClientRect();
-  const offsetRect = image.offsetParent.getBoundingClientRect();
+  const imgRect = image?.getBoundingClientRect();
+  const offsetRect = image?.offsetParent?.getBoundingClientRect();
+
+  // Skip if one of the rects can't get found, this element is being removed.
+  if (!imgRect || !offsetRect) return;
 
   const top = imgRect.top - offsetRect.top;
   const left = imgRect.left - offsetRect.left;
 
   host.style.top = `${top}px`;
   host.style.left = `${left}px`;
+  host.style.width = `${imgRect.width}px`;
+  host.style.height = `${imgRect.height}px`;
 
   if (imgRect.width > 250) {
     size.value = 'large';
@@ -42,16 +47,50 @@ useResizeObserver([image, image.offsetParent], () => {
 
 const colors = ['red', 'orange', 'gold', 'greenyellow', 'lawngreen'];
 const colorMap = interpolate(colors);
-const iconColor = computed(() => colorMap(Math.random()));
+const iconColor = colorMap(Math.random());
+
+const menuOpen = ref(false);
 </script>
 
 <template>
-  <div v-if="size !== 'small'" class="container" :class="size">
-    <button class="button" :class="size">
-      <DetectorSvg v-if="size === 'large'" class="icon large" />
-      <div v-else-if="size === 'medium'" class="icon medium"></div>
-    </button>
-  </div>
+  <v-menu
+    v-if="size !== 'small'"
+    v-model="menuOpen"
+    location="right top"
+    :attach="true"
+  >
+    <template #activator="{ props: menu }">
+      <v-tooltip location="right top" :attach="true" :disabled="menuOpen">
+        <template #activator="{ props: tooltip }">
+          <div class="container" :class="size">
+            <button
+              class="button"
+              :class="size"
+              v-bind="mergeProps(menu, tooltip)"
+            >
+              <DetectorSvg v-if="size === 'large'" class="icon large" />
+              <div v-else-if="size === 'medium'" class="icon medium"></div>
+            </button>
+          </div>
+        </template>
+
+        AI Analysis: 98%
+      </v-tooltip>
+    </template>
+
+    <v-card elevation="16" max-width="344">
+      <v-card-item>
+        <v-card-title> Card title </v-card-title>
+
+        <v-card-subtitle> Card subtitle secondary text </v-card-subtitle>
+      </v-card-item>
+
+      <v-card-text>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+        tempor incididunt ut labore et dolore magna aliqua.
+      </v-card-text>
+    </v-card>
+  </v-menu>
 </template>
 
 <style lang="scss" scoped>
@@ -102,7 +141,7 @@ const iconColor = computed(() => colorMap(Math.random()));
 }
 
 .container {
-  position: absolute;
+  overflow: hidden;
   clip-path: polygon(100% 0, 0 0, 0 100%);
 
   &.large {
