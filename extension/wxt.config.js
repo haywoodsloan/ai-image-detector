@@ -1,4 +1,5 @@
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import vuetify from 'vite-plugin-vuetify';
 import svgLoader from 'vite-svg-loader';
 import { defineConfig } from 'wxt';
 
@@ -8,6 +9,7 @@ export default defineConfig({
   vite: () => ({
     plugins: [
       svgLoader(),
+      vuetify(),
       nodePolyfills({
         include: ['crypto'],
         globals: { global: false },

@@ -1,5 +1,7 @@
+html {
+  overflow: visible !important;
+}
+
 body {
   all: initial !important;
-  position: absolute;
-  margin: 0;
 }

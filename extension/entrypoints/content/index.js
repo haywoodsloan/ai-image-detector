@@ -3,9 +3,10 @@ import { randomId } from 'common/utilities/string.js';
 import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 
 import './style.css';
+import { createAppEx } from '@/utilities/vue.js';
 
 const MutObsOpts = { subtree: true, childList: true };
-const CssUrlRegex = /url\((?<url>[^)]+)\)/;
+//const CssUrlRegex = /url\((?<url>[^)]+)\)/;
 const VisibilityThresh = 0.2;
 
 export default defineContentScript({
@@ -91,7 +92,7 @@ async function createIndicatorUi(ctx, image) {
     append: 'after',
 
     onMount(container, _, host) {
-      const app = createApp(IndicatorOverlay, { image, host });
+      const app = createAppEx(IndicatorOverlay, { image, host });
       app.mount(container);
       return app;
     },
