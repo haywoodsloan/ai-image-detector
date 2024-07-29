@@ -6,6 +6,7 @@ import {
   RealLabel,
   TestSplit,
   TrainSplit,
+  UploadBatchSize,
   fetchKnownUrls,
   setHfAccessToken,
   uploadImages,
@@ -76,7 +77,6 @@ const ImageSelector =
   'shreddit-post img[src^="https://preview.redd.it"]:not([alt=""])';
 
 const TestRatio = 0.1;
-const UploadBatchSize = 50;
 const CleanupRemainder = 9;
 const RetryLimit = 10;
 

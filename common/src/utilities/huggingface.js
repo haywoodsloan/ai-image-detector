@@ -32,9 +32,10 @@ export const RealLabel = 'real';
 export const AiLabel = 'artificial';
 export const AllLabels = [RealLabel, AiLabel];
 
+export const UploadBatchSize = 50;
+
 const RetryLimit = 10;
 const MaxSubsetSize = 10_000;
-const UploadBatchSize = 50;
 
 const UploadDelay = TimeSpan.fromSeconds(1);
 const HuggingFaceErrorDelay = TimeSpan.fromSeconds(10);
