@@ -190,13 +190,20 @@ try {
 
           validationQueue.add(validation);
           if (validationQueue.size >= UploadBatchSize) {
-            const results = await Promise.all([...validationQueue]);
-            const images = results.filter(Boolean);
+            /** @type {Map<string, HfImage>} */
+            const unique = new Map();
+
+            for (const validation of validationQueue) {
+              const result = await validation;
+              if (!unique.has(result.fileName))
+                unique.set(result.fileName, result);
+              else validationQueue.delete(validation);
+            }
 
             // Skip uploading if less than the batch size after validation
-            if (images.length < UploadBatchSize) continue;
+            if (unique.size < UploadBatchSize) continue;
 
-            const pendingUpload = uploadImages(images).then(async () =>
+            const pendingUpload = uploadImages([...unique.values()]).then(() =>
               pendingUploads.delete(pendingUpload)
             );
 
