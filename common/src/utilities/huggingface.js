@@ -16,13 +16,14 @@ import { basename, dirname } from 'path';
 import TimeSpan from './TimeSpan.js';
 import { firstResult } from './async.js';
 import { isRateLimitError } from './error.js';
-import { take } from './iterator.js';
+import { take } from './iterable.js';
 import { NonRetryableError, withRetry } from './retry.js';
 import { isHttpUrl } from './url.js';
 
 export const MainBranch = 'main';
 export const DataPath = 'data';
 export const UrlListPath = `${DataPath}/urls.txt`;
+export const UploadBatchSize = 50;
 
 export const TrainSplit = 'train';
 export const TestSplit = 'test';
@@ -31,8 +32,6 @@ export const AllSplits = [TrainSplit, TestSplit];
 export const RealLabel = 'real';
 export const AiLabel = 'artificial';
 export const AllLabels = [RealLabel, AiLabel];
-
-export const UploadBatchSize = 50;
 
 const RetryLimit = 10;
 const MaxSubsetSize = 10_000;
