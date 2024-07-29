@@ -16,6 +16,7 @@ import { basename, dirname } from 'path';
 import TimeSpan from './TimeSpan.js';
 import { firstResult } from './async.js';
 import { isRateLimitError } from './error.js';
+import { take } from './iterator.js';
 import { NonRetryableError, withRetry } from './retry.js';
 import { isHttpUrl } from './url.js';
 
@@ -33,6 +34,7 @@ export const AllLabels = [RealLabel, AiLabel];
 
 const RetryLimit = 10;
 const MaxSubsetSize = 10_000;
+const UploadBatchSize = 50;
 
 const UploadDelay = TimeSpan.fromSeconds(1);
 const HuggingFaceErrorDelay = TimeSpan.fromSeconds(10);
@@ -187,12 +189,14 @@ export async function uploadImages(images, branch = MainBranch) {
               // Track the last commit so we avoid redundant uploads
               const head = await getHeadCommit(branch);
 
-              const pendingCt = pendingUploads.size;
-              console.log(y`Uploading ${pendingCt} image(s) to HF`);
-
               // capture the current pendingUploads for
               // the secondary url upload after images
-              const initialUploads = [...pendingUploads.values()];
+              const initialUploads = [
+                ...take(pendingUploads.values(), UploadBatchSize),
+              ];
+
+              const pendingCt = initialUploads.length;
+              console.log(y`Uploading ${pendingCt} image(s) to HF`);
 
               // Double check that all the images are new
               // A duplicate image may have been added since validation
