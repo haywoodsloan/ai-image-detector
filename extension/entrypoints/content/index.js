@@ -6,7 +6,6 @@ import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 import './style.css';
 
 const MutObsOpts = { subtree: true, childList: true };
-//const CssUrlRegex = /url\((?<url>[^)]+)\)/;
 const VisibilityThresh = 0.2;
 
 export default defineContentScript({
@@ -17,19 +16,25 @@ export default defineContentScript({
     console.log('Content script running');
 
     /** @type {Map<string, ShadowRootContentScriptUi>} */
-    const uis = new Map();
+    const uiMap = new Map();
     const intersectionObs = new IntersectionObserver(
       async (entries) => {
-        for (const { intersectionRatio, target } of entries) {
-          const overlayId = target.dataset?.aidOverlayId;
-          if (intersectionRatio < VisibilityThresh && uis.has(overlayId)) {
-            delete target.dataset.aidOverlayId;
-            uis.get(overlayId).remove();
-            uis.delete(overlayId);
-          } else if (intersectionRatio >= VisibilityThresh && !overlayId) {
-            target.dataset.aidOverlayId = randomId(8);
-            const ui = await createIndicatorUi(ctx, target);
-            uis.set(target.dataset.aidOverlayId, ui);
+        for (const entry of entries) {
+          const overlayId = entry.target.dataset?.aidOverlayId;
+          if (
+            entry.intersectionRatio < VisibilityThresh &&
+            uiMap.has(overlayId)
+          ) {
+            delete entry.target.dataset.aidOverlayId;
+            uiMap.get(overlayId).remove();
+            uiMap.delete(overlayId);
+          } else if (
+            entry.intersectionRatio >= VisibilityThresh &&
+            !overlayId
+          ) {
+            entry.target.dataset.aidOverlayId = randomId(8);
+            const ui = await createIndicatorUi(ctx, entry.target);
+            uiMap.set(entry.target.dataset.aidOverlayId, ui);
           }
         }
       },
@@ -44,12 +49,14 @@ export default defineContentScript({
 
         for (const node of allRemovedNodes) {
           intersectionObs.unobserve(node);
+          
+          // TODO fix
           const overlayId = node.dataset?.aidOverlayId;
+          delete node.dataset.aidOverlayId;
 
-          if (uis.has(overlayId)) {
-            delete node.dataset.aidOverlayId;
-            uis.get(overlayId).remove();
-            uis.delete(overlayId);
+          if (uiMap.has(overlayId)) {
+            uiMap.get(overlayId).remove();
+            uiMap.delete(overlayId);
           }
         }
 
@@ -78,12 +85,7 @@ export default defineContentScript({
  * @param {Element} ele
  */
 function isImageElement(ele) {
-  return (
-    ele.nodeName.toLowerCase() === 'img' // ||
-    // CssUrlRegex.test(getComputedStyle(ele).backgroundImage) ||
-    // CssUrlRegex.test(getComputedStyle(ele, ':after').backgroundImage) ||
-    // CssUrlRegex.test(getComputedStyle(ele, ':before').backgroundImage)
-  );
+  return ele.nodeName.toLowerCase() === 'img';
 }
 
 /**
