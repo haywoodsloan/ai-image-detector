@@ -93,6 +93,7 @@ function isImageElement(ele) {
 async function createIndicatorUi(ctx, image) {
   const ui = await createShadowRootUi(ctx, {
     name: 'indicator-overlay',
+    isolateEvents: true,
 
     position: 'overlay',
     anchor: image,

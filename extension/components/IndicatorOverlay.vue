@@ -2,7 +2,8 @@
 import DetectorSvg from '@/assets/detector.svg';
 import { useResizeObserver } from '@vueuse/core';
 import interpolate from 'color-interpolate';
-import { mergeProps } from 'vue';
+
+import PopupMenu from './PopupMenu.vue';
 
 const { value: host } = defineModel('host', {
   type: HTMLElement,
@@ -16,11 +17,12 @@ const { image } = defineProps({
   },
 });
 
+const menuOpen = ref(false);
 onMounted(() => {
   host.style.position = 'absolute';
 });
 
-const size = ref('medium');
+const size = ref('small');
 useResizeObserver([image, image.offsetParent], () => {
   const imgRect = image?.getBoundingClientRect();
   const offsetRect = image?.offsetParent?.getBoundingClientRect();
@@ -48,48 +50,31 @@ useResizeObserver([image, image.offsetParent], () => {
 const colors = ['red', 'orange', 'gold', 'greenyellow', 'lawngreen'];
 const colorMap = interpolate(colors);
 const iconColor = colorMap(Math.random());
-
-const menuOpen = ref(false);
 </script>
 
-<template>
+<template v-if="size !== 'small'">
   <v-menu
-    v-if="size !== 'small'"
     v-model="menuOpen"
     location="right top"
     :attach="true"
+    :offset="[6, -8]"
+    open-on-hover
+    @click.stop
   >
     <template #activator="{ props: menu }">
-      <v-tooltip location="right top" :attach="true" :disabled="menuOpen">
-        <template #activator="{ props: tooltip }">
-          <div class="container" :class="size">
-            <button
-              class="button"
-              :class="size"
-              v-bind="mergeProps(menu, tooltip)"
-            >
-              <DetectorSvg v-if="size === 'large'" class="icon large" />
-              <div v-else-if="size === 'medium'" class="icon medium"></div>
-            </button>
-          </div>
-        </template>
-
-        AI Analysis: 98%
-      </v-tooltip>
+      <div class="container" :class="size">
+        <button
+          class="button"
+          :class="size"
+          v-bind="menu"
+          @click.stop="menuOpen = !menuOpen"
+        >
+          <DetectorSvg v-if="size === 'large'" class="icon large" />
+          <div v-else-if="size === 'medium'" class="icon medium"></div>
+        </button>
+      </div>
     </template>
-
-    <v-card elevation="16" max-width="344">
-      <v-card-item>
-        <v-card-title> Card title </v-card-title>
-
-        <v-card-subtitle> Card subtitle secondary text </v-card-subtitle>
-      </v-card-item>
-
-      <v-card-text>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-        tempor incididunt ut labore et dolore magna aliqua.
-      </v-card-text>
-    </v-card>
+    <PopupMenu />
   </v-menu>
 </template>
 
@@ -151,11 +136,11 @@ const menuOpen = ref(false);
     will-change: opacity;
     transition: opacity 0.3s;
 
-    opacity: 0.5;
+    opacity: 0.6;
     background-image: linear-gradient(
       135deg,
-      rgba(0, 0, 0, 0.9) 0%,
-      rgba(0, 0, 0, 0.5) 35%,
+      rgba(0, 0, 0, 0.7) 0%,
+      rgba(0, 0, 0, 0.3) 35%,
       rgba(0, 0, 0, 0) 50%
     );
 
@@ -169,8 +154,8 @@ const menuOpen = ref(false);
   }
 
   &.medium {
-    width: 35px;
-    height: 35px;
+    width: 40px;
+    height: 40px;
 
     &:hover {
       .button {
