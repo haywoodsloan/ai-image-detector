@@ -5,6 +5,7 @@ import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 
 import './style.css';
 
+const OverlapGridSize = 4;
 const MutObsOpts = { subtree: true, childList: true };
 const VisibilityThresh = 0.2;
 
@@ -13,35 +14,33 @@ export default defineContentScript({
   cssInjectionMode: 'ui',
 
   main(ctx) {
-    console.log('Content script running');
-
     /** @type {Map<string, ShadowRootContentScriptUi>} */
-    const uiMap = new Map();
+    const uis = new Map();
+
     const intersectionObs = new IntersectionObserver(
       async (entries) => {
-        for (const entry of entries) {
-          const overlayId = entry.target.dataset?.aidOverlayId;
-          if (
-            entry.intersectionRatio < VisibilityThresh &&
-            uiMap.has(overlayId)
-          ) {
-            delete entry.target.dataset.aidOverlayId;
-            uiMap.get(overlayId).remove();
-            uiMap.delete(overlayId);
+        for (const { intersectionRatio, target } of entries) {
+          console.log('new intersection entry');
+          const overlayId = target.dataset?.aidOverlayId;
+          if (intersectionRatio < VisibilityThresh && uis.has(overlayId)) {
+            delete target.dataset.aidOverlayId;
+            uis.get(overlayId).remove();
+            uis.delete(overlayId);
           } else if (
-            entry.intersectionRatio >= VisibilityThresh &&
-            !overlayId
+            intersectionRatio >= VisibilityThresh &&
+            !overlayId &&
+            !isImageCovered(target)
           ) {
-            entry.target.dataset.aidOverlayId = randomId(8);
-            const ui = await createIndicatorUi(ctx, entry.target);
-            uiMap.set(entry.target.dataset.aidOverlayId, ui);
+            target.dataset.aidOverlayId = randomId(8);
+            const ui = await createIndicatorUi(ctx, target);
+            uis.set(target.dataset.aidOverlayId, ui);
           }
         }
       },
       { threshold: VisibilityThresh }
     );
 
-    const mutationObs = new MutationObserver((mutations) => {
+    const mutationObs = new MutationObserver(async (mutations) => {
       for (const mutation of mutations) {
         const allRemovedNodes = [...mutation.removedNodes]
           .filter((node) => node instanceof Element)
@@ -49,14 +48,13 @@ export default defineContentScript({
 
         for (const node of allRemovedNodes) {
           intersectionObs.unobserve(node);
-          
-          // TODO fix
+
           const overlayId = node.dataset?.aidOverlayId;
           delete node.dataset.aidOverlayId;
 
-          if (uiMap.has(overlayId)) {
-            uiMap.get(overlayId).remove();
-            uiMap.delete(overlayId);
+          if (uis.has(overlayId)) {
+            uis.get(overlayId).remove();
+            uis.delete(overlayId);
           }
         }
 
@@ -67,6 +65,17 @@ export default defineContentScript({
         for (const node of allNewNodes) {
           if (node.shadowRoot) mutationObs.observe(node.shadowRoot, MutObsOpts);
           if (isImageElement(node)) intersectionObs.observe(node);
+
+          // Handle cloned images which have an overlay ID but not an actual UI
+          const overlayId = node.dataset?.aidOverlayId;
+          if (
+            uis.has(overlayId) &&
+            node.nextElementSibling !== uis.get(overlayId).shadowHost
+          ) {
+            node.dataset.aidOverlayId = randomId(8);
+            const ui = await createIndicatorUi(ctx, node);
+            uis.set(node.dataset.aidOverlayId, ui);
+          }
         }
       }
     });
@@ -82,6 +91,53 @@ export default defineContentScript({
 });
 
 /**
+ * @param {HTMLElement} ele
+ */
+function isImageCovered(ele) {
+  if (getComputedStyle(ele).visibility === 'hidden') return true;
+
+  const imgRect = ele.getBoundingClientRect();
+  const offsetRect = ele.offsetParent.getBoundingClientRect();
+
+  // Check just inside the visible area
+  const left = Math.max(imgRect.left, offsetRect.left) + 1;
+  const top = Math.max(imgRect.top, offsetRect.top) + 1;
+  const right = Math.min(imgRect.right, offsetRect.right) - 1;
+  const bottom = Math.min(imgRect.bottom, offsetRect.bottom) - 1;
+
+  for (let i = 0; i <= OverlapGridSize; i++) {
+    for (let j = 0; j <= OverlapGridSize; j++) {
+      const x = (right - left) * (i / OverlapGridSize) + left;
+      const y = (bottom - top) * (j / OverlapGridSize) + top;
+
+      const stack = getElementsFromPoint(x, y);
+      console.log(ele, [x,y], stack);
+      for (const overlapping of stack) {
+        if (overlapping === ele) return false;
+        else if (getComputedStyle(overlapping).visibility !== 'hidden') break;
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
+ * @param {number} x
+ * @param {number} y
+ * @param {Element} [base]
+ */
+function getElementsFromPoint(x, y, base = null) {
+  const root = base?.shadowRoot ?? document;
+  const shallow = root.elementsFromPoint(x, y);
+
+  return shallow.slice(0, shallow.indexOf(base)).flatMap((ele) => {
+    if (ele.shadowRoot) return [...getElementsFromPoint(x, y, ele), ele];
+    return ele;
+  });
+}
+
+/**
  * @param {Element} ele
  */
 function isImageElement(ele) {
@@ -95,7 +151,6 @@ function isImageElement(ele) {
 async function createIndicatorUi(ctx, image) {
   const ui = await createShadowRootUi(ctx, {
     name: 'indicator-overlay',
-    isolateEvents: true,
 
     position: 'overlay',
     anchor: image,

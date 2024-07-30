@@ -40,9 +40,9 @@ useResizeObserver([image, image.offsetParent], () => {
   host.style.width = `${width}px`;
   host.style.height = `${height}px`;
 
-  if (width > 250) {
+  if (width > 300 && height > 150) {
     size.value = 'large';
-  } else if (width > 100) {
+  } else if (width > 100 && height > 50) {
     size.value = 'medium';
   } else {
     size.value = 'small';
@@ -60,6 +60,7 @@ const iconColor = colorMap(Math.random());
     location="right top"
     :attach="true"
     :offset="[6, -8]"
+    z-index="99999"
     open-on-hover
     @click.stop.prevent
   >
