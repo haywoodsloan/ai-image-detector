@@ -40,9 +40,9 @@ useResizeObserver([image, image.offsetParent], () => {
   host.style.width = `${width}px`;
   host.style.height = `${height}px`;
 
-  if (imgRect.width > 250) {
+  if (width > 250) {
     size.value = 'large';
-  } else if (imgRect.width > 100) {
+  } else if (width > 100) {
     size.value = 'medium';
   } else {
     size.value = 'small';
@@ -55,11 +55,23 @@ const iconColor = colorMap(Math.random());
 </script>
 
 <template>
-  <v-menu v-model="menuOpen" location="right top" :attach="true" :offset="[6, -8]" open-on-hover @click.stop.prevent>
+  <v-menu
+    v-model="menuOpen"
+    location="right top"
+    :attach="true"
+    :offset="[6, -8]"
+    open-on-hover
+    @click.stop.prevent
+  >
     <template #activator="{ props: menu }">
       <v-fade-transition>
         <div v-if="size !== 'small'" class="container" :class="size">
-          <button class="button" :class="size" v-bind="menu" @click.stop.prevent="menuOpen = !menuOpen">
+          <button
+            class="button"
+            :class="size"
+            v-bind="menu"
+            @click.stop.prevent="menuOpen = !menuOpen"
+          >
             <DetectorSvg v-if="size === 'large'" class="icon large" />
             <div v-else-if="size === 'medium'" class="icon medium"></div>
           </button>
@@ -129,10 +141,12 @@ const iconColor = colorMap(Math.random());
     transition: opacity 0.3s;
 
     opacity: 0.6;
-    background-image: linear-gradient(135deg,
-        rgba(0, 0, 0, 0.7) 0%,
-        rgba(0, 0, 0, 0.3) 35%,
-        rgba(0, 0, 0, 0) 50%);
+    background-image: linear-gradient(
+      135deg,
+      rgba(0, 0, 0, 0.7) 0%,
+      rgba(0, 0, 0, 0.3) 35%,
+      rgba(0, 0, 0, 0) 50%
+    );
 
     &:hover {
       opacity: 1;
