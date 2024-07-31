@@ -66,17 +66,16 @@ const iconColor = colorMap(Math.random());
   >
     <template #activator="{ props: menu }">
       <v-fade-transition>
-        <div v-if="size !== 'small'" class="container" :class="size">
-          <button
-            class="button"
-            :class="size"
-            v-bind="menu"
-            @click.stop.prevent="menuOpen = !menuOpen"
-          >
-            <DetectorSvg v-if="size === 'large'" class="icon large" />
-            <div v-else-if="size === 'medium'" class="icon medium"></div>
-          </button>
-        </div>
+        <button
+          v-if="size !== 'small'"
+          class="button"
+          :class="size"
+          v-bind="menu"
+          @click.stop.prevent="menuOpen = !menuOpen"
+        >
+          <DetectorSvg v-if="size === 'large'" class="icon large" />
+          <div v-else-if="size === 'medium'" class="icon medium"></div>
+        </button>
       </v-fade-transition>
     </template>
     <PopupMenu />
@@ -85,9 +84,14 @@ const iconColor = colorMap(Math.random());
 
 <style lang="scss" scoped>
 .icon {
+  border-radius: 50%;
+
   &.large {
     height: 24px;
     width: 24px;
+
+    box-shadow: 0 0 12px 1px black;
+    background-color: rgba(0, 0, 0, 0.5);
 
     :deep(path) {
       stroke: v-bind(iconColor);
@@ -99,7 +103,7 @@ const iconColor = colorMap(Math.random());
     height: 6px;
     width: 6px;
 
-    border-radius: 50%;
+    box-shadow: 0 0 6px 2px rgba(0, 0, 0, 0.7);
     background-color: v-bind(iconColor);
   }
 }
@@ -108,8 +112,10 @@ const iconColor = colorMap(Math.random());
   display: block;
   cursor: pointer;
 
-  will-change: transform;
-  transition: transform 0.3s;
+  will-change: transform, opacity;
+  transition:
+    transform 0.3s,
+    opacity 0.3s;
 
   background: none;
   border: none;
@@ -119,53 +125,24 @@ const iconColor = colorMap(Math.random());
 
   &.large {
     transform-origin: center;
+    opacity: 0.6;
+
     margin-top: 6px;
     margin-left: 6px;
+
+    &:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
   }
 
   &.medium {
     transform-origin: 0 0;
     margin-top: 6px;
     margin-left: 6px;
-  }
-}
-
-.container {
-  overflow: hidden;
-  clip-path: polygon(100% 0, 0 0, 0 100%);
-
-  &.large {
-    width: 70px;
-    height: 70px;
-
-    will-change: opacity;
-    transition: opacity 0.3s;
-
-    opacity: 0.6;
-    background-image: linear-gradient(
-      135deg,
-      rgba(0, 0, 0, 0.7) 0%,
-      rgba(0, 0, 0, 0.3) 35%,
-      rgba(0, 0, 0, 0) 50%
-    );
 
     &:hover {
-      opacity: 1;
-
-      .button {
-        transform: scale(1.1);
-      }
-    }
-  }
-
-  &.medium {
-    width: 40px;
-    height: 40px;
-
-    &:hover {
-      .button {
-        transform: scale(2.5);
-      }
+      transform: scale(2.5);
     }
   }
 }
