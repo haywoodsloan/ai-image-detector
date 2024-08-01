@@ -6,7 +6,7 @@ import './style.css';
 
 const OverlapGridSize = 2;
 const MutObsOpts = { subtree: true, childList: true };
-const VisibilityThresh = 0.25;
+const MinVis = 0.2;
 
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -14,26 +14,24 @@ export default defineContentScript({
 
   main(ctx) {
     /** @type {Map<Element, ShadowRootContentScriptUi>} */
-    const uis = new Map();
+    const uiMap = new Map();
 
     const intersectionObs = new IntersectionObserver(
       async (entries) => {
         for (const { intersectionRatio, target } of entries) {
-          requestAnimationFrame(async () => {
-            if (intersectionRatio < VisibilityThresh && uis.has(target)) {
-              uis.get(target).remove();
-              uis.delete(target);
-            } else if (
-              intersectionRatio >= VisibilityThresh &&
-              !isImageCovered(target)
-            ) {
-              const ui = await createIndicatorUi(ctx, target);
-              uis.set(target, ui);
-            }
-          });
+          if (intersectionRatio < MinVis && uiMap.has(target)) {
+            uiMap.get(target).remove();
+            uiMap.delete(target);
+          } else if (intersectionRatio >= MinVis && !uiMap.has(target)) {
+            await waitForAnimations(target);
+            if (isImageCovered(target)) continue;
+
+            const ui = await createIndicatorUi(ctx, target);
+            uiMap.set(target, ui);
+          }
         }
       },
-      { threshold: VisibilityThresh }
+      { threshold: MinVis }
     );
 
     const mutationObs = new MutationObserver(async (mutations) => {
@@ -46,9 +44,9 @@ export default defineContentScript({
 
       for (const node of removedNodes) {
         intersectionObs.unobserve(node);
-        if (uis.has(node)) {
-          uis.get(node).remove();
-          uis.delete(node);
+        if (uiMap.has(node)) {
+          uiMap.get(node).remove();
+          uiMap.delete(node);
         }
       }
 
@@ -119,6 +117,15 @@ function isImageCovered(ele) {
 /**
  * @param {Element} ele
  */
+async function waitForAnimations(ele) {
+  await Promise.all(
+    ele.getAnimations({ subtree: true }).map(({ finished }) => finished)
+  );
+}
+
+/**
+ * @param {Element} ele
+ */
 function isImageElement(ele) {
   return ele.nodeName.toLowerCase() === 'img';
 }
@@ -128,6 +135,9 @@ function isImageElement(ele) {
  * @param {HTMLElement} image
  */
 async function createIndicatorUi(ctx, image) {
+  const { visibility, opacity } = getComputedStyle(image);
+  console.log('creating ui', image, { visibility, opacity });
+
   const ui = await createShadowRootUi(ctx, {
     name: 'indicator-overlay',
 

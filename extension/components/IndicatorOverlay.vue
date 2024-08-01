@@ -49,9 +49,11 @@ useResizeObserver([image, image.offsetParent], () => {
   }
 });
 
-const colors = ['red', 'orange', 'gold', 'greenyellow', 'lawngreen'];
+const colors = ['lawngreen', 'greenyellow', 'gold', 'orange', 'red'];
 const colorMap = interpolate(colors);
-const iconColor = colorMap(Math.random());
+
+const aiScore = Math.random();
+const iconColor = colorMap(aiScore);
 </script>
 
 <template>
@@ -78,7 +80,7 @@ const iconColor = colorMap(Math.random());
         </button>
       </v-fade-transition>
     </template>
-    <PopupMenu />
+    <PopupMenu :ai-score="aiScore" />
   </v-menu>
 </template>
 
@@ -90,7 +92,7 @@ const iconColor = colorMap(Math.random());
     height: 24px;
     width: 24px;
 
-    box-shadow: 0 0 12px 1px black;
+    box-shadow: 0 0 6px 1px rgba(0, 0, 0, 0.6);
     background-color: rgba(0, 0, 0, 0.5);
 
     :deep(path) {
@@ -100,10 +102,10 @@ const iconColor = colorMap(Math.random());
   }
 
   &.medium {
-    height: 6px;
-    width: 6px;
+    height: 7px;
+    width: 7px;
 
-    box-shadow: 0 0 6px 2px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 0 3px 1px rgba(0, 0, 0, 0.5);
     background-color: v-bind(iconColor);
   }
 }
@@ -137,7 +139,7 @@ const iconColor = colorMap(Math.random());
   }
 
   &.medium {
-    transform-origin: 0 0;
+    transform-origin: 15% 15%;
     margin-top: 6px;
     margin-left: 6px;
 

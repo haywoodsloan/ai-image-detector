@@ -1,10 +1,19 @@
 <script setup>
 import DetectorSvg from '@/assets/detector.svg';
+
+const props = defineProps({
+  aiScore: {
+    type: Number,
+    required: true,
+  },
+});
+
+const score = (props.aiScore * 100).toFixed(1);
 </script>
 
 <template>
   <v-card elevation="16" max-width="344">
-    <v-card-title>AI Analysis Score: 98.4%</v-card-title>
+    <v-card-title>AI Analysis Score: {{ score }}%</v-card-title>
     <v-card-subtitle>Based on detector model</v-card-subtitle>
     <v-card-actions class="pt-0">
       <v-list density="compact" class="w-100 pr-2">
