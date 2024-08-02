@@ -5,8 +5,8 @@ export default defineBackground(() => {
     switch (action) {
       case InitAction:
         init()
-          .then((success) => sendResponse({ success }))
-          .catch((error) => sendResponse({ success: false, error }));
+          .then((result) => sendResponse({ result }))
+          .catch((error) => sendResponse({ error }));
         return true;
     }
   });
