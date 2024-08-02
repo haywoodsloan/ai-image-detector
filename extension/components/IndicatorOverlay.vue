@@ -60,10 +60,11 @@ const iconColor = colorMap(aiScore);
   <v-menu
     v-model="menuOpen"
     location="right top"
+    z-index="99999"
     :attach="true"
     :offset="[6, -8]"
-    z-index="99999"
     open-on-hover
+    :close-on-content-click="false"
     @click.stop.prevent
   >
     <template #activator="{ props: menu }">
