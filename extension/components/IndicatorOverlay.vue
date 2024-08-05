@@ -1,5 +1,7 @@
 <script setup>
 import DetectorSvg from '@/assets/detector.svg';
+import { CheckImageAction } from '@/entrypoints/background/actions';
+import { invokeBackgroundTask } from '@/utilities/background.js';
 import { useResizeObserver } from '@vueuse/core';
 import interpolate from 'color-interpolate';
 
@@ -54,6 +56,8 @@ const colorMap = interpolate(colors);
 
 const aiScore = Math.random();
 const iconColor = colorMap(aiScore);
+
+invokeBackgroundTask(CheckImageAction.actionName, image.src);
 </script>
 
 <template>

@@ -2,6 +2,7 @@
   "name": "AI Image Detector",
   "description": "AI Image Detector Browser Extension",
   "version": "0.0.1",
+  "types": "./types.d.ts",
   "type": "module",
   "scripts": {
     "dev": "wxt",

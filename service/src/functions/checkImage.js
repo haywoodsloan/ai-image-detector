@@ -1,9 +1,9 @@
 import { app } from '@azure/functions';
 import { createHash } from 'common/utilities/hash.js';
 import { AiLabel } from 'common/utilities/huggingface.js';
-import { getImageData } from 'common/utilities/image.js';
+import { getImageData} from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
-import { isHttpUrl } from 'common/utilities/url.js';
+import { isDataUrl, isHttpUrl } from 'common/utilities/url.js';
 
 import { queryVotedLabel } from '../services/db/voteColl.js';
 import { classifyIfAi } from '../services/detector.js';
@@ -21,7 +21,7 @@ app.http('checkImage', {
     const { url } = await request.json();
 
     // Check url is valid
-    if (!isHttpUrl(url)) {
+    if (!isHttpUrl(url) && !isDataUrl(url)) {
       const error = new Error('Must specify a valid URL');
       console.error(error);
       return createErrorResponse(400, error);
@@ -29,6 +29,7 @@ app.http('checkImage', {
 
     // Check the access token is valid
     try {
+      // TODO fix issue when URL is too long
       const userId = await assertValidAuth(request);
       console.log(l`Checking image ${{ url, userId }}`);
     } catch (error) {

@@ -1,11 +1,10 @@
 import IndicatorOverlay from '@/components/IndicatorOverlay.vue';
-import { userAuth } from '@/utilities/storage.js';
 import { createAppEx } from '@/utilities/vue.js';
 import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 
-import { InitAction } from '../background/actions/init.js';
 import './style.css';
 import { invokeBackgroundTask } from '@/utilities/background.js';
+import { InitAction } from '../background/actions';
 
 const OverlapGridSize = 2;
 const MutObsOpts = { subtree: true, childList: true };
@@ -17,11 +16,8 @@ export default defineContentScript({
 
   async main(ctx) {
     console.log('starting content script, waiting for init');
-    const init = await invokeBackgroundTask(InitAction);
+    const init = await invokeBackgroundTask(InitAction.actionName);
     console.log('init complete', init);
-
-    //await userAuth.setValue('testValue');
-    console.log('getting user auth', await userAuth.getValue());
 
     /** @type {Map<Element, ShadowRootContentScriptUi>} */
     const uiMap = new Map();
