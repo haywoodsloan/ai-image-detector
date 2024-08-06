@@ -2,11 +2,11 @@ import * as actions from './actions';
 
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener(({ name, data }, _, sendResponse) => {
-    for (const actionName in actions) {
-      if (actionName === name) {
-        /** @type {ActionType} */
-        const action = actions[actionName];
+    for (const key in actions) {
+      /** @type {ActionType} */
+      const action = actions[key];
 
+      if (action.actionName === name) {
         const raw = action.invoke(data);
         if (raw instanceof Promise) {
           raw
