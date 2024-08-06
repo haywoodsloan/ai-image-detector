@@ -1,5 +1,5 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
-import { b, g, r, y } from 'common/utilities/colors.js';
+import { b, g, r, rl, y } from 'common/utilities/colors.js';
 import { createHash } from 'common/utilities/hash.js';
 import {
   AiLabel,
@@ -69,10 +69,13 @@ const ChromeUA = new UserAgent([
   { deviceCategory: 'desktop' },
 ]).toString();
 
-const LoaderSelector = 'main >>> shreddit-post-loading';
-const LoadingSelector = 'main >>> shreddit-loading';
-const RetrySelector = 'main >>> button ::-p-text(Retry)';
-const CleanupSelector = 'main article, main shreddit-ad-post, main hr';
+const LoaderSelector =
+  'shreddit-feed faceplate-partial[id^="partial-more-posts"]';
+const LoadingSelector =
+  'shreddit-feed faceplate-partial[id^="partial-more-posts"][hasBeenLoaded]';
+const RetrySelector = 'shreddit-feed button ::-p-text(Retry)';
+const CleanupSelector =
+  'shreddit-feed article, shreddit-feed shreddit-ad-post, shreddit-feed hr';
 const ImageSelector =
   'shreddit-post img[src^="https://preview.redd.it"]:not([alt=""])';
 
@@ -119,7 +122,7 @@ try {
       // Navigate to the page and wait for network traffic to settle
       const scrapeUrl = scrapeUrls[i];
       console.log(y`Navigating to ${scrapeUrl}`);
-      await page.goto(scrapeUrl, { waitUntil: 'networkidle2' });
+      await page.goto(scrapeUrl, { waitUntil: 'networkidle0' });
 
       // Wait for the loader to appear so we know the posts will load.
       const retry = withRetry(RetryLimit, RedditErrorDelay);
@@ -130,7 +133,7 @@ try {
         },
         async () => {
           console.log(r`Subreddit loading failed, refreshing`);
-          await page.reload({ waitUntil: 'networkidle2' });
+          await page.reload({ waitUntil: 'networkidle0' });
         }
       );
 
@@ -249,13 +252,13 @@ try {
         }
 
         // Wait for the loader to disappear and the posts to finish loading
-        let loading = await page.$(LoadingSelector);
+        const loading = await page.$(LoadingSelector);
         if (await loading?.isVisible()) {
           try {
             await waitForHidden(loading, LoadStuckTimeout);
-          } catch {
-            console.warn(r`Post loading failed, refreshing`);
-            await page.reload({ waitUntil: 'networkidle2' });
+          } catch (error) {
+            console.warn(rl`Post loading failed, refreshing ${error}`);
+            await page.reload({ waitUntil: 'networkidle0' });
           }
         }
       }

@@ -57,16 +57,20 @@ function stringify(val) {
       return val;
     case 'object':
       if (Array.isArray(val)) return `[${val.join(', ')}]`;
-      if (val instanceof Error) {
-        const errors =
-          val instanceof AggregateError ? flattenAggregateError(val) : [val];
 
+      if (val instanceof AggregateError) {
+        const errors = flattenAggregateError(val);
         return `[\n${errors
           .map(({ stack }) => {
             const [errMsg, errLoc] = stack.split(/\r?\n\s*/);
             return `    ${errMsg} ${errLoc}`;
           })
           .join(',\n')}\n]`;
+      }
+
+      if (val instanceof Error) {
+        const [errMsg, errLoc] = val.stack.split(/\r?\n\s*/);
+        return `(${errMsg} ${errLoc})`;
       }
 
       return `(${Object.entries(val)
