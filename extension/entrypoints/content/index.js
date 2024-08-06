@@ -16,7 +16,7 @@ export default defineContentScript({
 
   async main(ctx) {
     console.log('starting content script, waiting for init');
-    const init = await invokeBackgroundTask(InitAction.actionName);
+    const init = await invokeBackgroundTask(InitAction);
     console.log('init complete', init);
 
     /** @type {Map<Element, ShadowRootContentScriptUi>} */

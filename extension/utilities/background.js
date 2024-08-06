@@ -1,7 +1,7 @@
 /**
- * @param {string} name
+ * @param {ActionType} task
  * @returns {Promise<BackgroundTaskResult>}
  */
-export function invokeBackgroundTask(name, data) {
-  return browser.runtime.sendMessage({ name, data });
+export function invokeBackgroundTask(task, data) {
+  return browser.runtime.sendMessage({ name: task.actionName, data });
 }

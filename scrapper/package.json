@@ -2,7 +2,7 @@
   "name": "ai-image-data-scrapper",
   "version": "0.0.1",
   "description": "Image scrapper",
-  "main": "src/index.js",
+  "main": "./src/index.js",
   "type": "module",
   "types": "./src/types.d.ts",
   "scripts": {
