@@ -61,6 +61,10 @@ export async function getImageData(uri) {
   return buffer;
 }
 
+export async function normalizeImage(img) {
+  return await sharp(img).ensureAlpha().png().toBuffer();
+}
+
 /**
  * @param {string | URL | Buffer} img
  */

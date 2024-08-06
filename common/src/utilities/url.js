@@ -28,7 +28,11 @@ export function isDataUrl(url) {
  * @param {string} url
  */
 export function shortenUrl(url) {
-  const { origin, pathname } = new URL(url);
-  const endOfPath = pathname.substring(pathname.lastIndexOf('/') + 1);
-  return `${origin}/.../${endOfPath}`;
+  if (isHttpUrl(url)) {
+    const { origin, pathname } = new URL(url);
+    const endOfPath = pathname.substring(pathname.lastIndexOf('/') + 1);
+    return `${origin}/.../${endOfPath}`;
+  } else if (isDataUrl(url)) {
+    return `${url.slice(0, 40)}...${url.slice(-20)}`;
+  } else throw new Error(`Invalid url ${url}`);
 }

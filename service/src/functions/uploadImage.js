@@ -4,6 +4,7 @@ import { TrainSplit } from 'common/utilities/huggingface.js';
 import { uploadImages } from 'common/utilities/huggingface.js';
 import { sanitizeImage } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
+import { isHttpUrl } from 'common/utilities/url.js';
 import df from 'durable-functions';
 import { extname } from 'path';
 import sanitizeFileName from 'sanitize-filename';
@@ -30,16 +31,21 @@ df.app.entity(UploadImageEntity, async (context) => {
     throw error;
   }
 
-  // Use the hash of the sanitized image to store it
-  const hash = createHash(data);
-  const { pathname } = new URL(url);
-  const ext = extname(pathname);
+  // Only include the origin if url is http
+  // Default to a png if missing
+  let origin, ext;
+  if (isHttpUrl(url)) {
+    const { pathname } = new URL(url);
+    ext = extname(pathname);
+    origin = new URL(url);
+  } else ext = '.png';
 
   // Build the image properties, always use the train split
+  // Use the hash of the sanitized image to store it
+  const hash = createHash(data);
   const fileName = sanitizeFileName(`${hash}${ext}`);
   const split = TrainSplit;
   const content = new Blob([data]);
-  const origin = new URL(url);
 
   /** @type {HfImage} */
   const image = { fileName, label, split, content, origin };

@@ -1,9 +1,9 @@
 import { app } from '@azure/functions';
 import { createHash } from 'common/utilities/hash.js';
 import { AllLabels } from 'common/utilities/huggingface.js';
-import { getImageData } from 'common/utilities/image.js';
+import { getImageData, normalizeImage } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
-import { isDataUrl, isHttpUrl } from 'common/utilities/url.js';
+import { isDataUrl, isHttpUrl, shortenUrl } from 'common/utilities/url.js';
 import { EntityId, getClient, input } from 'durable-functions';
 
 import { queryVotedLabel, upsertVotedLabel } from '../services/db/voteColl.js';
@@ -46,9 +46,9 @@ app.http('voteImageLabel', {
     }
 
     // Track the vote by the image's hash
-    console.log(l`Vote image ${{ url, userId, voteLabel }}`);
+    console.log(l`Vote image ${{ url: shortenUrl(url), userId, voteLabel }}`);
     const data = await getImageData(url);
-    const hash = createHash(data, { alg: 'sha256' });
+    const hash = createHash(await normalizeImage(data), { alg: 'sha256' });
 
     // Check what the current voted label is
     const { label: oldLabel } = await queryVotedLabel(hash);
@@ -62,10 +62,10 @@ app.http('voteImageLabel', {
     // Check if the voted label has changed and upload if so
     // Skip upload if requested in vote
     if (skipUpload) {
-      console.log(l`Skip upload requested ${{ url }}`);
+      console.log(l`Skip upload requested ${{ url: shortenUrl(url) }}`);
     } else if (newLabel) {
       const entityId = new EntityId(UploadImageEntity, hash);
-      const input = { data, url, label: newLabel };
+      const input = { data, ...(isHttpUrl(url) && { url }), label: newLabel };
       await getClient(context).signalEntity(entityId, null, input);
     }
 
