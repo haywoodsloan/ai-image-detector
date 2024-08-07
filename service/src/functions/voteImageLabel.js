@@ -6,18 +6,14 @@ import { l } from 'common/utilities/string.js';
 import { isDataUrl, isHttpUrl, shortenUrl } from 'common/utilities/url.js';
 import { EntityId, getClient, input } from 'durable-functions';
 
-import {
-  deleteVote,
-  queryVotedLabel,
-  upsertVotedLabel,
-} from '../services/db/voteColl.js';
+import { queryVotedLabel, upsertVotedLabel } from '../services/db/voteColl.js';
 import { assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
 import { UploadImageEntity } from './uploadImage.js';
 
 app.http('voteImageLabel', {
-  methods: ['POST', 'DELETE'],
+  methods: ['POST'],
   authLevel: 'anonymous',
   extraInputs: [input.durableClient()],
   handler: async (request, context) => {
@@ -43,7 +39,7 @@ app.http('voteImageLabel', {
     }
 
     // Check the vote is valid
-    if (!AllLabels.includes(voteLabel) && request.method === 'POST') {
+    if (!AllLabels.includes(voteLabel)) {
       const error = new Error(l`voteLabel must be one of ${AllLabels}`);
       console.error(error);
       return createErrorResponse(400, error);
@@ -59,23 +55,12 @@ app.http('voteImageLabel', {
     }
 
     // Track the vote by the image's hash
-    const hash = createHash(await normalizeImage(data), { alg: 'sha256' });
-
-    // If a delete request just delete the vote if it exists
-    if (request.method === 'DELETE') {
-      console.log(l`Delete vote ${{ url: shortenUrl(url), userId }}`);
-      await deleteVote(userId, hash);
-      return { status: 204 };
-    }
-
-    // Check what the current voted label is
     console.log(l`Vote image ${{ url: shortenUrl(url), userId, voteLabel }}`);
-    const { voteLabel: oldLabel } = await queryVotedLabel(hash);
-    console.log(l`Original voted label ${{ hash, label: oldLabel }}`);
+    const hash = createHash(await normalizeImage(data), { alg: 'sha256' });
 
     // Add the vote and check the new label
     const vote = await upsertVotedLabel(hash, userId, voteLabel);
-    const { voteLabel: newLabel } = await queryVotedLabel(hash);
+    const { voteLabel: newLabel } = (await queryVotedLabel(hash)) ?? {};
     console.log(l`New voted label ${{ hash, label: newLabel }}`);
 
     // Check if the voted label has changed and upload if so
