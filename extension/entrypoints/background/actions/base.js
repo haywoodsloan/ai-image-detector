@@ -3,13 +3,16 @@
  * @static
  */
 export class BaseAction {
-  static get actionName() {
-    return this.name;
+  constructor() {
+    throw new Error('Actions are static types and cannot be instantiated.');
   }
 
-  constructor() {
-    if (this.constructor === BaseAction)
-      throw new Error('Actions are static types and cannot be instantiated.');
+  /**
+   * @abstract
+   * @returns {string}
+   */
+  static get actionName() {
+    throw new Error(`${this.name} does not implement actionName`);
   }
 
   /**

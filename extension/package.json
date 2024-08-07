@@ -1,7 +1,7 @@
 {
   "name": "AI Image Detector",
   "description": "AI Image Detector Browser Extension",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "types": "./types.d.ts",
   "type": "module",
   "scripts": {
@@ -19,6 +19,7 @@
     "@vueuse/core": "^10.11.0",
     "color-interpolate": "^1.0.5",
     "common": "file:../common",
+    "hash-wasm": "^4.11.0",
     "memoize": "^10.0.0",
     "query-selector-shadow-dom": "^1.0.1",
     "sass": "^1.77.8",

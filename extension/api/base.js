@@ -3,42 +3,60 @@ import { userAuth } from '@/utilities/storage.js';
 const BaseUrl = import.meta.env.VITE_API_BASE_URL;
 
 /**
- * @param {string} url
+ * @param {string} endpoint
  */
-export async function get(endpoint, { withCreds = true } = {}) {
-  const headers = await buildHeaders({ withCreds });
-  const response = await fetch(new URL(endpoint, BaseUrl), { headers });
-
-  if (!response.ok)
-    throw new Error(`API GET request failed [${response.statusText}]`);
-
-  return response.json();
+export function get(endpoint) {
+  return request(endpoint);
 }
 
 /**
- * @param {string} url
+ * @param {string} endpoint
  * @param {any} body
  */
-export async function post(endpoint, body, { withCreds = true } = {}) {
-  const headers = await buildHeaders({ withCreds });
+export function post(endpoint, body) {
+  return request(endpoint, { method: 'POST', body: JSON.stringify(body) });
+}
+
+/**
+ * @param {string} endpoint
+ * @param {RequestInit} init
+ */
+async function request(endpoint, init = {}) {
+  const headers = await buildHeaders();
   const response = await fetch(new URL(endpoint, BaseUrl), {
-    headers,
-    method: 'POST',
-    body: JSON.stringify(body),
+    ...init,
+    headers: { ...init.headers, ...headers },
   });
 
-  if (!response.ok)
-    throw new Error(`API GET request failed [${response.statusText}]`);
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      `API ${init.method ?? 'GET'} request failed [${response.statusText}]`
+    );
+  }
 
+  if (response.status === 204) return;
   return response.json();
 }
 
-async function buildHeaders({ withCreds = true } = {}) {
+async function buildHeaders() {
   const headers = {};
 
-  if (withCreds) {
-    headers.Authorization = (await userAuth.getValue()).accessToken;
-  }
+  const accessToken = (await userAuth.getValue())?.accessToken;
+  if (accessToken) headers.Authorization = accessToken;
 
   return headers;
+}
+
+export class ApiError extends Error {
+  /** @type {number} */ status;
+
+  /**
+   * @param {number} status
+   * @param {string} message
+   */
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
 }
