@@ -5,17 +5,31 @@ import { getImageData, normalizeImage } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
 import { isDataUrl, isHttpUrl, shortenUrl } from 'common/utilities/url.js';
 
-import { queryVotedLabel } from '../services/db/voteColl.js';
+import { queryVoteByUser, queryVotedLabel } from '../services/db/voteColl.js';
 import { classifyIfAi } from '../services/detector.js';
 import { assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
+
+const DetectorScoreType = 'detector';
+const UserScoreType = 'user';
+const VoteScoreType = 'vote';
 
 app.http('checkImage', {
   methods: ['POST'],
   authLevel: 'anonymous',
   handler: async (request, context) => {
     captureConsole(context);
+
+    // Check the access token is valid
+    let userId;
+    try {
+      userId = await assertValidAuth(request);
+      console.log(l`Checking image ${{ url: shortenUrl(url), userId }}`);
+    } catch (error) {
+      console.error(error);
+      return createErrorResponse(401, error);
+    }
 
     /** @type {{url: string}} */
     const { url } = await request.json();
@@ -27,15 +41,6 @@ app.http('checkImage', {
       return createErrorResponse(400, error);
     }
 
-    // Check the access token is valid
-    try {
-      const userId = await assertValidAuth(request);
-      console.log(l`Checking image ${{ url: shortenUrl(url), userId }}`);
-    } catch (error) {
-      console.error(error);
-      return createErrorResponse(401, error);
-    }
-
     // Get the image data
     let data;
     try {
@@ -45,20 +50,32 @@ app.http('checkImage', {
       return createErrorResponse(404, error);
     }
 
-    // Check for a voted class from the DB
+    // Check if the user voted for a label themselves
     const hash = createHash(await normalizeImage(data), { alg: 'sha256' });
-    const voted = await queryVotedLabel(hash);
+    const userLabel = await queryVoteByUser(userId, hash);
+    if (userLabel) {
+      const artificial = userLabel.voteLabel === AiLabel ? 1 : 0;
+      return { jsonBody: { artificial, scoreType: UserScoreType } };
+    }
 
+    // Check for a voted class from the DB
     // If a voted class exists return it and the vote count
-    if (voted) {
-      console.log(l`Voted label ${voted}`);
-      const artificial = voted.label === AiLabel ? 1 : 0;
-      return { jsonBody: { artificial, voteCount: voted.count } };
+    const votedLabel = await queryVotedLabel(hash);
+    if (votedLabel) {
+      console.log(l`Voted label ${votedLabel}`);
+      const artificial = votedLabel.voteLabel === AiLabel ? 1 : 0;
+      return {
+        jsonBody: {
+          artificial,
+          scoreType: VoteScoreType,
+          voteCount: votedLabel.count,
+        },
+      };
     }
 
     // Get the AI classification score
     const artificial = await classifyIfAi(data);
     console.log(l`Detector result ${{ artificial }}`);
-    return { jsonBody: { artificial } };
+    return { jsonBody: { artificial, scoreType: DetectorScoreType } };
   },
 });

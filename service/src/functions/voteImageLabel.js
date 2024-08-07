@@ -6,18 +6,31 @@ import { l } from 'common/utilities/string.js';
 import { isDataUrl, isHttpUrl, shortenUrl } from 'common/utilities/url.js';
 import { EntityId, getClient, input } from 'durable-functions';
 
-import { queryVotedLabel, upsertVotedLabel } from '../services/db/voteColl.js';
+import {
+  deleteVote,
+  queryVotedLabel,
+  upsertVotedLabel,
+} from '../services/db/voteColl.js';
 import { assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
 import { UploadImageEntity } from './uploadImage.js';
 
 app.http('voteImageLabel', {
-  methods: ['POST'],
+  methods: ['POST', 'DELETE'],
   authLevel: 'anonymous',
   extraInputs: [input.durableClient()],
   handler: async (request, context) => {
     captureConsole(context);
+
+    // Check the access token is valid
+    let userId;
+    try {
+      userId = await assertValidAuth(request);
+    } catch (error) {
+      console.error(error);
+      return createErrorResponse(401, error);
+    }
 
     /** @type {{url: string, voteLabel: string, skipUpload?: boolean}} */
     const { url, voteLabel, skipUpload = false } = await request.json();
@@ -30,33 +43,39 @@ app.http('voteImageLabel', {
     }
 
     // Check the vote is valid
-    if (!AllLabels.includes(voteLabel)) {
+    if (!AllLabels.includes(voteLabel) && request.method === 'POST') {
       const error = new Error(l`voteLabel must be one of ${AllLabels}`);
       console.error(error);
       return createErrorResponse(400, error);
     }
 
-    // Check the access token is valid
-    let userId;
+    // Get the image data
+    let data;
     try {
-      userId = await assertValidAuth(request);
+      data = await getImageData(url);
     } catch (error) {
       console.error(error);
-      return createErrorResponse(401, error);
+      return createErrorResponse(404, error);
     }
 
     // Track the vote by the image's hash
-    console.log(l`Vote image ${{ url: shortenUrl(url), userId, voteLabel }}`);
-    const data = await getImageData(url);
     const hash = createHash(await normalizeImage(data), { alg: 'sha256' });
 
+    // If a delete request just delete the vote if it exists
+    if (request.method === 'DELETE') {
+      console.log(l`Delete vote ${{ url: shortenUrl(url), userId }}`);
+      await deleteVote(userId, hash);
+      return { status: 204 };
+    }
+
     // Check what the current voted label is
-    const { label: oldLabel } = await queryVotedLabel(hash);
+    console.log(l`Vote image ${{ url: shortenUrl(url), userId, voteLabel }}`);
+    const { voteLabel: oldLabel } = await queryVotedLabel(hash);
     console.log(l`Original voted label ${{ hash, label: oldLabel }}`);
 
     // Add the vote and check the new label
     const vote = await upsertVotedLabel(hash, userId, voteLabel);
-    const { label: newLabel } = await queryVotedLabel(hash);
+    const { voteLabel: newLabel } = await queryVotedLabel(hash);
     console.log(l`New voted label ${{ hash, label: newLabel }}`);
 
     // Check if the voted label has changed and upload if so

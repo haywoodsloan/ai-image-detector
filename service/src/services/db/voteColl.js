@@ -43,7 +43,7 @@ export async function queryVotedLabel(imageHash) {
     ])
     .tryNext();
 
-  return result ? { label: result._id, count: result.count } : null;
+  return result ? { voteLabel: result._id, count: result.count } : null;
 }
 
 /**
@@ -52,6 +52,24 @@ export async function queryVotedLabel(imageHash) {
 export async function queryVotesByUser(userId) {
   const votes = await getVoteCollection();
   return await votes.find({ userId }).toArray();
+}
+
+/**
+ * @param {string} userId
+ * @param {string} imageHash
+ */
+export async function queryVoteByUser(userId, imageHash) {
+  const votes = await getVoteCollection();
+  return await votes.findOne({ userId, imageHash });
+}
+
+/**
+ * @param {string} userId 
+ * @param {string} imageHash 
+ */
+export async function deleteVote(userId, imageHash) {
+  const votes = await getVoteCollection();
+  return await votes.deleteOne({userId, imageHash});
 }
 
 /**
