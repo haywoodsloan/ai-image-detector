@@ -5,7 +5,7 @@ import memoize from 'memoize';
 import { BaseAction } from './base.js';
 
 export class InitAction extends BaseAction {
-  static actionName = 'init';
+  static actionName = 'InitAction';
   static invoke = memoize(async () => {
     const auth = await userAuth.getValue();
     

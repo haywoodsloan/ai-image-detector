@@ -1,11 +1,12 @@
 <script setup>
 import HelloWorld from '@/components/HelloWorld.vue';
+import DetectorSvg from '@/assets/detector.svg'
 </script>
 
 <template>
   <div>
     <a href="https://vuejs.org/" target="_blank">
-      <img src="@/assets/detector.svg" class="logo vue" alt="Vue logo" />
+      <DetectorSvg class="logo vue" alt="Vue logo" />
     </a>
   </div>
   <HelloWorld msg="WXT + Vue" />

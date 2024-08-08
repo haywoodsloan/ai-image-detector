@@ -1,6 +1,21 @@
+import { ApiAction } from '@/entrypoints/background/actions/api.js';
+import { invokeBackgroundTask } from '@/utilities/background.js';
 import { userAuth } from '@/utilities/storage.js';
 
 const BaseUrl = import.meta.env.VITE_API_BASE_URL;
+
+export class ApiError extends Error {
+  /** @type {number} */ status;
+
+  /**
+   * @param {number} status
+   * @param {string} message
+   */
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
 
 /**
  * @param {string} endpoint
@@ -21,7 +36,11 @@ export function post(endpoint, body) {
  * @param {string} endpoint
  * @param {RequestInit} init
  */
-async function request(endpoint, init = {}) {
+export async function request(endpoint, init = {}) {
+  // Use the background script if not already in it
+  if (import.meta.env.ENTRYPOINT !== 'background')
+    return invokeBackgroundTask(ApiAction, { endpoint, init });
+
   const headers = await buildHeaders();
   const response = await fetch(new URL(endpoint, BaseUrl), {
     ...init,
@@ -46,17 +65,4 @@ async function buildHeaders() {
   if (accessToken) headers.Authorization = accessToken;
 
   return headers;
-}
-
-export class ApiError extends Error {
-  /** @type {number} */ status;
-
-  /**
-   * @param {number} status
-   * @param {string} message
-   */
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
 }

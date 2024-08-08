@@ -1,7 +1,19 @@
+import { ApiError } from '@/api/base.js';
+
 /**
  * @param {ActionType} task
- * @returns {Promise<BackgroundTaskResult>}
  */
-export function invokeBackgroundTask(task, data) {
-  return browser.runtime.sendMessage({ name: task.actionName, data });
+export async function invokeBackgroundTask(task, data) {
+  const { result, error } = await browser.runtime.sendMessage({
+    name: task.actionName,
+    data,
+  });
+
+  if (error) {
+    const message = `[${task.actionName}] ${error.message}`;
+    if (error.status) throw new ApiError(error.status, message);
+    throw new Error(message);
+  }
+
+  return result;
 }
