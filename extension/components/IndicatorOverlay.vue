@@ -1,9 +1,13 @@
 <script setup>
 import DetectorSvg from '@/assets/detector.svg';
+import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
 import { useResizeObserver } from '@vueuse/core';
-import interpolate from 'color-interpolate';
 
-import PopupMenu from './PopupMenu.vue';
+import AnalysisCard from './AnalysisCard.vue';
+import { waitForAuth } from '@/utilities/auth.js';
+import { checkImage } from '@/api/detector.js';
+import { wait } from 'common/utilities/sleep.js';
+import TimeSpan from 'common/utilities/TimeSpan.js';
 
 const { value: host } = defineModel('host', {
   type: HTMLElement,
@@ -12,12 +16,11 @@ const { value: host } = defineModel('host', {
 
 const { image } = defineProps({
   image: {
-    type: HTMLElement,
+    type: HTMLImageElement,
     required: true,
   },
 });
 
-const menuOpen = ref(false);
 onMounted(() => {
   host.style.position = 'absolute';
 });
@@ -49,45 +52,58 @@ useResizeObserver([image, image.offsetParent], () => {
   }
 });
 
-const colors = ['lawngreen', 'greenyellow', 'gold', 'orange', 'red'];
-const colorMap = interpolate(colors);
+const iconColor = ref(DefaultIndicatorColor);
+// waitForAuth().then(async () => {
+//   const analysis = await checkImage(image.src);
+//   iconColor.value = getIndicatorColor(analysis.artificial)
+// });
 
-const aiScore = Math.random();
-const iconColor = colorMap(aiScore);
+wait(TimeSpan.fromSeconds(5)).then(() => {
+  iconColor.value = getIndicatorColor(Math.random())
+})
 </script>
 
 <template>
-  <v-menu
-    v-model="menuOpen"
-    location="right top"
-    z-index="99999"
-    :attach="true"
-    :offset="[6, -8]"
-    open-on-hover
-    :close-on-content-click="false"
-    @click.stop.prevent
-  >
-    <template #activator="{ props: menu }">
-      <v-fade-transition>
-        <button
-          v-if="size !== 'small'"
-          class="button"
-          :class="size"
-          v-bind="menu"
-          @click.stop.prevent="menuOpen = !menuOpen"
-        >
-          <DetectorSvg v-if="size === 'large'" class="icon large" />
-          <div v-else-if="size === 'medium'" class="icon medium"></div>
-        </button>
-      </v-fade-transition>
-    </template>
-    <PopupMenu :ai-score="aiScore" />
-  </v-menu>
+  <div @click.stop>
+    <v-menu
+      location="right top"
+      z-index="99999"
+      :contained="true"
+      :offset="[6, -8]"
+      :close-on-content-click="false"
+      open-on-hover
+      open-on-click
+    >
+      <template #activator="{ props: menu }">
+        <v-fade-transition>
+          <button
+            v-if="size !== 'small'"
+            class="button"
+            :class="size"
+            v-bind="menu"
+            aria-label="AI Image Detector"
+          >
+            <DetectorSvg v-if="size === 'large'" class="icon large" />
+            <div v-else-if="size === 'medium'" class="icon medium"></div>
+          </button>
+        </v-fade-transition>
+      </template>
+      <AnalysisCard :ai-score="aiScore" />
+    </v-menu>
+  </div>
 </template>
 
 <style lang="scss" scoped>
 .icon {
   border-radius: 50%;
+
+  will-change: background-color;
+  transition: background-color 0.3s;
+  
+  :deep(path) {
+    will-change: stroke fill;
+    transition: stroke 0.3s, fill 0.3s;
+  }
 
   &.large {
     height: 24px;

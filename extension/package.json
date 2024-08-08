@@ -16,7 +16,7 @@
     "format": "eslint --fix ./components ./entrypoints && prettier -w ./components ./entrypoints"
   },
   "dependencies": {
-    "@vueuse/core": "^10.11.0",
+    "@vueuse/core": "^10.11.1",
     "color-interpolate": "^1.0.5",
     "common": "file:../common",
     "hash-wasm": "^4.11.0",
