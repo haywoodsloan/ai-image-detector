@@ -1,13 +1,17 @@
 import IndicatorOverlay from '@/components/IndicatorOverlay.vue';
+import { invokeBackgroundTask } from '@/utilities/background.js';
 import { createAppEx } from '@/utilities/vue.js';
+import { ActionQueue } from 'common/utilities/ActionQueue.js';
 import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 
-import './style.css';
-import { invokeBackgroundTask } from '@/utilities/background.js';
 import { InitAction } from '../background/actions';
+import './style.css';
 
 const OverlapGridSize = 2;
+const OverlapInsetSize = 1;
+
 const MutObsOpts = { subtree: true, childList: true };
+const VisThreshes = [0.2, 0.6, 1];
 const MinVis = 0.2;
 
 export default defineContentScript({
@@ -22,21 +26,24 @@ export default defineContentScript({
     /** @type {Map<Element, ShadowRootContentScriptUi>} */
     const uiMap = new Map();
 
+    const intersectActionQueue = new ActionQueue();
     const intersectionObs = new IntersectionObserver(
       async (entries) => {
-        for (const { intersectionRatio, target } of entries) {
-          if (intersectionRatio < MinVis && uiMap.has(target)) {
-            uiMap.get(target).remove();
-            uiMap.delete(target);
-          } else if (intersectionRatio >= MinVis && !uiMap.has(target)) {
-            await waitForAnimations(target);
-            if (isImageCovered(target)) continue;
-            const ui = await createIndicatorUi(ctx, target);
-            uiMap.set(target, ui);
+        intersectActionQueue.queue(async () => {
+          for (const { intersectionRatio, target } of entries) {
+            if (intersectionRatio < MinVis && uiMap.has(target)) {
+              uiMap.get(target).remove();
+              uiMap.delete(target);
+            } else if (intersectionRatio >= MinVis && !uiMap.has(target)) {
+              await waitForAnimations(target);
+              if (isImageCovered(target)) continue;
+              const ui = await createIndicatorUi(ctx, target);
+              uiMap.set(target, ui);
+            }
           }
-        }
+        });
       },
-      { threshold: MinVis }
+      { threshold: VisThreshes }
     );
 
     const mutationObs = new MutationObserver(async (mutations) => {
@@ -88,10 +95,10 @@ function isImageCovered(ele) {
   const offsetRect = ele.offsetParent.getBoundingClientRect();
 
   // Check just inside the visible area
-  const left = Math.max(imgRect.left, offsetRect.left) + 1;
-  const top = Math.max(imgRect.top, offsetRect.top) + 1;
-  const right = Math.min(imgRect.right, offsetRect.right) - 1;
-  const bottom = Math.min(imgRect.bottom, offsetRect.bottom) - 1;
+  const left = Math.max(imgRect.left, offsetRect.left) + OverlapInsetSize;
+  const top = Math.max(imgRect.top, offsetRect.top) + OverlapInsetSize;
+  const right = Math.min(imgRect.right, offsetRect.right) - OverlapInsetSize;
+  const bottom = Math.min(imgRect.bottom, offsetRect.bottom) - OverlapInsetSize;
 
   for (let i = 0; i <= OverlapGridSize; i++) {
     for (let j = 0; j <= OverlapGridSize; j++) {
@@ -145,6 +152,7 @@ async function createIndicatorUi(ctx, image) {
 
   const ui = await createShadowRootUi(ctx, {
     name: 'indicator-overlay',
+    isolateEvents: true,
 
     position: 'overlay',
     anchor: image,
