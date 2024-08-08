@@ -198,7 +198,7 @@ try {
 
             for (const validation of validationQueue) {
               const result = await validation;
-              if (!unique.has(result.fileName))
+              if (result && !unique.has(result.fileName))
                 unique.set(result.fileName, result);
               else validationQueue.delete(validation);
             }
