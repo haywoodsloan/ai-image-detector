@@ -1,13 +1,13 @@
 <script setup>
+import { checkImage } from '@/api/detector.js';
 import DetectorSvg from '@/assets/detector.svg';
+import { waitForAuth } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
 import { useResizeObserver } from '@vueuse/core';
+import TimeSpan from 'common/utilities/TimeSpan.js';
+import { wait } from 'common/utilities/sleep.js';
 
 import AnalysisCard from './AnalysisCard.vue';
-import { waitForAuth } from '@/utilities/auth.js';
-import { checkImage } from '@/api/detector.js';
-import { wait } from 'common/utilities/sleep.js';
-import TimeSpan from 'common/utilities/TimeSpan.js';
 
 const { value: host } = defineModel('host', {
   type: HTMLElement,
@@ -59,38 +59,38 @@ const iconColor = ref(DefaultIndicatorColor);
 // });
 
 wait(TimeSpan.fromSeconds(5)).then(() => {
-  iconColor.value = getIndicatorColor(Math.random())
-})
+  iconColor.value = getIndicatorColor(Math.random());
+});
 </script>
 
 <template>
-  <div @click.stop>
-    <v-menu
-      location="right top"
-      z-index="99999"
-      :contained="true"
-      :offset="[6, -8]"
-      :close-on-content-click="false"
-      open-on-hover
-      open-on-click
-    >
-      <template #activator="{ props: menu }">
-        <v-fade-transition>
-          <button
-            v-if="size !== 'small'"
-            class="button"
-            :class="size"
-            v-bind="menu"
-            aria-label="AI Image Detector"
-          >
-            <DetectorSvg v-if="size === 'large'" class="icon large" />
-            <div v-else-if="size === 'medium'" class="icon medium"></div>
-          </button>
-        </v-fade-transition>
-      </template>
-      <AnalysisCard :ai-score="aiScore" />
-    </v-menu>
-  </div>
+  <v-menu
+    location="right top"
+    z-index="99999"
+    :contained="true"
+    :offset="[6, -8]"
+    :close-on-content-click="false"
+    open-on-hover
+    open-on-click
+    @click.stop.prevent
+  >
+    <template #activator="{ props: menu }">
+      <v-fade-transition>
+        <button
+          v-if="size !== 'small'"
+          class="button"
+          :class="size"
+          v-bind="menu"
+          aria-label="AI Image Detector"
+          @click.stop.prevent
+        >
+          <DetectorSvg v-if="size === 'large'" class="icon large" />
+          <div v-else-if="size === 'medium'" class="icon medium"></div>
+        </button>
+      </v-fade-transition>
+    </template>
+    <AnalysisCard />
+  </v-menu>
 </template>
 
 <style lang="scss" scoped>
@@ -99,10 +99,12 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
 
   will-change: background-color;
   transition: background-color 0.3s;
-  
+
   :deep(path) {
     will-change: stroke fill;
-    transition: stroke 0.3s, fill 0.3s;
+    transition:
+      stroke 0.3s,
+      fill 0.3s;
   }
 
   &.large {

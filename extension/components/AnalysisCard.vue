@@ -2,21 +2,21 @@
 import DetectorSvg from '@/assets/detector.svg';
 
 const props = defineProps({
-  aiScore: {
-    type: Number,
-    required: true,
-  },
+  // aiScore: {
+  //   type: Number,
+  //   required: true,
+  // },
 });
 
 const score = (props.aiScore * 100).toFixed(1);
 </script>
 
 <template>
-  <v-card elevation="16" max-width="344">
+  <v-card elevation="16">
     <v-card-title>AI Analysis Score: {{ score }}%</v-card-title>
     <v-card-subtitle>Based on detector model</v-card-subtitle>
     <v-card-actions class="pt-0">
-      <v-list density="compact" class="w-100 pr-2">
+      <v-list density="compact" class="w-100 overflow-x-hidden">
         <v-list-item rounded="pill" :link="true">
           <template #prepend>
             <DetectorSvg class="icon red mr-5"></DetectorSvg>
