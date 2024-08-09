@@ -122,7 +122,7 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
     height: 7px;
     width: 7px;
 
-    box-shadow: 0 0 3px 1px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 3px 0.5px rgba(0, 0, 0, 0.5);
     background-color: v-bind(iconColor);
   }
 }
