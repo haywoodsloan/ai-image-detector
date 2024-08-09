@@ -1,7 +1,6 @@
 import IndicatorOverlay from '@/components/IndicatorOverlay.vue';
 import { invokeBackgroundTask } from '@/utilities/background.js';
 import { createAppEx } from '@/utilities/vue.js';
-import { ActionQueue } from 'common/utilities/ActionQueue.js';
 import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 
 import { InitAction } from '../background/actions';
@@ -26,22 +25,32 @@ export default defineContentScript({
     /** @type {Map<Element, ShadowRootContentScriptUi>} */
     const uiMap = new Map();
 
-    const intersectActionQueue = new ActionQueue();
+    /** @type {Map<Element, AbortController>} */
+    const aborters = new Map();
+
     const intersectionObs = new IntersectionObserver(
       async (entries) => {
-        intersectActionQueue.queue(async () => {
-          for (const { intersectionRatio, target } of entries) {
-            if (intersectionRatio < MinVis && uiMap.has(target)) {
-              uiMap.get(target).remove();
-              uiMap.delete(target);
-            } else if (intersectionRatio >= MinVis && !uiMap.has(target)) {
-              await waitForAnimations(target);
-              if (isImageCovered(target)) continue;
-              const ui = await createIndicatorUi(ctx, target);
-              uiMap.set(target, ui);
-            }
+        for (const { intersectionRatio, target } of entries) {
+          aborters.get(target)?.abort();
+
+          const aborter = new AbortController();
+          aborters.set(target, aborter);
+
+          const signal = aborter.signal;
+          if (intersectionRatio < MinVis && uiMap.has(target)) {
+            uiMap.get(target).remove();
+            uiMap.delete(target);
+          } else if (intersectionRatio >= MinVis && !uiMap.has(target)) {
+            await waitForAnimations(target);
+            if (signal.aborted) continue;
+
+            if (isImageCovered(target)) continue;
+            const ui = await createIndicatorUi(ctx, target, signal);
+
+            if (!signal.aborted) uiMap.set(target, ui);
+            else ui?.remove();
           }
-        });
+        }
       },
       { threshold: VisThreshes }
     );
@@ -145,8 +154,9 @@ function isImageElement(ele) {
 /**
  * @param {ContentScriptContext} ctx
  * @param {HTMLElement} image
+ * @param {AbortSignal} signal
  */
-async function createIndicatorUi(ctx, image) {
+async function createIndicatorUi(ctx, image, signal) {
   const { visibility, opacity } = getComputedStyle(image);
   console.log('creating ui', image, { visibility, opacity });
 
@@ -159,6 +169,7 @@ async function createIndicatorUi(ctx, image) {
     append: 'after',
 
     onMount(container, _, host) {
+      if (signal.aborted) return;
       const app = createAppEx(IndicatorOverlay, { image, host });
       app.mount(container);
       return app;
@@ -169,6 +180,8 @@ async function createIndicatorUi(ctx, image) {
     },
   });
 
+  if (signal.aborted) return;
   ui.mount();
+  
   return ui;
 }
