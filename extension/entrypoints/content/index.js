@@ -4,7 +4,7 @@ import { createAppEx } from '@/utilities/vue.js';
 import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 
 import { InitAction } from '../background/actions';
-import './style.css';
+import './style.scss';
 
 const OverlapGridSize = 2;
 const OverlapInsetSize = 1;
@@ -15,8 +15,6 @@ const MinVis = 0.2;
 
 export default defineContentScript({
   matches: ['<all_urls>'],
-  cssInjectionMode: 'ui',
-
   async main(ctx) {
     console.log('starting content script, waiting for init');
     const init = await invokeBackgroundTask(InitAction);
@@ -45,7 +43,7 @@ export default defineContentScript({
             if (signal.aborted) continue;
 
             if (isImageCovered(target)) continue;
-            const ui = await createIndicatorUi(ctx, target, signal);
+            const ui = createIndicatorUi(ctx, target, signal);
 
             if (!signal.aborted) uiMap.set(target, ui);
             else ui?.remove();
@@ -156,22 +154,19 @@ function isImageElement(ele) {
  * @param {HTMLElement} image
  * @param {AbortSignal} signal
  */
-async function createIndicatorUi(ctx, image, signal) {
+function createIndicatorUi(ctx, image, signal) {
   const { visibility, opacity } = getComputedStyle(image);
   console.log('creating ui', image, { visibility, opacity });
 
-  const ui = await createShadowRootUi(ctx, {
-    name: 'indicator-overlay',
-    isolateEvents: true,
-
-    position: 'overlay',
+  const ui = createIntegratedUi(ctx, {
+    position: 'overlay', 
     anchor: image,
     append: 'after',
 
-    onMount(container, _, host) {
+    onMount(host) {
       if (signal.aborted) return;
       const app = createAppEx(IndicatorOverlay, { image, host });
-      app.mount(container);
+      app.mount(host);
       return app;
     },
 

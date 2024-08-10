@@ -1,5 +1,5 @@
 import { createVuetify } from 'vuetify';
-import 'vuetify/styles';
+// import 'vuetify/styles';
 
 const Vuetify = createVuetify({ theme: { defaultTheme: 'dark' } });
 

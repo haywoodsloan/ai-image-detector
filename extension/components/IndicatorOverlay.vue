@@ -35,14 +35,11 @@ useResizeObserver([image, image.offsetParent], () => {
 
   const top = Math.max(imgRect.top - offsetRect.top, 0);
   const left = Math.max(imgRect.left - offsetRect.left, 0);
-  const width = Math.min(imgRect.width, offsetRect.width);
-  const height = Math.min(imgRect.height, offsetRect.height);
-
   host.style.top = `${top}px`;
   host.style.left = `${left}px`;
-  host.style.width = `${width}px`;
-  host.style.height = `${height}px`;
 
+  const width = Math.min(imgRect.width, offsetRect.width);
+  const height = Math.min(imgRect.height, offsetRect.height);
   if (width > 300 && height > 150) {
     size.value = 'large';
   } else if (width > 100 && height > 50) {
@@ -64,33 +61,34 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
 </script>
 
 <template>
-  <v-menu
-    location="right top"
-    z-index="99999"
-    :contained="true"
-    :offset="[6, -8]"
-    :close-on-content-click="false"
-    open-on-hover
-    open-on-click
-    @click.stop.prevent
-  >
-    <template #activator="{ props: menu }">
-      <v-fade-transition>
-        <button
-          v-if="size !== 'small'"
-          class="button"
-          :class="size"
-          v-bind="menu"
-          aria-label="AI Image Detector"
-          @click.stop.prevent
-        >
-          <DetectorSvg v-if="size === 'large'" class="icon large" />
-          <div v-else-if="size === 'medium'" class="icon medium"></div>
-        </button>
-      </v-fade-transition>
-    </template>
-    <AnalysisCard />
-  </v-menu>
+  <div style="all: initial !important">
+    <v-menu
+      location="right top"
+      z-index="99999"
+      open-on-click
+      open-on-hover
+      :offset="[6, -8]"
+      :close-on-content-click="false"
+      @click.stop.prevent
+    >
+      <template #activator="{ props: menu }">
+        <v-fade-transition>
+          <button
+            v-if="size !== 'small'"
+            class="button"
+            :class="size"
+            v-bind="menu"
+            aria-label="AI Image Detector"
+            @click.stop.prevent
+          >
+            <DetectorSvg v-if="size === 'large'" class="icon large" />
+            <div v-else-if="size === 'medium'" class="icon medium"></div>
+          </button>
+        </v-fade-transition>
+      </template>
+      <AnalysisCard />
+    </v-menu>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -111,8 +109,8 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
     height: 24px;
     width: 24px;
 
-    box-shadow: 0 0 6px 1px rgba(0, 0, 0, 0.6);
-    background-color: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 6px 1px rgba(0, 0, 0, 0.4);
+    background-color: rgba(0, 0, 0, 0.4);
 
     :deep(path) {
       stroke: v-bind(iconColor);
@@ -131,18 +129,15 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
 
 .button {
   display: block;
-  cursor: pointer;
+  background: none;
+
+  padding: 0;
+  border: none;
 
   will-change: transform, opacity;
   transition:
     transform 0.3s,
     opacity 0.3s;
-
-  background: none;
-  border: none;
-
-  padding: 0;
-  margin: 0;
 
   &.large {
     transform-origin: center;
