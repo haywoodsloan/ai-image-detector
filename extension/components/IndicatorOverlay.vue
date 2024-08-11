@@ -61,34 +61,32 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
 </script>
 
 <template>
-  <div style="all: initial !important">
-    <v-menu
-      location="right top"
-      z-index="99999"
-      open-on-click
-      open-on-hover
-      :offset="[6, -8]"
-      :close-on-content-click="false"
-      @click.stop.prevent
-    >
-      <template #activator="{ props: menu }">
-        <v-fade-transition>
-          <button
-            v-if="size !== 'small'"
-            class="button"
-            :class="size"
-            v-bind="menu"
-            aria-label="AI Image Detector"
-            @click.stop.prevent
-          >
-            <DetectorSvg v-if="size === 'large'" class="icon large" />
-            <div v-else-if="size === 'medium'" class="icon medium"></div>
-          </button>
-        </v-fade-transition>
-      </template>
-      <AnalysisCard />
-    </v-menu>
-  </div>
+  <v-menu
+    location="right top"
+    z-index="2147483647"
+    open-on-click
+    open-on-hover
+    :offset="[6, -8]"
+    :close-on-content-click="false"
+    @click.stop.prevent
+  >
+    <template #activator="{ props: menu }">
+      <v-fade-transition>
+        <button
+          v-if="size !== 'small'"
+          class="button"
+          :class="size"
+          v-bind="menu"
+          aria-label="AI Image Detector"
+          @click.stop.prevent
+        >
+          <DetectorSvg v-if="size === 'large'" class="icon large" />
+          <div v-else-if="size === 'medium'" class="icon medium"></div>
+        </button>
+      </v-fade-transition>
+    </template>
+    <AnalysisCard />
+  </v-menu>
 </template>
 
 <style lang="scss" scoped>

@@ -9,6 +9,9 @@ export default defineConfig({
     permissions: ['storage'],
   },
   vite: () => ({
-    plugins: [svgLoader(), vuetify()],
+    plugins: [
+      svgLoader(),
+      vuetify(),
+    ],
   }),
 });

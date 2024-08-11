@@ -4,7 +4,6 @@ import { createAppEx } from '@/utilities/vue.js';
 import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 
 import { InitAction } from '../background/actions';
-import './style.scss';
 
 const OverlapGridSize = 2;
 const OverlapInsetSize = 1;
@@ -159,7 +158,7 @@ function createIndicatorUi(ctx, image, signal) {
   console.log('creating ui', image, { visibility, opacity });
 
   const ui = createIntegratedUi(ctx, {
-    position: 'overlay', 
+    position: 'overlay',
     anchor: image,
     append: 'after',
 
@@ -177,6 +176,6 @@ function createIndicatorUi(ctx, image, signal) {
 
   if (signal.aborted) return;
   ui.mount();
-  
+
   return ui;
 }

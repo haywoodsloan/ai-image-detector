@@ -1,5 +1,6 @@
 <script setup>
 import DetectorSvg from '@/assets/detector.svg';
+import StyleProvider from './StyleProvider.vue'
 
 const props = defineProps({
   // aiScore: {
@@ -12,7 +13,7 @@ const score = (props.aiScore * 100).toFixed(1);
 </script>
 
 <template>
-  <div style="all: initial !important">
+  <StyleProvider>
     <v-card elevation="16" class="card">
       <v-card-title>AI Analysis Score: {{ score }}%</v-card-title>
       <v-card-subtitle>Based on detector model</v-card-subtitle>
@@ -37,7 +38,7 @@ const score = (props.aiScore * 100).toFixed(1);
         </v-list>
       </v-card-actions>
     </v-card>
-  </div>
+  </StyleProvider>
 </template>
 
 <style lang="scss" scoped>
