@@ -1,23 +1,36 @@
 import IndicatorOverlay from '@/components/IndicatorOverlay.vue';
+import { InitAction } from '@/entrypoints/background/actions';
+import { mergeSignals } from '@/utilities/abort.js';
 import { invokeBackgroundTask } from '@/utilities/background.js';
+import {
+  getChildrenDeep,
+  getCoveredElements,
+  getParentChain,
+  isElementCovered,
+  isImageElement,
+  isStyleHidden,
+  waitForAnimations,
+} from '@/utilities/element.js';
 import { createAppEx } from '@/utilities/vue.js';
-import { collectAllElementsDeep } from 'query-selector-shadow-dom';
 
-import { InitAction } from '../background/actions';
-
-const OverlapGridSize = 2;
-const OverlapInsetSize = 1;
-
-const MutObsOpts = { subtree: true, childList: true };
-const VisThreshes = [0.2, 0.6, 1];
 const MinVis = 0.2;
+const VisThreshes = [0.2, 0.6, 1];
+
+const AddObsOpts = {
+  subtree: true,
+  childList: true,
+};
+
+const StyleObsOpts = {
+  attributes: true,
+  attributeFilter: ['style', 'class'],
+};
 
 export default defineContentScript({
   matches: ['<all_urls>'],
   async main(ctx) {
-    console.log('starting content script, waiting for init');
-    const init = await invokeBackgroundTask(InitAction);
-    console.log('init complete', init);
+    // Make sure the extension has been initialized
+    await invokeBackgroundTask(InitAction);
 
     /** @type {Map<Element, ShadowRootContentScriptUi>} */
     const uiMap = new Map();
@@ -41,141 +54,149 @@ export default defineContentScript({
             await waitForAnimations(target);
             if (signal.aborted) continue;
 
-            if (isImageCovered(target)) continue;
-            const ui = createIndicatorUi(ctx, target, signal);
+            if (isElementCovered(target)) continue;
+            const ui = createIndicatorUi(target, signal);
 
             if (!signal.aborted) uiMap.set(target, ui);
             else ui?.remove();
           }
+
+          // Remove the aborter when the operation is done
+          if (aborters.get(target) === aborter) aborters.delete(target);
         }
       },
       { threshold: VisThreshes }
     );
 
-    const mutationObs = new MutationObserver(async (mutations) => {
-      const removedNodes = new Set(
-        mutations
-          .flatMap((mutation) => [...mutation.removedNodes])
-          .filter((node) => node instanceof Element)
-          .flatMap((node) => [...collectAllElementsDeep(null, node), node])
-      );
+    /** @type {Set<Element>} */
+    const hiddenEles = new Set();
+    const styleObs = new MutationObserver(async (mutations) => {
+      for (const { target } of mutations) {
+        aborters.get(target)?.abort();
 
-      for (const node of removedNodes) {
-        intersectionObs.unobserve(node);
-        if (uiMap.has(node)) {
-          uiMap.get(node).remove();
-          uiMap.delete(node);
+        const targetAborter = new AbortController();
+        aborters.set(target, targetAborter);
+
+        const targetSignal = targetAborter.signal;
+        const isHidden = isStyleHidden(target);
+
+        if (isHidden === hiddenEles.has(target)) continue;
+        if (isHidden) hiddenEles.add(target);
+        else hiddenEles.delete(target);
+
+        const newHidden = isHidden
+          ? [...getChildrenDeep(target), target]
+          : [...getCoveredElements(target)];
+
+        const newRevealed = isHidden
+          ? [...getCoveredElements(target)]
+          : [...getChildrenDeep(target), target];
+
+        for (const ele of newHidden) {
+          if (targetSignal.aborted) break;
+          if (isImageElement(ele) && uiMap.has(ele)) {
+            uiMap.get(ele).remove();
+            uiMap.delete(ele);
+          }
         }
+
+        for (const ele of newRevealed) {
+          if (targetSignal.aborted) break;
+          if (isImageElement(ele) && !uiMap.has(ele)) {
+            aborters.get(ele)?.abort();
+
+            const imgAborter = new AbortController();
+            aborters.set(ele, imgAborter);
+
+            const mergeSignal = mergeSignals(imgAborter.signal, targetSignal);
+            await waitForAnimations(ele);
+            if (mergeSignal.aborted) continue;
+
+            if (isElementCovered(ele)) continue;
+            const ui = createIndicatorUi(ele, mergeSignal);
+
+            if (!mergeSignal.aborted) uiMap.set(ele, ui);
+            else ui?.remove();
+
+            if (aborters.get(ele) === imgAborter) aborters.delete(ele);
+          }
+        }
+
+        if (aborters.get(target) === targetAborter) aborters.delete(target);
       }
+    });
 
-      const addedNodes = new Set(
-        mutations
-          .flatMap((mutation) => [...mutation.addedNodes])
+    const addObs = new MutationObserver(async (mutations) => {
+      for (const mutation of mutations) {
+        const removedNodes = [...mutation.removedNodes]
           .filter((node) => node instanceof Element)
-          .flatMap((node) => [...collectAllElementsDeep(null, node), node])
-      );
+          .flatMap((node) => [...getChildrenDeep(node), node]);
 
-      for (const node of addedNodes) {
-        if (node.shadowRoot) mutationObs.observe(node.shadowRoot, MutObsOpts);
-        if (isImageElement(node)) intersectionObs.observe(node);
+        for (const node of removedNodes) {
+          if (uiMap.has(node)) {
+            uiMap.get(node).remove();
+            uiMap.delete(node);
+          }
+        }
+
+        const addedNodes = [...mutation.addedNodes]
+          .filter((node) => node instanceof Element)
+          .flatMap((node) => [...getChildrenDeep(node), node]);
+
+        for (const node of addedNodes) {
+          watchElement(node);
+        }
       }
     });
 
     requestAnimationFrame(() => {
-      mutationObs.observe(document.body, MutObsOpts);
-      for (const node of collectAllElementsDeep(null, document.body)) {
-        if (node.shadowRoot) mutationObs.observe(node.shadowRoot, MutObsOpts);
-        if (isImageElement(node)) intersectionObs.observe(node);
+      addObs.observe(document.body, AddObsOpts);
+      for (const ele of getChildrenDeep(document.body)) {
+        watchElement(ele);
       }
     });
-  },
-});
 
-/**
- * @param {HTMLElement} ele
- */
-function isImageCovered(ele) {
-  if (getComputedStyle(ele).visibility === 'hidden') return true;
+    /**
+     * @param {Element} ele
+     */
+    function watchElement(ele) {
+      if (ele.shadowRoot) addObs.observe(ele.shadowRoot, AddObsOpts);
+      if (isImageElement(ele)) {
+        intersectionObs.observe(ele);
 
-  const imgRect = ele.getBoundingClientRect();
-  const offsetRect = ele.offsetParent.getBoundingClientRect();
-
-  // Check just inside the visible area
-  const left = Math.max(imgRect.left, offsetRect.left) + OverlapInsetSize;
-  const top = Math.max(imgRect.top, offsetRect.top) + OverlapInsetSize;
-  const right = Math.min(imgRect.right, offsetRect.right) - OverlapInsetSize;
-  const bottom = Math.min(imgRect.bottom, offsetRect.bottom) - OverlapInsetSize;
-
-  for (let i = 0; i <= OverlapGridSize; i++) {
-    for (let j = 0; j <= OverlapGridSize; j++) {
-      const x = (right - left) * (i / OverlapGridSize) + left;
-      const y = (bottom - top) * (j / OverlapGridSize) + top;
-
-      const stack = document.elementsFromPoint(x, y);
-      const expanded = new Set();
-
-      // Check if any visible element comes before the image
-      // Expand shadow roots too
-      while (stack.length) {
-        const topEle = stack.shift();
-        if (topEle === ele) return false;
-
-        if (topEle.shadowRoot && !expanded.has(topEle)) {
-          const nested = topEle.shadowRoot.elementsFromPoint(x, y);
-          stack.unshift(...nested, topEle);
-          expanded.add(topEle);
-        } else if (getComputedStyle(topEle).visibility !== 'hidden') break;
+        for (const linked of [...getParentChain(ele), ele]) {
+          if (isStyleHidden(linked)) hiddenEles.add(linked);
+          styleObs.observe(linked, StyleObsOpts);
+        }
       }
     }
-  }
 
-  return true;
-}
+    /**
+     * @param {HTMLElement} image
+     * @param {AbortSignal} signal
+     */
+    function createIndicatorUi(image, signal) {
+      const ui = createIntegratedUi(ctx, {
+        position: 'overlay',
+        anchor: image,
+        append: 'after',
 
-/**
- * @param {Element} ele
- */
-async function waitForAnimations(ele) {
-  await Promise.all(
-    ele.getAnimations({ subtree: true }).map(({ finished }) => finished)
-  );
-}
+        onMount(host) {
+          if (signal.aborted) return;
+          const app = createAppEx(IndicatorOverlay, { image, host });
+          app.mount(host);
+          return app;
+        },
 
-/**
- * @param {Element} ele
- */
-function isImageElement(ele) {
-  return ele.nodeName.toLowerCase() === 'img';
-}
+        onRemove(app) {
+          app?.unmount();
+        },
+      });
 
-/**
- * @param {ContentScriptContext} ctx
- * @param {HTMLElement} image
- * @param {AbortSignal} signal
- */
-function createIndicatorUi(ctx, image, signal) {
-  const { visibility, opacity } = getComputedStyle(image);
-  console.log('creating ui', image, { visibility, opacity });
-
-  const ui = createIntegratedUi(ctx, {
-    position: 'overlay',
-    anchor: image,
-    append: 'after',
-
-    onMount(host) {
       if (signal.aborted) return;
-      const app = createAppEx(IndicatorOverlay, { image, host });
-      app.mount(host);
-      return app;
-    },
+      ui.mount();
 
-    onRemove(app) {
-      app?.unmount();
-    },
-  });
-
-  if (signal.aborted) return;
-  ui.mount();
-
-  return ui;
-}
+      return ui;
+    }
+  },
+});
