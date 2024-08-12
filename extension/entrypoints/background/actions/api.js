@@ -7,7 +7,7 @@ export class ApiAction extends BaseAction {
   /**
    * @param {{endpoint: string, init?: RequestInit}}
    */
-  static invoke({ endpoint, init = {} }) {
+  static invoke({ endpoint, init }) {
     return request(endpoint, init);
   }
 }
