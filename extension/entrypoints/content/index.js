@@ -69,7 +69,7 @@ export default defineContentScript({
     );
 
     /** @type {Set<Element>} */
-    const hiddenEles = new Set();
+    const hiddenEls = new Set();
     const styleObs = new MutationObserver(async (mutations) => {
       for (const { target } of mutations) {
         aborters.get(target)?.abort();
@@ -80,19 +80,19 @@ export default defineContentScript({
         const targetSignal = targetAborter.signal;
         const isHidden = isStyleHidden(target);
 
-        if (isHidden === hiddenEles.has(target)) continue;
-        if (isHidden) hiddenEles.add(target);
-        else hiddenEles.delete(target);
+        if (isHidden === hiddenEls.has(target)) continue;
+        if (isHidden) hiddenEls.add(target);
+        else hiddenEls.delete(target);
 
-        const newHidden = isHidden
+        const justHidden = isHidden
           ? [...getChildrenDeep(target), target]
           : [...getCoveredElements(target)];
 
-        const newRevealed = isHidden
+        const justRevealed = isHidden
           ? [...getCoveredElements(target)]
           : [...getChildrenDeep(target), target];
 
-        for (const ele of newHidden) {
+        for (const ele of justHidden) {
           if (targetSignal.aborted) break;
           if (isImageElement(ele) && uiMap.has(ele)) {
             uiMap.get(ele).remove();
@@ -100,7 +100,7 @@ export default defineContentScript({
           }
         }
 
-        for (const ele of newRevealed) {
+        for (const ele of justRevealed) {
           if (targetSignal.aborted) break;
           if (isImageElement(ele) && !uiMap.has(ele)) {
             aborters.get(ele)?.abort();
@@ -165,7 +165,7 @@ export default defineContentScript({
         intersectionObs.observe(ele);
 
         for (const linked of [...getParentChain(ele), ele]) {
-          if (isStyleHidden(linked)) hiddenEles.add(linked);
+          if (isStyleHidden(linked)) hiddenEls.add(linked);
           styleObs.observe(linked, StyleObsOpts);
         }
       }

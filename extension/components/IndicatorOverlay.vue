@@ -8,6 +8,7 @@ import TimeSpan from 'common/utilities/TimeSpan.js';
 import { wait } from 'common/utilities/sleep.js';
 
 import AnalysisCard from './AnalysisCard.vue';
+import StyleProvider from './StyleProvider.vue';
 
 const { value: host } = defineModel('host', {
   type: HTMLElement,
@@ -61,37 +62,40 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
 </script>
 
 <template>
-  <v-menu
-    location="right top"
-    z-index="2147483647"
-    open-on-click
-    open-on-hover
-    :offset="[6, -8]"
-    :close-on-content-click="false"
-    @click.stop.prevent
-  >
-    <template #activator="{ props: menu }">
-      <v-fade-transition>
-        <button
-          v-if="size !== 'small'"
-          class="button"
-          :class="size"
-          v-bind="menu"
-          aria-label="AI Image Detector"
-          @click.stop.prevent
-        >
-          <DetectorSvg v-if="size === 'large'" class="icon large" />
-          <div v-else-if="size === 'medium'" class="icon medium"></div>
-        </button>
-      </v-fade-transition>
-    </template>
-    <AnalysisCard />
-  </v-menu>
+  <StyleProvider>
+    <v-menu
+      location="right top"
+      z-index="2147483647"
+      open-on-click
+      open-on-hover
+      :offset="[6, -8]"
+      :close-on-content-click="false"
+      @click.stop.prevent
+    >
+      <template #activator="{ props: menu }">
+        <v-fade-transition>
+          <button
+            v-if="size !== 'small'"
+            class="button"
+            :class="size"
+            v-bind="menu"
+            aria-label="AI Image Detector"
+            @click.stop.prevent
+          >
+            <DetectorSvg v-if="size === 'large'" class="icon large" />
+            <div v-else-if="size === 'medium'" class="icon medium"></div>
+          </button>
+        </v-fade-transition>
+      </template>
+      <AnalysisCard />
+    </v-menu>
+  </StyleProvider>
 </template>
 
 <style lang="scss" scoped>
 .icon {
-  border-radius: 50%;
+  // border-radius: 50%;
+  // overflow: visible;
 
   will-change: background-color;
   transition: background-color 0.3s;
@@ -104,14 +108,18 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
   }
 
   &.large {
-    height: 24px;
-    width: 24px;
+    height: 26px;
+    width: 26px;
 
-    box-shadow: 0 0 6px 1px rgba(0, 0, 0, 0.4);
-    background-color: rgba(0, 0, 0, 0.4);
+    // box-shadow: 0 0 6px 1px rgba(0, 0, 0, 0.4);
+    // background-color: rgba(0, 0, 0, 0.3);
+
+    filter: drop-shadow(0 0 3.5px black);
 
     :deep(path) {
       stroke: v-bind(iconColor);
+      // stroke: black;
+      // stroke-width: 0.15px;
       fill: v-bind(iconColor);
     }
   }
@@ -120,7 +128,9 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
     height: 7px;
     width: 7px;
 
-    box-shadow: 0 0 3px 0.5px rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+
+    filter: drop-shadow(0 0 1.4px black);
     background-color: v-bind(iconColor);
   }
 }
@@ -141,8 +151,8 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
     transform-origin: center;
     opacity: 0.6;
 
-    margin-top: 6px;
-    margin-left: 6px;
+    margin-top: 7px;
+    margin-left: 7px;
 
     &:hover {
       opacity: 1;
