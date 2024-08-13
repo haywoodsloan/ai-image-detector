@@ -13,7 +13,8 @@
     "zip:firefox": "wxt zip -b firefox",
     "compile": "vue-tsc --noEmit",
     "postinstall": "wxt prepare",
-    "format": "eslint --fix ./components ./entrypoints && prettier -w ./components ./entrypoints"
+    "format": "eslint --fix ./components ./entrypoints && prettier -w ./components ./entrypoints",
+    "gen-icon": "icon-gen -i ./assets/detector.svg -o ./public/icon/ -r --favicon --favicon-name / --favicon-png-sizes 16,24,48,96,128"
   },
   "dependencies": {
     "@vueuse/core": "^10.11.1",
@@ -32,11 +33,11 @@
     "@eslint/js": "^9.7.0",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@wxt-dev/module-vue": "^1.0.1",
-    "eslint": "^9.8.0",
+    "eslint": "^9.9.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-vue": "^9.27.0",
     "globals": "^15.9.0",
-    "icon-gen": "^4.0.0",
+    "icon-gen": "^5.0.0",
     "prettier": "^3.3.3",
     "typescript": "^5.5.4",
     "vue-tsc": "^2.0.29",

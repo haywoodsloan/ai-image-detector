@@ -1,6 +1,8 @@
 <script setup>
 import DetectorSvg from '@/assets/detector.svg';
-import StyleProvider from './StyleProvider.vue'
+import { getIndicatorColor } from '@/utilities/color.js';
+
+import StyleProvider from './StyleProvider.vue';
 
 const props = defineProps({
   // aiScore: {
@@ -9,19 +11,21 @@ const props = defineProps({
   // },
 });
 
-const score = (props.aiScore * 100).toFixed(1);
+const score = (Math.random() * 100).toFixed(1);
+const aiColor = getIndicatorColor(1);
+const realColor = getIndicatorColor(0);
 </script>
 
 <template>
   <StyleProvider>
-    <v-card elevation="16" class="card">
+    <v-card class="card">
       <v-card-title>AI Analysis Score: {{ score }}%</v-card-title>
       <v-card-subtitle>Based on detector model</v-card-subtitle>
       <v-card-actions class="pt-0">
         <v-list density="compact" class="w-100 overflow-x-hidden">
           <v-list-item rounded="pill" :link="true">
             <template #prepend>
-              <DetectorSvg class="icon red mr-5"></DetectorSvg>
+              <DetectorSvg class="icon ai mr-5"></DetectorSvg>
             </template>
             <v-list-item-title>
               <p class="title">Report AI Image</p>
@@ -29,7 +33,7 @@ const score = (props.aiScore * 100).toFixed(1);
           </v-list-item>
           <v-list-item rounded="pill" :link="true">
             <template #prepend>
-              <DetectorSvg class="icon green mr-5"></DetectorSvg>
+              <DetectorSvg class="icon real mr-5"></DetectorSvg>
             </template>
             <v-list-item-title>
               <p class="title">Report Real Image</p>
@@ -50,17 +54,17 @@ const score = (props.aiScore * 100).toFixed(1);
   height: 24px;
   width: 24px;
 
-  &.red {
+  &.ai {
     :deep(path) {
-      stroke: red;
-      fill: red;
+      stroke: v-bind(aiColor);
+      fill: v-bind(aiColor);
     }
   }
 
-  &.green {
+  &.real {
     :deep(path) {
-      stroke: lawngreen;
-      fill: lawngreen;
+      stroke: v-bind(realColor);
+      fill: v-bind(realColor);
     }
   }
 }

@@ -1,9 +1,9 @@
 import interpolate from 'color-interpolate';
 
-const IndicatorColors = ['lawngreen', 'greenyellow', 'gold', 'orange', 'red'];
+const IndicatorColors = ['#00C176', '#88C100', '#FABE28', '#FF8A00', '#FF003C'];
 const IndicatorColorMap = interpolate(IndicatorColors);
 
-export const DefaultIndicatorColor = 'lightgrey'
+export const DefaultIndicatorColor = '#858585';
 
 /**
  * @param {number} aiScore

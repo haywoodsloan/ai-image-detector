@@ -94,32 +94,19 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
 
 <style lang="scss" scoped>
 .icon {
-  // border-radius: 50%;
-  // overflow: visible;
-
-  will-change: background-color;
-  transition: background-color 0.3s;
-
-  :deep(path) {
-    will-change: stroke fill;
-    transition:
-      stroke 0.3s,
-      fill 0.3s;
-  }
-
   &.large {
-    height: 26px;
-    width: 26px;
+    height: 24px;
+    width: 24px;
 
-    // box-shadow: 0 0 6px 1px rgba(0, 0, 0, 0.4);
-    // background-color: rgba(0, 0, 0, 0.3);
-
-    filter: drop-shadow(0 0 3.5px black);
+    filter: drop-shadow(0 0 1.8px v-bind(iconColor));
+    transition: filter 0.3s;
 
     :deep(path) {
+      transition:
+        stroke 0.3s,
+        fill 0.3s;
+
       stroke: v-bind(iconColor);
-      // stroke: black;
-      // stroke-width: 0.15px;
       fill: v-bind(iconColor);
     }
   }
@@ -128,28 +115,33 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
     height: 7px;
     width: 7px;
 
-    border-radius: 50%;
+    filter: drop-shadow(0 0 1.6px v-bind(iconColor));
+    transform-origin: 15% 15%;
 
-    filter: drop-shadow(0 0 1.4px black);
+    transition:
+      filter 0.3s,
+      background-color 0.3s,
+      transform 0.3s;
+
     background-color: v-bind(iconColor);
+    border-radius: 50%;
   }
 }
 
 .button {
-  display: block;
+  display: flex;
   background: none;
 
   padding: 0;
   border: none;
 
-  will-change: transform, opacity;
-  transition:
-    transform 0.3s,
-    opacity 0.3s;
-
   &.large {
+    transition:
+      transform 0.3s,
+      opacity 0.3s;
+
     transform-origin: center;
-    opacity: 0.6;
+    opacity: 0.8;
 
     margin-top: 7px;
     margin-left: 7px;
@@ -161,11 +153,13 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
   }
 
   &.medium {
-    transform-origin: 15% 15%;
+    width: 17px;
+    height: 17px;
+
     margin-top: 6px;
     margin-left: 6px;
 
-    &:hover {
+    &:hover .icon {
       transform: scale(2.5);
     }
   }
