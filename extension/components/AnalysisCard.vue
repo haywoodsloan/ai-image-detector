@@ -48,28 +48,28 @@ const realColor = getIndicatorColor(0);
 <style lang="scss" scoped>
 .card {
   font-family: Arial, Helvetica, sans-serif !important;
-}
 
-.icon {
-  height: 24px;
-  width: 24px;
-
-  &.ai {
-    :deep(path) {
-      stroke: v-bind(aiColor);
-      fill: v-bind(aiColor);
-    }
+  .title {
+    text-anchor: middle;
   }
 
-  &.real {
-    :deep(path) {
-      stroke: v-bind(realColor);
-      fill: v-bind(realColor);
+  .icon {
+    height: 24px;
+    width: 24px;
+
+    &.ai {
+      :deep(path) {
+        stroke: v-bind(aiColor);
+        fill: v-bind(aiColor);
+      }
+    }
+
+    &.real {
+      :deep(path) {
+        stroke: v-bind(realColor);
+        fill: v-bind(realColor);
+      }
     }
   }
-}
-
-.title {
-  text-anchor: middle;
 }
 </style>

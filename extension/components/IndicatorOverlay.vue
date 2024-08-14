@@ -2,10 +2,11 @@
 import { checkImage } from '@/api/detector.js';
 import DetectorSvg from '@/assets/detector.svg';
 import { waitForAuth } from '@/utilities/auth.js';
-import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
+import { getIndicatorColor } from '@/utilities/color';
 import { useResizeObserver } from '@vueuse/core';
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { wait } from 'common/utilities/sleep.js';
+import memoize from 'memoize';
 
 import AnalysisCard from './AnalysisCard.vue';
 import StyleProvider from './StyleProvider.vue';
@@ -22,6 +23,7 @@ const { image } = defineProps({
   },
 });
 
+// Use absolute position for host element
 onMounted(() => {
   host.style.position = 'absolute';
 });
@@ -36,11 +38,13 @@ useResizeObserver([image, image.offsetParent], () => {
 
   const top = Math.max(imgRect.top - offsetRect.top, 0);
   const left = Math.max(imgRect.left - offsetRect.left, 0);
+
   host.style.top = `${top}px`;
   host.style.left = `${left}px`;
 
   const width = Math.min(imgRect.width, offsetRect.width);
   const height = Math.min(imgRect.height, offsetRect.height);
+
   if (width > 300 && height > 150) {
     size.value = 'large';
   } else if (width > 100 && height > 50) {
@@ -50,19 +54,30 @@ useResizeObserver([image, image.offsetParent], () => {
   }
 });
 
-const iconColor = ref(DefaultIndicatorColor);
-// waitForAuth().then(async () => {
-//   const analysis = await checkImage(image.src);
-//   iconColor.value = getIndicatorColor(analysis.artificial)
-// });
+const iconColor = ref('');
+const check = memoize(() => {
+  // waitForAuth().then(async () => {
+  //   const analysis = await checkImage(image.src);
+  //   iconColor.value = getIndicatorColor(analysis.artificial)
+  // });
 
-wait(TimeSpan.fromSeconds(5)).then(() => {
-  iconColor.value = getIndicatorColor(Math.random());
+  wait(TimeSpan.fromSeconds(1)).then(() => {
+    iconColor.value = getIndicatorColor(Math.random());
+  });
 });
+
+// Wait for the size to become medium or large
+watch(
+  size,
+  (newSize) => {
+    if (newSize !== 'small') check();
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
-  <StyleProvider>
+  <StyleProvider v-if="size !== 'small'">
     <v-menu
       location="right top"
       z-index="2147483647"
@@ -75,15 +90,18 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
       <template #activator="{ props: menu }">
         <v-fade-transition>
           <button
-            v-if="size !== 'small'"
+            v-if="iconColor"
             class="button"
             :class="size"
             v-bind="menu"
             aria-label="AI Image Detector"
             @click.stop.prevent
           >
-            <DetectorSvg v-if="size === 'large'" class="icon large" />
-            <div v-else-if="size === 'medium'" class="icon medium"></div>
+            <div class="icon-wrapper">
+              <div class="underlay"></div>
+              <DetectorSvg v-if="size === 'large'" class="icon" />
+              <div v-else-if="size === 'medium'" class="icon"></div>
+            </div>
           </button>
         </v-fade-transition>
       </template>
@@ -93,62 +111,68 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
 </template>
 
 <style lang="scss" scoped>
-.icon {
-  &.large {
-    height: 24px;
-    width: 24px;
-
-    filter: drop-shadow(0 0 1.8px v-bind(iconColor));
-    transition: filter 0.3s;
-
-    :deep(path) {
-      transition:
-        stroke 0.3s,
-        fill 0.3s;
-
-      stroke: v-bind(iconColor);
-      fill: v-bind(iconColor);
-    }
-  }
-
-  &.medium {
-    height: 7px;
-    width: 7px;
-
-    filter: drop-shadow(0 0 1.6px v-bind(iconColor));
-    transform-origin: 15% 15%;
-
-    transition:
-      filter 0.3s,
-      background-color 0.3s,
-      transform 0.3s;
-
-    background-color: v-bind(iconColor);
-    border-radius: 50%;
-  }
-}
-
 .button {
   display: flex;
-  background: none;
+  position: relative;
 
   padding: 0;
   border: none;
 
+  height: fit-content;
+  width: fit-content;
+
+  margin-top: 7px;
+  margin-left: 7px;
+
+  .icon-wrapper {
+    position: relative;
+
+    .underlay {
+      position: absolute;
+      border-radius: 50%;
+
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+
+      opacity: 0.3;
+      background-color: v-bind(iconColor);
+    }
+
+    .icon {
+      display: block;
+    }
+  }
+
   &.large {
-    transition:
-      transform 0.3s,
-      opacity 0.3s;
-
     transform-origin: center;
-    opacity: 0.8;
+    transition: transform 0.3s;
 
-    margin-top: 7px;
-    margin-left: 7px;
+    .underlay {
+      box-shadow: 0 0 5px 2.5px v-bind(iconColor);
+    }
 
-    &:hover {
-      opacity: 1;
+    .icon {
+      height: 24px;
+      width: 24px;
+
+      opacity: 0.8;
+      transition: opacity 0.3s;
+
+      :deep(path) {
+        stroke: v-bind(iconColor);
+        fill: v-bind(iconColor);
+      }
+    }
+
+    &:hover,
+    &:focus {
       transform: scale(1.1);
+
+      .icon {
+        opacity: 1;
+      }
     }
   }
 
@@ -156,10 +180,26 @@ wait(TimeSpan.fromSeconds(5)).then(() => {
     width: 17px;
     height: 17px;
 
-    margin-top: 6px;
-    margin-left: 6px;
+    .icon-wrapper {
+      transition: transform 0.3s;
+      transform-origin: 15% 15%;
 
-    &:hover .icon {
+      .underlay {
+        opacity: 0.6;
+        box-shadow: 0 0 2px 1px v-bind(iconColor);
+      }
+
+      .icon {
+        height: 7px;
+        width: 7px;
+
+        background-color: v-bind(iconColor);
+        border-radius: 50%;
+      }
+    }
+
+    &:hover .icon-wrapper,
+    &:focus .icon-wrapper {
       transform: scale(2.5);
     }
   }
