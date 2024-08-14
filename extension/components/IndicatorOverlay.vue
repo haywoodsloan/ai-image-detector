@@ -1,12 +1,11 @@
 <script setup>
 import { checkImage } from '@/api/detector.js';
 import DetectorSvg from '@/assets/detector.svg';
-import { waitForAuth } from '@/utilities/auth.js';
-import { getIndicatorColor } from '@/utilities/color';
+import { useHasAuth, waitForAuth } from '@/utilities/auth.js';
+import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
 import { useResizeObserver } from '@vueuse/core';
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { wait } from 'common/utilities/sleep.js';
-import memoize from 'memoize';
 
 import AnalysisCard from './AnalysisCard.vue';
 import StyleProvider from './StyleProvider.vue';
@@ -22,6 +21,8 @@ const { image } = defineProps({
     required: true,
   },
 });
+
+const menuOpen = ref(false);
 
 // Use absolute position for host element
 onMounted(() => {
@@ -54,35 +55,40 @@ useResizeObserver([image, image.offsetParent], () => {
   }
 });
 
-const iconColor = ref('');
-const check = memoize(() => {
-  // waitForAuth().then(async () => {
-  //   const analysis = await checkImage(image.src);
-  //   iconColor.value = getIndicatorColor(analysis.artificial)
-  // });
+/** @type {Ref<ImageAnalysis>} */
+const analysis = ref(null);
+const unwatch = watch(size, async (newSize) => {
+  // Wait for the size to become medium or large
+  if (newSize !== 'small') {
+    // waitForAuth().then(async () => {
+    //   const analysis = await checkImage(image.src);
+    //   iconColor.value = getIndicatorColor(analysis.artificial)
+    // });
 
-  wait(TimeSpan.fromSeconds(1)).then(() => {
-    iconColor.value = getIndicatorColor(Math.random());
-  });
+    // This only needs to run once
+    unwatch();
+
+    await wait(TimeSpan.fromSeconds(1));
+    analysis.value = { artificial: Math.random(), scoreType: 'detector' };
+  }
 });
 
-// Wait for the size to become medium or large
-if (size.value !== 'small') check();
-else {
-  const unwatch = watch(size, (newSize) => {
-    if (newSize !== 'small') check();
-    unwatch();
-  });
-}
+const hasAuth = useHasAuth();
+const iconColor = computed(() => {
+  if (analysis.value) return getIndicatorColor(analysis.value.artificial);
+  else if (!hasAuth.value) return DefaultIndicatorColor;
+  else return null;
+});
 </script>
 
 <template>
   <StyleProvider v-if="size !== 'small'">
     <v-menu
+      v-model="menuOpen"
       location="right top"
       z-index="2147483647"
       open-on-click
-      open-on-hover
+      :open-on-hover="false"
       :offset="[6, -8]"
       :close-on-content-click="false"
       @click.stop.prevent
@@ -92,7 +98,7 @@ else {
           <button
             v-if="iconColor"
             class="button"
-            :class="size"
+            :class="[size, { 'menu-open': menuOpen }]"
             v-bind="menu"
             aria-label="AI Image Detector"
             @click.stop.prevent
@@ -105,13 +111,15 @@ else {
           </button>
         </v-fade-transition>
       </template>
-      <AnalysisCard />
+      <AnalysisCard :analysis="analysis" />
     </v-menu>
   </StyleProvider>
 </template>
 
 <style lang="scss" scoped>
 .button {
+  --transition-dur: 0.3s;
+
   display: flex;
   position: relative;
 
@@ -136,6 +144,10 @@ else {
       bottom: 0;
       right: 0;
 
+      transition:
+        background-color var(--transition-dur),
+        box-shadow var(--transition-dur);
+
       opacity: 0.3;
       background-color: v-bind(iconColor);
     }
@@ -147,7 +159,7 @@ else {
 
   &.large {
     transform-origin: center;
-    transition: transform 0.3s;
+    transition: transform var(--transition-dur);
 
     .underlay {
       box-shadow: 0 0 5px 2.5px v-bind(iconColor);
@@ -158,16 +170,21 @@ else {
       width: 24px;
 
       opacity: 0.8;
-      transition: opacity 0.3s;
+      transition: opacity var(--transition-dur);
 
       :deep(path) {
+        transition:
+          stroke var(--transition-dur),
+          fill var(--transition-dur);
+
         stroke: v-bind(iconColor);
         fill: v-bind(iconColor);
       }
     }
 
     &:hover,
-    &:focus {
+    &:focus,
+    &.menu-open {
       transform: scale(1.1);
 
       .icon {
@@ -181,7 +198,7 @@ else {
     height: 17px;
 
     .icon-wrapper {
-      transition: transform 0.3s;
+      transition: transform var(--transition-dur);
       transform-origin: 15% 15%;
 
       .underlay {
@@ -193,14 +210,19 @@ else {
         height: 7px;
         width: 7px;
 
+        transition: background-color var(--transition-dur);
+
         background-color: v-bind(iconColor);
         border-radius: 50%;
       }
     }
 
-    &:hover .icon-wrapper,
-    &:focus .icon-wrapper {
-      transform: scale(2.5);
+    &:hover,
+    &:focus,
+    &.menu-open {
+      .icon-wrapper {
+        transform: scale(2.5);
+      }
     }
   }
 }

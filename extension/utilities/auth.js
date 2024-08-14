@@ -1,4 +1,4 @@
-import { userAuth } from './storage.js';
+import { userAuth, useStorage } from './storage.js';
 
 export async function waitForAuth() {
   if ((await userAuth.getValue())?.accessToken) return;
@@ -9,4 +9,9 @@ export async function waitForAuth() {
       }
     });
   });
+}
+
+export function useHasAuth() {
+  const authRef = useStorage(userAuth);
+  return computed(() => !!authRef.value?.accessToken);
 }
