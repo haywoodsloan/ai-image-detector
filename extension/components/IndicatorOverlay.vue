@@ -67,13 +67,13 @@ const check = memoize(() => {
 });
 
 // Wait for the size to become medium or large
-watch(
-  size,
-  (newSize) => {
+if (size.value !== 'small') check();
+else {
+  const unwatch = watch(size, (newSize) => {
     if (newSize !== 'small') check();
-  },
-  { immediate: true }
-);
+    unwatch();
+  });
+}
 </script>
 
 <template>
