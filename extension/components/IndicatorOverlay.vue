@@ -1,7 +1,7 @@
 <script setup>
 import { checkImage } from '@/api/detector.js';
 import DetectorSvg from '@/assets/detector.svg';
-import { useHasAuth } from '@/utilities/auth.js';
+import { useAuthVerified } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
 import { useResizeObserver } from '@vueuse/core';
 import TimeSpan from 'common/utilities/TimeSpan.js';
@@ -56,12 +56,12 @@ useResizeObserver([image, image.offsetParent], () => {
 });
 
 /** @type {Ref<ImageAnalysis>} */
-const analysis = ref();
+const analysis = ref(null);
 
-const hasAuth = useHasAuth();
+const hasAuth = useAuthVerified();
 const unwatch = watch([size, hasAuth], async () => {
   // Wait for the size to become medium or large
-  if (size.value !== 'small' && hasAuth.value) {
+  if (hasAuth.value && size.value !== 'small') {
     // waitForAuth().then(async () => {
     //   const analysis = await checkImage(image.src);
     //   iconColor.value = getIndicatorColor(analysis.artificial)
@@ -77,7 +77,7 @@ const unwatch = watch([size, hasAuth], async () => {
 
 const iconColor = computed(() => {
   if (analysis.value) return getIndicatorColor(analysis.value.artificial);
-  else if (!hasAuth.value) return DefaultIndicatorColor;
+  else if (!(hasAuth.value ?? true)) return DefaultIndicatorColor;
   else return null;
 });
 </script>
@@ -89,7 +89,7 @@ const iconColor = computed(() => {
       location="right top"
       z-index="2147483647"
       open-on-click
-      :open-on-hover="false"
+      open-on-hover
       :offset="[6, -8]"
       :close-on-content-click="false"
       @click.stop.prevent
@@ -105,7 +105,6 @@ const iconColor = computed(() => {
             @click.stop.prevent
           >
             <div class="icon-wrapper">
-              <div class="underlay"></div>
               <DetectorSvg v-if="size === 'large'" class="icon" />
               <div v-else-if="size === 'medium'" class="icon"></div>
             </div>
@@ -130,28 +129,8 @@ const iconColor = computed(() => {
   height: fit-content;
   width: fit-content;
 
-  margin-top: 7px;
-  margin-left: 7px;
-
   .icon-wrapper {
     position: relative;
-
-    .underlay {
-      position: absolute;
-      border-radius: 50%;
-
-      top: 0;
-      left: 0;
-      bottom: 0;
-      right: 0;
-
-      transition:
-        background-color var(--transition-dur),
-        box-shadow var(--transition-dur);
-
-      opacity: 0.3;
-      background-color: v-bind(iconColor);
-    }
 
     .icon {
       display: block;
@@ -159,16 +138,15 @@ const iconColor = computed(() => {
   }
 
   &.large {
+    margin-top: 8px;
+    margin-left: 8px;
+
     transform-origin: center;
     transition: transform var(--transition-dur);
 
-    .underlay {
-      box-shadow: 0 0 5px 2.5px v-bind(iconColor);
-    }
-
     .icon {
-      height: 24px;
-      width: 24px;
+      height: 28px;
+      width: 28px;
 
       opacity: 0.8;
       transition: opacity var(--transition-dur);
@@ -198,21 +176,22 @@ const iconColor = computed(() => {
     width: 17px;
     height: 17px;
 
+    margin-top: 8px;
+    margin-left: 8px;
+
     .icon-wrapper {
       transition: transform var(--transition-dur);
       transform-origin: 15% 15%;
-
-      .underlay {
-        opacity: 0.6;
-        box-shadow: 0 0 2px 1px v-bind(iconColor);
-      }
 
       .icon {
         height: 7px;
         width: 7px;
 
-        transition: background-color var(--transition-dur);
+        transition:
+          background-color var(--transition-dur),
+          filter var(--transition-dur);
 
+        filter: drop-shadow(0 0 1.4px v-bind(iconColor));
         background-color: v-bind(iconColor);
         border-radius: 50%;
       }

@@ -17,6 +17,7 @@ declare type UserAuth = {
   verification: 'pending' | 'verified';
   verificationSocket: string;
   expiresAt: Date;
+  email: string
 };
 
 declare type ImageAnalysis = {

@@ -1,10 +1,21 @@
-import { userAuth, useStorage } from './storage.js';
+import memoize from 'memoize';
 
-export function useHasAuth() {
+import { useStorage, userAuth } from './storage.js';
+
+export const useAuthVerified = memoize(() => {
   const authRef = useStorage(userAuth);
-  return computed(() => !!authRef.value?.accessToken);
-}
+  return computed(() => {
+    const auth = authRef.value;
+    if (auth === null) return null;
+    return !!auth?.accessToken && auth?.verification === 'verified';
+  });
+});
 
-export function useAuth() {
-  return useStorage(userAuth);
-}
+export const useAuthPending = memoize(() => {
+  const authRef = useStorage(userAuth);
+  return computed(() => {
+    const auth = authRef.value;
+    if (auth === null) return null;
+    return !!auth?.accessToken && auth?.verification === 'pending';
+  })
+})

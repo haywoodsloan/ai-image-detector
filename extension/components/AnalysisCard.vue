@@ -24,7 +24,7 @@ const scoreText = computed(() => {
 });
 
 /** @type {Ref<LabelType>} */
-const pendingVote = ref();
+const pendingVote = ref(null);
 
 /**
  * @param {LabelType} label

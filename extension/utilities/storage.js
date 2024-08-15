@@ -1,4 +1,5 @@
 import { sha1 } from 'hash-wasm';
+import memoize from 'memoize';
 
 /** @type {WxtStorageItem<UserAuth>} */
 export const userAuth = storage.defineItem('sync:userAuth');
@@ -12,19 +13,17 @@ export async function getAnalysisStorage(url) {
   return storage.defineItem(`session:analysis-${hash}`);
 }
 
+export const useStorage = memoize(
+  /** @template T */
+  (/** @type {WxtStorageItem<T>} */ storage) => {
+    /** @type {Ref<T | null>} */
+    const item = ref(null);
 
-/**
- * @template T
- * @param {WxtStorageItem<T>} storage
- */
-export function useStorage(storage) {
-  /** @type {Ref<T>} */
-  const item = ref();
+    storage.getValue().then((val) => {
+      item.value = val ?? undefined;
+      storage.watch((newVal) => (item.value = newVal ?? undefined));
+    });
 
-  storage.getValue().then((val) => {
-    ref.value = val;
-    storage.watch((newVal) => ref.value = newVal);
-  });
-
-  return item;
-}
+    return item;
+  }
+);

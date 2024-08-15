@@ -3,6 +3,7 @@ import { invokeBackgroundTask } from '@/utilities/background.js';
 import { userAuth } from '@/utilities/storage.js';
 
 const BaseUrl = import.meta.env.VITE_API_BASE_URL;
+const DevKey = import.meta.env.VITE_API_DEV_KEY;
 
 export class ApiError extends Error {
   /** @type {number} */ status;
@@ -38,7 +39,7 @@ export function post(endpoint, body) {
  */
 export async function request(endpoint, init = {}) {
   // Use the background script if not already in it
-  if (import.meta.env.ENTRYPOINT !== 'background')
+  if (import.meta.env.ENTRYPOINT === 'content')
     return invokeBackgroundTask(ApiAction, { endpoint, init });
 
   const headers = await buildHeaders();
@@ -48,9 +49,10 @@ export async function request(endpoint, init = {}) {
   });
 
   if (!response.ok) {
+    const errorText = response.statusText || `Status: ${response.status}`;
     throw new ApiError(
       response.status,
-      `API ${init.method ?? 'GET'} request failed [${response.statusText}]`
+      `API ${init.method ?? 'GET'} request failed [${errorText}]`
     );
   }
 
@@ -60,6 +62,8 @@ export async function request(endpoint, init = {}) {
 
 async function buildHeaders() {
   const headers = {};
+
+  if (DevKey) headers['X-Dev-Key'] = DevKey;
 
   const accessToken = (await userAuth.getValue())?.accessToken;
   if (accessToken) headers.Authorization = accessToken;
