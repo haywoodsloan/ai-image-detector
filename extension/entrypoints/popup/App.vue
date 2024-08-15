@@ -5,5 +5,3 @@ import LoginCard from '@/components/LoginCard.vue';
 <template>
   <LoginCard />
 </template>
-
-<style scoped></style>

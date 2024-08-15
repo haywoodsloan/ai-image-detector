@@ -20,6 +20,7 @@
     "@vueuse/core": "^10.11.1",
     "color-interpolate": "^1.0.5",
     "common": "file:../common",
+    "email-validator": "^2.0.4",
     "hash-wasm": "^4.11.0",
     "memoize": "^10.0.0",
     "sass": "^1.77.8",

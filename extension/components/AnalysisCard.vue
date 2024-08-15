@@ -24,7 +24,7 @@ const scoreText = computed(() => {
 });
 
 /** @type {Ref<LabelType>} */
-const pendingVote = ref('');
+const pendingVote = ref();
 
 /**
  * @param {LabelType} label
@@ -38,7 +38,7 @@ async function vote(label) {
 
 <template>
   <StyleProvider>
-    <v-card class="card">
+    <v-card>
       <v-card-title>AI Analysis Score: {{ scoreText }}%</v-card-title>
       <v-card-subtitle>Based on detector model</v-card-subtitle>
       <v-card-actions>
@@ -84,25 +84,21 @@ async function vote(label) {
 </template>
 
 <style lang="scss" scoped>
-.card {
-  font-family: Arial, Helvetica, sans-serif !important;
+.icon {
+  height: 24px;
+  width: 24px;
 
-  .icon {
-    height: 24px;
-    width: 24px;
-
-    &.ai {
-      :deep(path) {
-        stroke: v-bind(aiColor);
-        fill: v-bind(aiColor);
-      }
+  &.ai {
+    :deep(path) {
+      stroke: v-bind(aiColor);
+      fill: v-bind(aiColor);
     }
+  }
 
-    &.real {
-      :deep(path) {
-        stroke: v-bind(realColor);
-        fill: v-bind(realColor);
-      }
+  &.real {
+    :deep(path) {
+      stroke: v-bind(realColor);
+      fill: v-bind(realColor);
     }
   }
 }

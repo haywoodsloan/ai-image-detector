@@ -19,7 +19,7 @@ export async function getAnalysisStorage(url) {
  */
 export function useStorage(storage) {
   /** @type {Ref<T>} */
-  const item = ref(null);
+  const item = ref();
 
   storage.getValue().then((val) => {
     ref.value = val;

@@ -10,7 +10,8 @@
   @import 'vuetify';
 
   & > * {
-    @extend :root
+    @extend :root;
+    font-family: Arial, Helvetica, sans-serif !important;
   }
 }
 </style>

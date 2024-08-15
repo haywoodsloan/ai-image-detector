@@ -1,7 +1,7 @@
 <script setup>
 import { checkImage } from '@/api/detector.js';
 import DetectorSvg from '@/assets/detector.svg';
-import { useHasAuth, waitForAuth } from '@/utilities/auth.js';
+import { useHasAuth } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
 import { useResizeObserver } from '@vueuse/core';
 import TimeSpan from 'common/utilities/TimeSpan.js';
@@ -56,10 +56,12 @@ useResizeObserver([image, image.offsetParent], () => {
 });
 
 /** @type {Ref<ImageAnalysis>} */
-const analysis = ref(null);
-const unwatch = watch(size, async (newSize) => {
+const analysis = ref();
+
+const hasAuth = useHasAuth();
+const unwatch = watch([size, hasAuth], async () => {
   // Wait for the size to become medium or large
-  if (newSize !== 'small') {
+  if (size.value !== 'small' && hasAuth.value) {
     // waitForAuth().then(async () => {
     //   const analysis = await checkImage(image.src);
     //   iconColor.value = getIndicatorColor(analysis.artificial)
@@ -73,7 +75,6 @@ const unwatch = watch(size, async (newSize) => {
   }
 });
 
-const hasAuth = useHasAuth();
 const iconColor = computed(() => {
   if (analysis.value) return getIndicatorColor(analysis.value.artificial);
   else if (!hasAuth.value) return DefaultIndicatorColor;
