@@ -1,7 +1,6 @@
 import interpolate from 'color-interpolate';
 import memoize from 'memoize';
 
-export const DefaultIndicatorColor = '#858585';
 export const IndicatorColors = [
   '#00C176',
   '#88C100',
@@ -9,6 +8,10 @@ export const IndicatorColors = [
   '#FF8A00',
   '#FF003C',
 ];
+
+export const DefaultIndicatorColor = '#858585';
+export const RealIndicatorColor = IndicatorColors.at(0);
+export const AiIndicatorColor = IndicatorColors.at(-1);
 
 const IndicatorColorMap = interpolate(IndicatorColors);
 export const getIndicatorColor = memoize((/** @type {number} */ aiScore) => {

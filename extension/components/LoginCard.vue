@@ -1,7 +1,13 @@
 <script setup>
 import { createAuth } from '@/api/auth.js';
 import DetectorSvg from '@/assets/detector.svg';
-import { useAuthPending } from '@/utilities/auth.js';
+import {
+  useAuthPending,
+  useEmail,
+  useVerificationSocket,
+} from '@/utilities/auth.js';
+import { RealIndicatorColor } from '@/utilities/color.js';
+import { subForAuthVerify } from '@/utilities/pubsub.js';
 import { userAuth } from '@/utilities/storage.js';
 import { validate as validateEmail } from 'email-validator';
 
@@ -10,7 +16,9 @@ import StyleProvider from './StyleProvider.vue';
 const InvalidEmailMsg = 'A valid email is required';
 const FailedToSendMsg = 'Verification email failed to send, please try again';
 
-const email = ref('');
+const newEmail = ref('');
+const storedEmail = useEmail();
+
 const valid = ref(null);
 const isValidEmail = (email) => validateEmail(email) || InvalidEmailMsg;
 
@@ -18,13 +26,42 @@ const createError = ref();
 const createPending = ref(false);
 
 const authPending = useAuthPending();
-async function login() {
+const verificationSocket = useVerificationSocket();
+
+/** @type {() => void} */
+let unsubForAuthVerify;
+watch([authPending, verificationSocket], () => {
+  if (authPending.value) {
+    unsubForAuthVerify?.();
+    const socket = verificationSocket.value;
+
+    unsubForAuthVerify = subForAuthVerify(socket, async () => {
+      unsubForAuthVerify();
+      const storedAuth = await userAuth.getValue();
+      await userAuth.setValue({ ...storedAuth, verification: 'verified' });
+    });
+  }
+});
+
+// Unsub from the auth subscription when unmounted
+onUnmounted(() => {
+  unsubForAuthVerify?.();
+});
+
+/**
+ * @param {string} email
+ */
+async function login(email) {
   try {
-    const newAuth = await createAuth(email.value);
-    await userAuth.setValue({ ...newAuth, email: email.value });
+    createPending.value = true;
+    const newAuth = await createAuth(email);
+    await userAuth.setValue({ ...newAuth, email });
+    createError.value = null;
   } catch (error) {
     console.error(error);
     createError.value = FailedToSendMsg;
+  } finally {
+    createPending.value = false;
   }
 }
 </script>
@@ -46,10 +83,10 @@ async function login() {
           v-if="!authPending"
           v-model="valid"
           class="d-flex flex-column"
-          @submit.prevent="login"
+          @submit.prevent="login(newEmail)"
         >
           <v-text-field
-            v-model="email"
+            v-model="newEmail"
             min-width="350"
             density="compact"
             type="email"
@@ -75,6 +112,35 @@ async function login() {
             {{ createError }}
           </p>
         </v-form>
+
+        <div v-else class="d-flex flex-column">
+          <div class="d-flex gc-6">
+            <div class="flex-fill">
+              <div class="text-no-wrap text-body-1">
+                Please check your email for a verification link
+              </div>
+              <div class="text-no-wrap text-body-2 text-medium-emphasis">
+                {{ storedEmail }}
+              </div>
+            </div>
+
+            <v-progress-circular :color="RealIndicatorColor" indeterminate />
+          </div>
+
+          <v-btn
+            class="mt-3"
+            color="#0085dd"
+            :loading="createPending"
+            size="large"
+            @click.prevent="login(storedEmail)"
+          >
+            Resend Link
+          </v-btn>
+
+          <p v-if="createError" class="text-error text-caption mt-3">
+            {{ createError }}
+          </p>
+        </div>
       </v-card-text>
     </v-card>
   </StyleProvider>
