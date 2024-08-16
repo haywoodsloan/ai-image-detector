@@ -79,8 +79,37 @@ async function login(email) {
         </template>
       </v-card-item>
       <v-card-text>
+        <div v-if="authPending" class="d-flex flex-column">
+          <div class="d-flex gc-6">
+            <div class="flex-fill">
+              <div class="text-no-wrap text-body-1">
+                Please check your email for a verification link
+              </div>
+              <div class="text-no-wrap text-body-2 text-medium-emphasis">
+                {{ storedEmail }}
+              </div>
+            </div>
+
+            <v-progress-circular :color="RealIndicatorColor" indeterminate />
+          </div>
+
+          <v-btn
+            class="mt-3"
+            color="#0085dd"
+            :loading="createPending"
+            size="large"
+            @click.prevent="login(storedEmail)"
+          >
+            Resend Link
+          </v-btn>
+
+          <p v-if="createError" class="text-error text-caption mt-3">
+            {{ createError }}
+          </p>
+        </div>
+
         <v-form
-          v-if="!authPending"
+          v-else
           v-model="valid"
           class="d-flex flex-column"
           @submit.prevent="login(newEmail)"
@@ -112,35 +141,6 @@ async function login(email) {
             {{ createError }}
           </p>
         </v-form>
-
-        <div v-else class="d-flex flex-column">
-          <div class="d-flex gc-6">
-            <div class="flex-fill">
-              <div class="text-no-wrap text-body-1">
-                Please check your email for a verification link
-              </div>
-              <div class="text-no-wrap text-body-2 text-medium-emphasis">
-                {{ storedEmail }}
-              </div>
-            </div>
-
-            <v-progress-circular :color="RealIndicatorColor" indeterminate />
-          </div>
-
-          <v-btn
-            class="mt-3"
-            color="#0085dd"
-            :loading="createPending"
-            size="large"
-            @click.prevent="login(storedEmail)"
-          >
-            Resend Link
-          </v-btn>
-
-          <p v-if="createError" class="text-error text-caption mt-3">
-            {{ createError }}
-          </p>
-        </div>
       </v-card-text>
     </v-card>
   </StyleProvider>
