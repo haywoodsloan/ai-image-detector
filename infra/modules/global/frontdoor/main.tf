@@ -16,7 +16,7 @@ resource "time_offset" "secondary_rotation_offset" {
 
 resource "time_rotating" "secondary_dev_key_refresh" {
   count           = var.env_name != "prod" ? 1 : 0
-  rfc3339         = time_offset.secondary_rotation_offset[0].id
+  rfc3339         = time_offset.secondary_rotation_offset[0].rfc3339
   rotation_months = 1
 }
 

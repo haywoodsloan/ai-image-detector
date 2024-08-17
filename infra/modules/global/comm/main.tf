@@ -21,6 +21,11 @@ resource "azurerm_email_communication_service_domain" "email_domain" {
   domain_management = "CustomerManaged"
 }
 
+resource "azurerm_communication_service_email_domain_association" "comm_email_association" {
+  communication_service_id = azurerm_communication_service.comm_service.id
+  email_service_domain_id  = azurerm_email_communication_service_domain.email_domain.id
+}
+
 resource "azurerm_dns_txt_record" "email_txt" {
   name                = "@"
   resource_group_name = var.rg_name

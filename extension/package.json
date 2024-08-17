@@ -17,6 +17,7 @@
     "gen-icon": "icon-gen -i ./assets/detector.svg -o ./public/icon/ -r --favicon --favicon-name / --favicon-png-sizes 16,24,48,96,128"
   },
   "dependencies": {
+    "@fontsource/roboto": "^5.0.14",
     "@vueuse/core": "^10.11.1",
     "color-interpolate": "^1.0.5",
     "common": "file:../common",

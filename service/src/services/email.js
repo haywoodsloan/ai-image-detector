@@ -9,8 +9,8 @@ import { getTemplateHtml } from '../utilities/html.js';
 const VerifyRequestHtml = 'verifyRequest';
 
 const SenderAddress = isProd
-  ? 'donotreply@ai-image-detector.com'
-  : 'donotreply@ai-image-detector-dev.com';
+  ? 'DoNotReply@ai-image-detector.com'
+  : 'DoNotReply@ai-image-detector-dev.com';
 
 export const getEmailClient = memoize(() => {
   const endpoint = process.env.COMM_ENDPOINT;
