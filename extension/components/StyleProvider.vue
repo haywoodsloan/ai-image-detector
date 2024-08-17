@@ -12,13 +12,17 @@
   $styles: all
 );
 
+div {
+  @extend :root;
+}
+
 :deep() {
   $color-pack: false;
   $layers: true;
   @import 'vuetify';
 
-  & > * {
-    @extend :root;
+  * {
+    font-family: 'Roboto', sans-serif !important;
   }
 }
 </style>
