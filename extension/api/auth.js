@@ -3,7 +3,7 @@ import { get, post } from './base.js';
 /** @typedef {Omit<UserAuth, 'email'>} ApiUserAuth*/
 
 const CreateAuthEndpoint = '/createAuth';
-const CheckAuthEndpoint = '/createAuth';
+const CheckAuthEndpoint = '/checkAuth';
 
 /**
  * @param {string} email

@@ -58,91 +58,113 @@ async function login(email) {
     await userAuth.setValue({ ...newAuth, email });
     createError.value = null;
   } catch (error) {
-    console.error(error);
     createError.value = FailedToSendMsg;
+    throw error;
   } finally {
     createPending.value = false;
   }
+}
+
+async function cancel() {
+  await userAuth.removeValue();
 }
 </script>
 
 <template>
   <StyleProvider>
-    <v-card>
-      <v-card-item>
-        <v-card-title>AI Image Detector</v-card-title>
-        <v-card-subtitle>
-          {{ authPending ? 'Pending Email Verification' : 'Sign In Required' }}
-        </v-card-subtitle>
-        <template #append>
-          <DetectorSvg class="icon" />
-        </template>
-      </v-card-item>
-      <v-card-text>
-        <div v-if="authPending" class="d-flex flex-column">
-          <div class="d-flex gc-6">
-            <div class="flex-fill">
-              <div class="text-no-wrap text-body-1">
-                Please check your email for a verification link
-              </div>
-              <div class="text-no-wrap text-body-2 text-medium-emphasis">
-                {{ storedEmail }}
-              </div>
+    <v-scroll-x-reverse-transition v-if="authPending !== null" mode="out-in">
+      <v-card v-if="!authPending">
+        <v-card-item>
+          <v-card-title>AI Image Detector</v-card-title>
+          <v-card-subtitle> Sign In Required </v-card-subtitle>
+          <template #append>
+            <DetectorSvg class="icon" />
+          </template>
+        </v-card-item>
+        <v-card-text>
+          <v-form
+            v-model="valid"
+            class="d-flex flex-column"
+            @submit.prevent="login(newEmail)"
+          >
+            <v-text-field
+              v-model="newEmail"
+              min-width="350"
+              density="compact"
+              type="email"
+              label="Please enter your email to sign in"
+              hide-details="auto"
+              :readonly="createPending"
+              :rules="[isValidEmail]"
+              :validate-on="(valid ?? true) ? 'blur' : 'input'"
+            />
+
+            <v-btn
+              size="large"
+              type="submit"
+              :class="(valid ?? true) ? 'mt-6' : 'mt-2'"
+              :color="(valid ?? true) && newEmail.length ? '#0085dd' : null"
+              :disabled="!(valid ?? true) || !newEmail.length"
+              :loading="createPending"
+            >
+              Sign In
+            </v-btn>
+
+            <p v-if="createError" class="text-error text-caption mt-3">
+              {{ createError }}
+            </p>
+          </v-form>
+        </v-card-text>
+      </v-card>
+
+      <v-card v-else>
+        <v-card-item>
+          <v-card-title>AI Image Detector</v-card-title>
+          <v-card-subtitle>Pending Email Verification</v-card-subtitle>
+          <template #append>
+            <v-progress-circular
+              size="38"
+              :color="RealIndicatorColor"
+              :indeterminate="!createPending"
+            />
+          </template>
+        </v-card-item>
+        <v-card-text>
+          <div class="d-flex flex-column">
+            <div class="text-no-wrap text-body-1">
+              Please check your email for a verification link
+            </div>
+            <div class="text-no-wrap text-body-2 text-medium-emphasis">
+              {{ storedEmail }}
             </div>
 
-            <v-progress-circular :color="RealIndicatorColor" indeterminate />
+            <v-btn
+              class="mt-3"
+              color="#0085dd"
+              :loading="createPending"
+              size="large"
+              @click.prevent="login(storedEmail)"
+            >
+              Resend Link
+            </v-btn>
+
+            <p v-if="createError" class="text-error text-caption mt-3">
+              {{ createError }}
+            </p>
+
+            <v-btn
+              class="mt-3"
+              :color="!createPending ? '#e10035' : null"
+              size="large"
+              :disabled="createPending"
+              @click.prevent="cancel"
+            >
+              Cancel
+            </v-btn>
           </div>
-
-          <v-btn
-            class="mt-3"
-            color="#0085dd"
-            :loading="createPending"
-            size="large"
-            @click.prevent="login(storedEmail)"
-          >
-            Resend Link
-          </v-btn>
-
-          <p v-if="createError" class="text-error text-caption mt-3">
-            {{ createError }}
-          </p>
-        </div>
-
-        <v-form
-          v-else
-          v-model="valid"
-          class="d-flex flex-column"
-          @submit.prevent="login(newEmail)"
-        >
-          <v-text-field
-            v-model="newEmail"
-            min-width="350"
-            density="compact"
-            type="email"
-            label="Please enter your email to sign in"
-            hide-details="auto"
-            :readonly="createPending"
-            :rules="[isValidEmail]"
-            :validate-on="(valid ?? true) ? 'blur' : 'input'"
-          />
-
-          <v-btn
-            size="large"
-            type="submit"
-            :class="(valid ?? true) ? 'mt-6' : 'mt-2'"
-            :color="(valid ?? true) ? '#0085dd' : null"
-            :disabled="!(valid ?? true)"
-            :loading="createPending"
-          >
-            Sign In
-          </v-btn>
-
-          <p v-if="createError" class="text-error text-caption mt-3">
-            {{ createError }}
-          </p>
-        </v-form>
-      </v-card-text>
-    </v-card>
+        </v-card-text>
+      </v-card>
+    </v-scroll-x-reverse-transition>
   </StyleProvider>
 </template>
 

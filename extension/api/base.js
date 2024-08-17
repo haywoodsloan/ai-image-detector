@@ -49,7 +49,8 @@ export async function request(endpoint, init = {}) {
   });
 
   if (!response.ok) {
-    const errorText = response.statusText || `Status: ${response.status}`;
+    const { error } = await response.json();
+    const errorText = `Status: ${response.status}, ${error}`;
     throw new ApiError(
       response.status,
       `API ${init.method ?? 'GET'} request failed [${errorText}]`
@@ -66,7 +67,7 @@ async function buildHeaders() {
   if (DevKey) headers['X-Dev-Key'] = DevKey;
 
   const accessToken = (await userAuth.getValue())?.accessToken;
-  if (accessToken) headers.Authorization = accessToken;
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
   return headers;
 }

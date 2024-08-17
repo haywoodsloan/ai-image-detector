@@ -18,6 +18,7 @@ export class InitAction extends BaseAction {
       await userAuth.setValue({ ...auth, ...authUpdate });
     } catch (error) {
       if (error.status === 401) await userAuth.removeValue();
+      throw error;
     }
   });
 }
