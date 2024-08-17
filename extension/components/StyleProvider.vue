@@ -14,6 +14,7 @@
 
 :deep() {
   $color-pack: false;
+  $layers: true;
   @import 'vuetify';
 
   & > * {
