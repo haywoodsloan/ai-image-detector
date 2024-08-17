@@ -1,5 +1,5 @@
 <script setup>
-import LoginCard from '@/components/LoginCard.vue';
+import LoginCard from '@/components/LoginCard/index.vue';
 import { useAuthVerified } from '@/utilities/auth.js';
 
 import { InitAction } from '../background/actions/init.js';

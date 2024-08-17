@@ -46,7 +46,6 @@ async function vote(label) {
           <v-list-item class="px-0">
             <v-list-item-action>
               <v-btn
-                rounded="xl"
                 size="large"
                 class="justify-start flex-grow-1"
                 :loading="pendingVote === 'artificial' ? aiColor : false"
@@ -63,7 +62,6 @@ async function vote(label) {
           <v-list-item class="px-0">
             <v-list-item-action>
               <v-btn
-                rounded="xl"
                 size="large"
                 class="justify-start flex-grow-1"
                 :loading="pendingVote === 'real' ? realColor : false"

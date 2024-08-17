@@ -64,12 +64,12 @@ export async function queryVoteByUser(userId, imageHash) {
 }
 
 /**
- * @param {string} userId 
- * @param {string} imageHash 
+ * @param {string} userId
+ * @param {string} imageHash
  */
 export async function deleteVote(userId, imageHash) {
   const votes = await getVoteCollection();
-  return await votes.deleteOne({userId, imageHash});
+  return await votes.deleteOne({ userId, imageHash });
 }
 
 /**

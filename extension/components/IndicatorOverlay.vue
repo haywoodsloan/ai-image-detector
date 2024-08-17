@@ -59,21 +59,25 @@ useResizeObserver([image, image.offsetParent], () => {
 const analysis = ref(null);
 
 const hasAuth = useAuthVerified();
-const unwatch = watch([size, hasAuth], async () => {
-  // Wait for the size to become medium or large
-  if (hasAuth.value && size.value !== 'small') {
-    // waitForAuth().then(async () => {
-    //   const analysis = await checkImage(image.src);
-    //   iconColor.value = getIndicatorColor(analysis.artificial)
-    // });
+const unwatch = watch(
+  [size, hasAuth],
+  async () => {
+    // Wait for the size to become medium or large
+    if (hasAuth.value && size.value !== 'small') {
+      // waitForAuth().then(async () => {
+      //   const analysis = await checkImage(image.src);
+      //   iconColor.value = getIndicatorColor(analysis.artificial)
+      // });
 
-    // This only needs to run once
-    unwatch();
+      // This only needs to run once
+      unwatch();
 
-    await wait(TimeSpan.fromSeconds(1));
-    analysis.value = { artificial: Math.random(), scoreType: 'detector' };
-  }
-});
+      await wait(TimeSpan.fromSeconds(1));
+      analysis.value = { artificial: Math.random(), scoreType: 'detector' };
+    }
+  },
+  { immediate: true }
+);
 
 const iconColor = computed(() => {
   if (analysis.value) return getIndicatorColor(analysis.value.artificial);
@@ -128,6 +132,9 @@ const iconColor = computed(() => {
 
   height: fit-content;
   width: fit-content;
+
+  background: none !important;
+  box-shadow: none !important;
 
   .icon-wrapper {
     position: relative;
