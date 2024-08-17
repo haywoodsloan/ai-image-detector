@@ -7,7 +7,7 @@ import {
   useVerificationSocket,
 } from '@/utilities/auth.js';
 import { RealIndicatorColor } from '@/utilities/color.js';
-import { subForAuthVerify } from '@/utilities/pubsub.js';
+import { subAuthVerify } from '@/utilities/pubsub.js';
 import { userAuth } from '@/utilities/storage.js';
 import { validate as validateEmail } from 'email-validator';
 
@@ -29,14 +29,14 @@ const authPending = useAuthPending();
 const verificationSocket = useVerificationSocket();
 
 /** @type {() => void} */
-let unsubForAuthVerify;
+let unsubAuthVerify;
 watch([authPending, verificationSocket], () => {
   if (authPending.value) {
-    unsubForAuthVerify?.();
+    unsubAuthVerify?.();
     const socket = verificationSocket.value;
 
-    unsubForAuthVerify = subForAuthVerify(socket, async () => {
-      unsubForAuthVerify();
+    unsubAuthVerify = subAuthVerify(socket, async () => {
+      unsubAuthVerify();
       const storedAuth = await userAuth.getValue();
       await userAuth.setValue({ ...storedAuth, verification: 'verified' });
     });
@@ -45,7 +45,7 @@ watch([authPending, verificationSocket], () => {
 
 // Unsub from the auth subscription when unmounted
 onUnmounted(() => {
-  unsubForAuthVerify?.();
+  unsubAuthVerify?.();
 });
 
 /**

@@ -2,8 +2,8 @@
  * @param {string} websocket
  * @param {() => void} callback
  */
-export function subForAuthVerify(websocket, callback) {
-  return subForVerification(websocket, ({ auth }) => {
+export function subAuthVerify(websocket, callback) {
+  return subVerification(websocket, ({ auth }) => {
     if (auth) callback();
   });
 }
@@ -12,7 +12,7 @@ export function subForAuthVerify(websocket, callback) {
  * @param {string} websocket
  * @param {(data: any) => void} callback
  */
-function subForVerification(websocket, callback) {
+function subVerification(websocket, callback) {
   const ws = new WebSocket(websocket);
   ws.onmessage = async ({ data }) => callback(JSON.parse(data));
   return () => ws.close();

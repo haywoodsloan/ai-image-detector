@@ -1,10 +1,16 @@
 <html>
   <head>
     <title>Verify Email</title>
+    <link rel='preconnect' href='https://fonts.googleapis.com' />
+    <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin />
+    <link
+      href='https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap'
+      rel='stylesheet'
+    />
   </head>
-  <body style='font-family: Arial, Helvetica, sans-serif !important'>
+  <body style='font-family: Roboto, Arial, Helvetica, sans-serif !important'>
     <table
-      style='font-family: Arial, Helvetica, sans-serif !important'
+      style='font-family: Roboto, Arial, Helvetica, sans-serif !important'
       width='100%'
       border='0'
       cellspacing='0'
@@ -12,10 +18,8 @@
     >
       <tr>
         <td
-          style='
-            text-align: center;
-            font-family: Arial, Helvetica, sans-serif !important;
-          '
+          align='center'
+          style='font-family: Roboto, Arial, Helvetica, sans-serif !important'
         >
           <h1 style='margin-top: 0px; margin-bottom: 15px'>
             AI Image Detector
@@ -24,10 +28,8 @@
       </tr>
       <tr>
         <td
-          style='
-            text-align: center;
-            font-family: Arial, Helvetica, sans-serif !important;
-          '
+          align='center'
+          style='font-family: Roboto, Arial, Helvetica, sans-serif !important'
         >
           <h2 style='margin-top: 0px; margin-bottom: 25px'>
             Please verify your email
@@ -36,10 +38,8 @@
       </tr>
       <tr>
         <td
-          style='
-            text-align: center;
-            font-family: Arial, Helvetica, sans-serif !important;
-          '
+          align='center'
+          style='font-family: Roboto, Arial, Helvetica, sans-serif !important'
         >
           <p style='font-size: 16px; margin-bottom: 25px'>
             Thank you for using the AI Image Detector! Click "Verify Me" to
@@ -48,39 +48,38 @@
         </td>
       </tr>
       <tr>
-        <td
-          style='
-            text-align: center;
-            font-family: Arial, Helvetica, sans-serif !important;
-          '
-        >
-          <!--[if mso]>
-        <v:roundrect href="https://www.enter-your-url.com" style="width:165px;height:68px;v-text-anchor:middle;" arcsize="50%" stroke="f" fillcolor="#22d172" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word">
-            <w:anchorlock/>
-            <v:textbox inset="0,0,0,0">
-            <center>
-        <![endif]-->
-          <a
-            href='{{link}}'
-            style='
-              background-color: #22d172;
-              color: #ffffff;
-              height: 68px;
-              line-height: 68px;
-              width: 165px;
-              margin-top: 0px;
-              margin-bottom: 0px;
-              display: inline-block;
-              font-size: 32px;
-              border-radius: 99999px;
-              text-decoration: none;
-            '
-          >Verify Me</a>
-          <!--[if mso]>
-            </center>
-            </v:textbox>
-        </v:roundrect>
-        <![endif]-->
+        <td>
+          <table width='100%' border='0' cellspacing='0' cellpadding='0'>
+            <tr>
+              <td></td>
+              <td
+                align='center'
+                style='
+                  height: 52px;
+                  width: 124px;
+                  background-color: #0085dd;
+                  border-radius: 4px;
+                  font-family: Roboto, Arial, Helvetica, sans-serif !important;
+                '
+              >
+                <a
+                  href='{{link}}'
+                  style='
+                    display: inline-block;
+                    color: #ffffff;
+                    width: 100%;
+                    height: 52px;
+                    line-height: 52px;
+                    font-size: 18px;
+                    text-decoration: none;
+                  '
+                >
+                  Verify Me
+                </a>
+              </td>
+              <td></td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
