@@ -53,7 +53,7 @@ async function vote(label) {
                 @click="vote('artificial')"
               >
                 <template #prepend>
-                  <DetectorSvg class="icon ai"></DetectorSvg>
+                  <detector-svg class="icon ai" />
                 </template>
                 Report AI Image
               </v-btn>
@@ -69,7 +69,7 @@ async function vote(label) {
                 @click="vote('real')"
               >
                 <template #prepend>
-                  <DetectorSvg class="icon real"></DetectorSvg>
+                  <detector-svg class="icon real" />
                 </template>
                 Report Real Image
               </v-btn>

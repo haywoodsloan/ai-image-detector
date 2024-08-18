@@ -36,7 +36,7 @@ async function login() {
       <v-card-title>AI Image Detector</v-card-title>
       <v-card-subtitle>Sign In Required</v-card-subtitle>
       <template #append>
-        <DetectorSvg class="icon" />
+        <detector-svg class="icon" />
       </template>
     </v-card-item>
     <v-card-text>

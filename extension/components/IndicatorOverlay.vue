@@ -109,7 +109,7 @@ const iconColor = computed(() => {
             @click.stop.prevent
           >
             <div class="icon-wrapper">
-              <DetectorSvg v-if="size === 'large'" class="icon" />
+              <detector-svg v-if="size === 'large'" class="icon" />
               <div v-else-if="size === 'medium'" class="icon"></div>
             </div>
           </button>
