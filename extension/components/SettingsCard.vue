@@ -1,9 +1,11 @@
 <script setup>
 import SettingsSvg from '@/assets/settings.svg';
+import { PrimaryColor } from '@/utilities/color.js';
+import { mdiInformationOutline } from '@mdi/js';
 </script>
 
 <template>
-  <v-card>
+  <v-card min-width="450">
     <v-card-item>
       <v-card-title>AI Image Detector</v-card-title>
       <v-card-subtitle>Settings</v-card-subtitle>
@@ -11,26 +13,32 @@ import SettingsSvg from '@/assets/settings.svg';
         <settings-svg class="icon" />
       </template>
     </v-card-item>
-    <v-card-text>
-      <v-list lines="three">
-        <v-list-group value="auto-check">
-          <template #activator="{ props }">
-            <v-list-item class="px-0" >
-              <v-list-item-title>Automatically check images</v-list-item-title>
+    <v-card-text class="pa-0">
+      <v-list lines="two" class="pa-0 overflow-visible">
+        <v-list-item class="px-4" value="auto-check">
+          <v-list-item-title>Automatically check images</v-list-item-title>
 
-              <v-list-item-subtitle>
-                Will check images as you browse and display an icon to indicate
-                if its real or AI.
-              </v-list-item-subtitle>
+          <v-list-item-subtitle>
+            Will check images as you browse and display an icon to indicate if
+            its real or AI.
 
-              <template #append="{ isActive }">
-                <v-list-item-action>
-                  <v-switch v-bind="props" :model-value="isActive" inset  />
-                </v-list-item-action>
-              </template>
-            </v-list-item>
+            <div class="d-flex text-caption mt-1 gc-2">
+              <v-icon :icon="mdiInformationOutline"></v-icon>
+              Image data is not stored when analyzing them.
+            </div>
+          </v-list-item-subtitle>
+
+          <template #append="{ isActive }">
+            <v-list-item-action class="ml-3">
+              <v-switch
+                :color="PrimaryColor"
+                :model-value="isActive"
+                inset
+                hide-details
+              />
+            </v-list-item-action>
           </template>
-        </v-list-group>
+        </v-list-item>
       </v-list>
     </v-card-text>
   </v-card>
@@ -38,7 +46,8 @@ import SettingsSvg from '@/assets/settings.svg';
 
 <style lang="scss" scoped>
 .icon {
-  aspect-ratio: 1 / 1;
+  display: block;
+  height: 38px;
   width: 38px;
 }
 </style>

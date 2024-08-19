@@ -1,7 +1,7 @@
 <script setup>
 import { createAuth } from '@/api/auth.js';
 import { useEmail, useVerificationSocket } from '@/utilities/auth.js';
-import { RealIndicatorColor } from '@/utilities/color.js';
+import { PrimaryColor, RealIndicatorColor } from '@/utilities/color.js';
 import { subAuthVerify } from '@/utilities/pubsub.js';
 import { userAuth } from '@/utilities/storage.js';
 
@@ -77,7 +77,7 @@ async function cancel() {
 
         <v-btn
           class="mt-3"
-          color="#0085dd"
+          :color="PrimaryColor"
           :loading="createPending"
           size="large"
           @click.prevent="login"

@@ -1,6 +1,7 @@
 <script setup>
 import { createAuth } from '@/api/auth.js';
 import DetectorSvg from '@/assets/detector.svg';
+import { PrimaryColor } from '@/utilities/color.js';
 import { userAuth } from '@/utilities/storage.js';
 import { validate as validateEmail } from 'email-validator';
 
@@ -48,7 +49,6 @@ async function login() {
         <v-text-field
           v-model="newEmail"
           min-width="350"
-          density="compact"
           type="email"
           label="Please enter your email to sign in"
           hide-details="auto"
@@ -61,7 +61,7 @@ async function login() {
           size="large"
           type="submit"
           :class="(valid ?? true) ? 'mt-6' : 'mt-2'"
-          :color="(valid ?? true) && newEmail.length ? '#0085dd' : null"
+          :color="(valid ?? true) && newEmail.length ? PrimaryColor : null"
           :disabled="!(valid ?? true) || !newEmail.length"
           :loading="createPending"
         >

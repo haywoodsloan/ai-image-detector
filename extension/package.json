@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@fontsource/roboto": "^5.0.14",
+    "@mdi/js": "^7.4.47",
     "@vueuse/core": "^10.11.1",
     "color-interpolate": "^1.0.5",
     "common": "file:../common",

@@ -4,8 +4,6 @@ import { IndicatorColors } from '@/utilities/color.js';
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { wait } from 'common/utilities/sleep.js';
 
-import StyleProvider from './StyleProvider.vue';
-
 const aiColor = IndicatorColors.at(-1);
 const realColor = IndicatorColors.at(0);
 
@@ -37,12 +35,15 @@ async function vote(label) {
 </script>
 
 <template>
-  <StyleProvider>
     <v-card>
       <v-card-title>AI Analysis Score: {{ scoreText }}%</v-card-title>
       <v-card-subtitle>Based on detector model</v-card-subtitle>
       <v-card-actions>
-        <v-list density="compact" width="100%" class="pa-0 overflow-hidden">
+        <v-list
+          density="compact"
+          min-width="100%"
+          class="pa-0 overflow-visible"
+        >
           <v-list-item class="px-0">
             <v-list-item-action>
               <v-btn
@@ -78,7 +79,6 @@ async function vote(label) {
         </v-list>
       </v-card-actions>
     </v-card>
-  </StyleProvider>
 </template>
 
 <style lang="scss" scoped>
