@@ -35,50 +35,46 @@ async function vote(label) {
 </script>
 
 <template>
-    <v-card>
-      <v-card-title>AI Analysis Score: {{ scoreText }}%</v-card-title>
-      <v-card-subtitle>Based on detector model</v-card-subtitle>
-      <v-card-actions>
-        <v-list
-          density="compact"
-          min-width="100%"
-          class="pa-0 overflow-visible"
-        >
-          <v-list-item class="px-0">
-            <v-list-item-action>
-              <v-btn
-                size="large"
-                class="justify-start flex-grow-1"
-                :loading="pendingVote === 'artificial' ? aiColor : false"
-                :disabled="!!pendingVote && pendingVote !== 'artificial'"
-                @click="vote('artificial')"
-              >
-                <template #prepend>
-                  <detector-svg class="icon ai" />
-                </template>
-                Report AI Image
-              </v-btn>
-            </v-list-item-action>
-          </v-list-item>
-          <v-list-item class="px-0">
-            <v-list-item-action>
-              <v-btn
-                size="large"
-                class="justify-start flex-grow-1"
-                :loading="pendingVote === 'real' ? realColor : false"
-                :disabled="!!pendingVote && pendingVote !== 'real'"
-                @click="vote('real')"
-              >
-                <template #prepend>
-                  <detector-svg class="icon real" />
-                </template>
-                Report Real Image
-              </v-btn>
-            </v-list-item-action>
-          </v-list-item>
-        </v-list>
-      </v-card-actions>
-    </v-card>
+  <v-card>
+    <v-card-title>AI Analysis Score: {{ scoreText }}%</v-card-title>
+    <v-card-subtitle>Based on detector model</v-card-subtitle>
+    <v-card-actions>
+      <v-list density="compact" min-width="100%" class="pa-0 overflow-visible">
+        <v-list-item class="px-0">
+          <v-list-item-action>
+            <v-btn
+              size="large"
+              class="justify-start flex-fill"
+              :loading="pendingVote === 'artificial' ? aiColor : false"
+              :disabled="!!pendingVote && pendingVote !== 'artificial'"
+              @click="vote('artificial')"
+            >
+              <template #prepend>
+                <detector-svg class="icon ai" />
+              </template>
+              Report AI Image
+            </v-btn>
+          </v-list-item-action>
+        </v-list-item>
+        <v-list-item class="px-0">
+          <v-list-item-action>
+            <v-btn
+              size="large"
+              class="justify-start flex-fill"
+              :loading="pendingVote === 'real' ? realColor : false"
+              :disabled="!!pendingVote && pendingVote !== 'real'"
+              @click="vote('real')"
+            >
+              <template #prepend>
+                <detector-svg class="icon real" />
+              </template>
+              Report Real Image
+            </v-btn>
+          </v-list-item-action>
+        </v-list-item>
+      </v-list>
+    </v-card-actions>
+  </v-card>
 </template>
 
 <style lang="scss" scoped>

@@ -32,3 +32,13 @@ declare type ImageVote = {
   voteLabel: LabelType;
   changedAt: Date;
 };
+
+declare type UserSettings = {
+  autoCheck: boolean;
+  autoCheckPrivate: boolean;
+
+  uploadImages: boolean;
+  uploadImagesPrivate: boolean;
+
+  disabledSites: string[];
+}

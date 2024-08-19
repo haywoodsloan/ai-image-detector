@@ -14,16 +14,16 @@
 
 div {
   @extend :root;
-  box-sizing: border-box;
+  box-sizing: border-box !important;
 
-  line-height: 1.5;
-  font-size: 1rem;
+  line-height: 1.5 !important;
+  font-size: 1rem !important;
   
-  -webkit-text-size-adjust: 100%; /* Prevent adjustments of font size after orientation changes in iOS */
-  word-break: normal;
+  -webkit-text-size-adjust: 100% !important;
+  word-break: normal !important;
   
-  -moz-tab-size: 4;
-  tab-size: 4;
+  -moz-tab-size: 4 !important;
+  tab-size: 4 !important;
 }
 
 :deep() {

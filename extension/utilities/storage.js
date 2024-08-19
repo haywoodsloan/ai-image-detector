@@ -1,6 +1,19 @@
 import { sha1 } from 'hash-wasm';
 import memoize from 'memoize';
 
+/** @type {WxtStorageItem<UserSettings>} */
+export const userSettings = storage.defineItem('sync:userSettings', {
+  defaultValue: {
+    autoCheck: true,
+    autoCheckPrivate: false,
+
+    uploadImages: true,
+    uploadImagesPrivate: false,
+    
+    disabledSites: [],
+  },
+});
+
 /** @type {WxtStorageItem<UserAuth>} */
 export const userAuth = storage.defineItem('sync:userAuth');
 
