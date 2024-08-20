@@ -60,6 +60,7 @@ async function login() {
         <v-btn
           size="large"
           type="submit"
+          aria-describedby="create-error-message"
           :class="(valid ?? true) ? 'mt-6' : 'mt-2'"
           :color="(valid ?? true) && newEmail.length ? PrimaryColor : null"
           :disabled="!(valid ?? true) || !newEmail.length"
@@ -68,7 +69,13 @@ async function login() {
           Sign In
         </v-btn>
 
-        <p v-if="createError" class="text-error text-caption mt-3">
+        <p
+          v-if="createError"
+          id="create-error-message"
+          class="text-error text-caption mt-3"
+          role="alert"
+          aria-live="polite"
+        >
           {{ createError }}
         </p>
       </v-form>

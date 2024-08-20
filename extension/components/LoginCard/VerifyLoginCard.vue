@@ -77,15 +77,22 @@ async function cancel() {
 
         <v-btn
           class="mt-3"
+          aria-describedby="create-error-message"
           :color="PrimaryColor"
           :loading="createPending"
           size="large"
-          @click.prevent="login"
+          @click="login"
         >
           Resend Link
         </v-btn>
 
-        <p v-if="createError" class="text-error text-caption mt-3">
+        <p
+          v-if="createError"
+          id="create-error-message"
+          class="text-error text-caption mt-3"
+          role="alert"
+          aria-live="polite"
+        >
           {{ createError }}
         </p>
 
@@ -94,7 +101,7 @@ async function cancel() {
           :color="!createPending ? '#e10035' : null"
           size="large"
           :disabled="createPending"
-          @click.prevent="cancel"
+          @click="cancel"
         >
           Cancel
         </v-btn>

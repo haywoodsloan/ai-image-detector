@@ -1,6 +1,10 @@
 <script setup>
 import SettingsSvg from '@/assets/settings.svg';
-import { AiIndicatorColor, PrimaryColor } from '@/utilities/color.js';
+import {
+  AiIndicatorColor,
+  PrimaryColor,
+  RealIndicatorColor,
+} from '@/utilities/color.js';
 import { useSettings } from '@/utilities/settings.js';
 import { userAuth, userSettings } from '@/utilities/storage.js';
 import { mdiInformationOutline } from '@mdi/js';
@@ -11,7 +15,7 @@ import StyleProvider from './StyleProvider.vue';
 /** @type {Ref<string>} */
 const currentSite = ref(null);
 browser.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
-  if (isHttpUrl(tab?.url)) currentSite.value = new URL(tab.url).origin;
+  if (isHttpUrl(tab?.url)) currentSite.value = new URL(tab.url).host;
 });
 
 /**
@@ -21,7 +25,7 @@ const onSiteChange = async ({ tabId }) => {
   const tab = await browser.tabs.get(tabId);
   if (!tab.active) return;
 
-  if (isHttpUrl(tab?.url)) currentSite.value = new URL(tab.url).origin;
+  if (isHttpUrl(tab?.url)) currentSite.value = new URL(tab.url).host;
   else currentSite.value = null;
 };
 
@@ -29,6 +33,10 @@ browser.webNavigation.onCommitted.addListener(onSiteChange);
 onUnmounted(() =>
   browser.webNavigation.onCommitted.removeListener(onSiteChange)
 );
+
+/** @type {Ref<UserSettings>} */
+const originalSettings = ref(null);
+userSettings.getValue().then((settings) => (originalSettings.value = settings));
 
 const storedSettings = useSettings();
 const toggles = computed({
@@ -56,6 +64,20 @@ const disabledSites = computed({
     }),
 });
 
+const reloadNeeded = computed(() => {
+  const [original, current] = [originalSettings.value, storedSettings.value];
+  if (!original || !current) return false;
+
+  const site = currentSite.value;
+  if (!site) return false;
+
+  return (
+    original.autoCheck !== current.autoCheck ||
+    original.disabledSites.includes(site) !==
+      current.disabledSites.includes(site)
+  );
+});
+
 async function toggleDisabledSite(site) {
   const sites = disabledSites.value;
   if (sites.includes(site)) {
@@ -67,6 +89,14 @@ async function toggleDisabledSite(site) {
 
 async function logout() {
   await userAuth.removeValue();
+}
+
+async function reload() {
+  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  await browser.tabs.reload(tab.id);
+
+  const replaceSettings = await userSettings.getValue();
+  originalSettings.value = replaceSettings;
 }
 </script>
 
@@ -86,8 +116,18 @@ async function logout() {
         v-model:selected="toggles"
         class="pa-0 overflow-visible"
         lines="two"
+        density="comfortable"
         select-strategy="leaf"
       >
+        <v-list-item v-if="reloadNeeded">
+          <v-list-item-action class="text-medium-emphasis">
+            A reload is required for changes to take effect.
+            <v-btn class="ml-6" :color="RealIndicatorColor" @click="reload">
+              Reload Site
+            </v-btn>
+          </v-list-item-action>
+        </v-list-item>
+
         <v-list-item class="px-4" value="autoCheck">
           <v-list-item-title class="d-flex mb-1 gc-2">
             Automatically check images
@@ -102,7 +142,7 @@ async function logout() {
               </template>
 
               Data used for image analysis is never stored. Requires a page
-              refresh for changes to take effect.
+              reload for changes to take effect.
             </v-tooltip>
           </v-list-item-title>
 
@@ -237,7 +277,7 @@ async function logout() {
           v-if="currentSite"
           class="px-4"
           :active="disabledSites.includes(currentSite)"
-          @click.prevent="toggleDisabledSite(currentSite)"
+          @click="toggleDisabledSite(currentSite)"
         >
           <v-list-item-title> Disable for this site </v-list-item-title>
 
@@ -287,10 +327,8 @@ async function logout() {
                     </v-card-text>
                     <v-card-actions>
                       <v-spacer />
-                      <v-btn @click.prevent="isActive.value = false">
-                        Cancel
-                      </v-btn>
-                      <v-btn :color="AiIndicatorColor" @click.prevent="logout">
+                      <v-btn @click="isActive.value = false"> Cancel </v-btn>
+                      <v-btn :color="AiIndicatorColor" @click="logout">
                         Sign out
                       </v-btn>
                     </v-card-actions>
