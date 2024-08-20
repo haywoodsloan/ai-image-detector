@@ -14,7 +14,7 @@
     "compile": "vue-tsc --noEmit",
     "postinstall": "wxt prepare",
     "format": "eslint --fix ./components ./entrypoints && prettier -w ./components ./entrypoints",
-    "gen-icon": "icon-gen -i ./assets/detector.svg -o ./public/icon/ -r --favicon --favicon-name / --favicon-png-sizes 16,24,48,96,128"
+    "gen-icon": "icon-gen -i ./assets/detector.svg -o ./public/icon/ -r --favicon --favicon-name / --favicon-png-sizes 16,24,32,48,96,128"
   },
   "dependencies": {
     "@fontsource/roboto": "^5.0.14",
