@@ -306,7 +306,6 @@ async function logout() {
 
 <style lang="scss" scoped>
 .icon {
-  display: block;
   height: 38px;
   width: 38px;
 }

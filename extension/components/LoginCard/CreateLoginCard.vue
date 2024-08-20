@@ -78,7 +78,6 @@ async function login() {
 
 <style lang="scss" scoped>
 .icon {
-  display: block;
   height: 40px;
   width: 40px;
 }

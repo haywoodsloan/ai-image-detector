@@ -144,10 +144,6 @@ const iconColor = computed(() => {
 
   .icon-wrapper {
     position: relative;
-
-    .icon {
-      display: block;
-    }
   }
 
   &.large {
