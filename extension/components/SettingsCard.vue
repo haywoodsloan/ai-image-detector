@@ -24,7 +24,7 @@ const onSiteChange = async ({ tabId }) => {
 };
 
 browser.tabs.onActivated.addListener(onSiteChange);
-browser.webNavigation.onCommitted.addListener(onSiteChange)
+browser.webNavigation.onCommitted.addListener(onSiteChange);
 onUnmounted(() => {
   browser.tabs.onActivated.removeListener(onSiteChange);
   browser.webNavigation.onCommitted.removeListener(onSiteChange);
@@ -38,11 +38,12 @@ const toggles = computed({
     ),
   set: async (newVal) =>
     await userSettings.setValue({
-      ...(await userSettings.getValue()),
-      autoCheck: newVal.includes('autoCheck'),
-      autoCheckPrivate: newVal.includes('autoCheckPrivate'),
-      uploadImages: newVal.includes('uploadImages'),
-      uploadImagesPrivate: newVal.includes('uploadImagesPrivate'),
+      ...Object.fromEntries(newVal.map((key) => [key, true])),
+      ...Object.fromEntries(
+        Object.entries(await userSettings.getValue()).filter(
+          ([, value]) => typeof value !== 'boolean'
+        )
+      ),
     }),
 });
 
@@ -55,13 +56,12 @@ const disabledSites = computed({
     }),
 });
 
-async function toggleSiteDisable() {
-  if (disabledSites.value.includes(currentSite.value)) {
-    disabledSites.value = disabledSites.value.filter(
-      (site) => site !== currentSite.value
-    );
+async function toggleDisabledSite(site) {
+  const sites = disabledSites.value;
+  if (sites.includes(site)) {
+    disabledSites.value = sites.filter((s) => s !== site);
   } else {
-    disabledSites.value = [...disabledSites.value, currentSite.value];
+    disabledSites.value = [...sites, site];
   }
 }
 
@@ -81,7 +81,7 @@ async function logout() {
         <settings-svg class="icon" />
       </template>
     </v-card-item>
-    <v-card-text class="pa-0">
+    <v-card-text v-if="storedSettings !== null" class="pa-0">
       <v-list
         v-model:selected="toggles"
         class="pa-0 overflow-visible"
@@ -139,7 +139,7 @@ async function logout() {
                 />
               </template>
               Metadata (GPS, camera info, etc.) will be removed before sending
-              the image for analysis.
+              the image for analysis. May increase bandwidth usage.
             </v-tooltip>
           </v-list-item-title>
 
@@ -211,8 +211,8 @@ async function logout() {
                 />
               </template>
 
-              Images are kept secure and private, they will only used to improve
-              the detector.
+              Metadata (GPS, camera info, etc.) will be removed before
+              uploading.
             </v-tooltip>
           </v-list-item-title>
 
@@ -236,7 +236,7 @@ async function logout() {
           v-if="currentSite"
           class="px-4"
           :active="disabledSites.includes(currentSite)"
-          @click.prevent="toggleSiteDisable"
+          @click.prevent="toggleDisabledSite(currentSite)"
         >
           <v-list-item-title> Disable for this site </v-list-item-title>
 
