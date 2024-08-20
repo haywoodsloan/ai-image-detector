@@ -19,16 +19,16 @@ browser.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
  */
 const onSiteChange = async ({ tabId }) => {
   const tab = await browser.tabs.get(tabId);
+  if (!tab.active) return;
+
   if (isHttpUrl(tab?.url)) currentSite.value = new URL(tab.url).origin;
   else currentSite.value = null;
 };
 
-browser.tabs.onActivated.addListener(onSiteChange);
 browser.webNavigation.onCommitted.addListener(onSiteChange);
-onUnmounted(() => {
-  browser.tabs.onActivated.removeListener(onSiteChange);
-  browser.webNavigation.onCommitted.removeListener(onSiteChange);
-});
+onUnmounted(() =>
+  browser.webNavigation.onCommitted.removeListener(onSiteChange)
+);
 
 const storedSettings = useSettings();
 const toggles = computed({
@@ -101,7 +101,8 @@ async function logout() {
                 />
               </template>
 
-              Data used for image analysis is never stored.
+              Data used for image analysis is never stored. Requires a page
+              refresh for changes to take effect.
             </v-tooltip>
           </v-list-item-title>
 
