@@ -1,11 +1,8 @@
 <script setup>
 import DetectorSvg from '@/assets/detector.svg';
-import { IndicatorColors } from '@/utilities/color.js';
+import { AiIndicatorColor, RealIndicatorColor } from '@/utilities/color.js';
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { wait } from 'common/utilities/sleep.js';
-
-const aiColor = IndicatorColors.at(-1);
-const realColor = IndicatorColors.at(0);
 
 /** @type {{readonly analysis: ImageAnalysis}} */
 const props = defineProps({
@@ -50,7 +47,7 @@ async function vote(label) {
               @click="vote('artificial')"
             >
               <template #prepend>
-                <detector-svg class="icon ai" />
+                <v-icon class="icon ai" :icon="DetectorSvg" />
               </template>
               Report AI Image
             </v-btn>
@@ -66,7 +63,7 @@ async function vote(label) {
               @click="vote('real')"
             >
               <template #prepend>
-                <detector-svg class="icon real" />
+                <v-icon class="icon real" :icon="DetectorSvg" />
               </template>
               Report Real Image
             </v-btn>
@@ -84,15 +81,15 @@ async function vote(label) {
 
   &.ai {
     :deep(path) {
-      stroke: v-bind(aiColor);
-      fill: v-bind(aiColor);
+      stroke: v-bind(AiIndicatorColor);
+      fill: v-bind(AiIndicatorColor);
     }
   }
 
   &.real {
     :deep(path) {
-      stroke: v-bind(realColor);
-      fill: v-bind(realColor);
+      stroke: v-bind(RealIndicatorColor);
+      fill: v-bind(RealIndicatorColor);
     }
   }
 }
