@@ -78,7 +78,7 @@ async function logout() {
       <v-card-subtitle> Settings </v-card-subtitle>
 
       <template #append>
-        <settings-svg class="icon" />
+        <v-icon class="icon" :icon="SettingsSvg" />
       </template>
     </v-card-item>
     <v-card-text v-if="storedSettings !== null" class="pa-0">

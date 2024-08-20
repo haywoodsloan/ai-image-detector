@@ -87,7 +87,7 @@ const iconColor = computed(() => {
 </script>
 
 <template>
-  <StyleProvider v-if="size !== 'small' && iconColor">
+  <StyleProvider v-if="size !== 'small'">
     <v-menu
       v-model="menuOpen"
       location="right top"
@@ -101,6 +101,7 @@ const iconColor = computed(() => {
       <template #activator="{ props: menu }">
         <v-fade-transition>
           <button
+            v-if="iconColor"
             class="button"
             :class="[size, { 'menu-open': menuOpen }]"
             v-bind="menu"
@@ -108,7 +109,11 @@ const iconColor = computed(() => {
             @click.stop.prevent
           >
             <div class="icon-wrapper">
-              <v-icon v-if="size === 'large'" class="icon" :icon="DetectorSvg"/>
+              <v-icon
+                v-if="size === 'large'"
+                class="icon"
+                :icon="DetectorSvg"
+              />
               <div v-else-if="size === 'medium'" class="icon"></div>
             </div>
           </button>
