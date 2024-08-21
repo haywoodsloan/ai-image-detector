@@ -2,7 +2,7 @@
 import SettingsSvg from '@/assets/settings.svg';
 import {
   AiIndicatorColor,
-  PrimaryColor,
+  PrimaryColorLight,
   RealIndicatorColor,
 } from '@/utilities/color.js';
 import { useSettings } from '@/utilities/settings.js';
@@ -10,6 +10,7 @@ import { userAuth, userSettings } from '@/utilities/storage.js';
 import { mdiInformationOutline } from '@mdi/js';
 import { isHttpUrl } from 'common/utilities/url.js';
 
+import DonateLinks from './DonateLinks.vue';
 import StyleProvider from './StyleProvider.vue';
 
 /** @type {Ref<string>} */
@@ -102,31 +103,33 @@ async function reload() {
 
 <template>
   <v-card min-width="400">
-    <v-card-item>
+    <v-card-item class="pb-0">
       <v-card-title> AI Image Detector </v-card-title>
 
       <v-card-subtitle> Settings </v-card-subtitle>
 
       <template #append>
-        <v-icon class="icon" :icon="SettingsSvg" />
+        <v-icon class="icon mb-2" :icon="SettingsSvg" />
       </template>
     </v-card-item>
     <v-card-text v-if="storedSettings !== null" class="pa-0">
       <v-list
         v-model:selected="toggles"
-        class="pa-0 overflow-visible"
+        class="pa-0"
         lines="two"
         density="comfortable"
         select-strategy="leaf"
       >
-        <v-list-item v-if="reloadNeeded">
-          <v-list-item-action class="text-medium-emphasis">
-            A reload is required for changes to take effect.
-            <v-btn class="ml-6" :color="RealIndicatorColor" @click="reload">
-              Reload Site
-            </v-btn>
-          </v-list-item-action>
-        </v-list-item>
+        <v-fade-transition>
+          <v-list-item v-if="reloadNeeded">
+            <v-list-item-action class="text-medium-emphasis">
+              A reload is required for changes to take effect.
+              <v-btn class="ml-6" :color="RealIndicatorColor" @click="reload">
+                Reload Site
+              </v-btn>
+            </v-list-item-action>
+          </v-list-item>
+        </v-fade-transition>
 
         <v-list-item class="px-4" value="autoCheck">
           <v-list-item-title class="d-flex mb-1 gc-2">
@@ -137,7 +140,7 @@ async function reload() {
                 <v-icon
                   v-bind="props"
                   :icon="mdiInformationOutline"
-                  :color="PrimaryColor"
+                  :color="PrimaryColorLight"
                 />
               </template>
 
@@ -154,7 +157,7 @@ async function reload() {
           <template #append="{ isActive }">
             <v-list-item-action class="ml-3">
               <v-switch
-                :color="PrimaryColor"
+                :color="PrimaryColorLight"
                 :model-value="isActive"
                 inset
                 hide-details
@@ -176,7 +179,7 @@ async function reload() {
                 <v-icon
                   v-bind="props"
                   :icon="mdiInformationOutline"
-                  :color="PrimaryColor"
+                  :color="PrimaryColorLight"
                 />
               </template>
               Metadata (GPS, camera info, etc.) will be removed before sending
@@ -191,7 +194,7 @@ async function reload() {
           <template #append="{ isActive }">
             <v-list-item-action class="ml-3">
               <v-switch
-                :color="PrimaryColor"
+                :color="PrimaryColorLight"
                 :model-value="isActive && toggles.includes('autoCheck')"
                 inset
                 hide-details
@@ -209,7 +212,7 @@ async function reload() {
                 <v-icon
                   v-bind="props"
                   :icon="mdiInformationOutline"
-                  :color="PrimaryColor"
+                  :color="PrimaryColorLight"
                 />
               </template>
 
@@ -226,7 +229,7 @@ async function reload() {
           <template #append="{ isActive }">
             <v-list-item-action class="ml-3">
               <v-switch
-                :color="PrimaryColor"
+                :color="PrimaryColorLight"
                 :model-value="isActive"
                 inset
                 hide-details
@@ -248,7 +251,7 @@ async function reload() {
                 <v-icon
                   v-bind="props"
                   :icon="mdiInformationOutline"
-                  :color="PrimaryColor"
+                  :color="PrimaryColorLight"
                 />
               </template>
 
@@ -264,7 +267,7 @@ async function reload() {
           <template #append="{ isActive }">
             <v-list-item-action class="ml-3">
               <v-switch
-                :color="PrimaryColor"
+                :color="PrimaryColorLight"
                 :model-value="isActive && toggles.includes('uploadImages')"
                 inset
                 hide-details
@@ -285,7 +288,7 @@ async function reload() {
             <span class="text-medium-emphasis">
               Disable automatic image check for just this site:
             </span>
-            <span :style="{ color: PrimaryColor }">
+            <span :style="{ color: PrimaryColorLight }">
               {{ currentSite }}
             </span>
           </v-list-item-subtitle>
@@ -293,7 +296,7 @@ async function reload() {
           <template #append="{ isActive }">
             <v-list-item-action class="ml-3">
               <v-switch
-                :color="PrimaryColor"
+                :color="PrimaryColorLight"
                 :model-value="isActive"
                 inset
                 hide-details
@@ -340,6 +343,7 @@ async function reload() {
         </v-list-item>
       </v-list>
     </v-card-text>
+    <DonateLinks />
   </v-card>
 </template>
 

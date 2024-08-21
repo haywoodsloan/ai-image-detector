@@ -4,6 +4,8 @@ import { AiIndicatorColor, RealIndicatorColor } from '@/utilities/color.js';
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { wait } from 'common/utilities/sleep.js';
 
+import DonateLinks from './DonateLinks.vue';
+
 /** @type {{readonly analysis: ImageAnalysis}} */
 const props = defineProps({
   analysis: {
@@ -33,9 +35,12 @@ async function vote(label) {
 
 <template>
   <v-card>
-    <v-card-title>AI Analysis Score: {{ scoreText }}%</v-card-title>
-    <v-card-subtitle>Based on detector model</v-card-subtitle>
-    <v-card-actions>
+    <v-card-item class="pb-0">
+      <v-card-title>AI Analysis Score: {{ scoreText }}%</v-card-title>
+      <v-card-subtitle>Based on detector model</v-card-subtitle>
+    </v-card-item>
+
+    <v-card-actions class="pt-0">
       <v-list density="compact" min-width="100%" class="pa-0 overflow-visible">
         <v-list-item class="px-0">
           <v-list-item-action>
@@ -71,6 +76,7 @@ async function vote(label) {
         </v-list-item>
       </v-list>
     </v-card-actions>
+    <DonateLinks />
   </v-card>
 </template>
 

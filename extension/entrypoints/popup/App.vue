@@ -8,7 +8,6 @@ import { InitAction } from '../background/actions/init.js';
 
 InitAction.invoke();
 const authVerified = useAuthVerified();
-
 </script>
 
 <template>

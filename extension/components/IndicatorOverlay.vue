@@ -93,10 +93,10 @@ const iconColor = computed(() => {
       location="right top"
       z-index="2147483647"
       open-on-click
-      open-on-hover
+      open-on-hover2
       :offset="[6, -8]"
       :close-on-content-click="false"
-      @click.stop.prevent
+      @click.stop
     >
       <template #activator="{ props: menu }">
         <v-fade-transition>

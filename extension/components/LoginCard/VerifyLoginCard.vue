@@ -5,6 +5,8 @@ import { PrimaryColor, RealIndicatorColor } from '@/utilities/color.js';
 import { subAuthVerify } from '@/utilities/pubsub.js';
 import { userAuth } from '@/utilities/storage.js';
 
+import DonateLinks from '../DonateLinks.vue';
+
 const FailedToSendMsg = 'Verification email failed to send, please try again';
 
 const storedEmail = useEmail();
@@ -107,5 +109,6 @@ async function cancel() {
         </v-btn>
       </div>
     </v-card-text>
+    <DonateLinks />
   </v-card>
 </template>
