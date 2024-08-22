@@ -102,7 +102,7 @@ async function reload() {
 </script>
 
 <template>
-  <v-card min-width="400">
+  <v-card min-width="425" class="d-flex flex-column">
     <v-card-item class="pb-0">
       <v-card-title> AI Image Detector </v-card-title>
 
@@ -112,7 +112,10 @@ async function reload() {
         <v-icon class="icon mb-2" :icon="SettingsSvg" />
       </template>
     </v-card-item>
-    <v-card-text v-if="storedSettings !== null" class="pa-0">
+    <v-card-text
+      v-if="storedSettings !== null"
+      class="pa-0 d-flex overflow-hidden"
+    >
       <v-list
         v-model:selected="toggles"
         class="pa-0"

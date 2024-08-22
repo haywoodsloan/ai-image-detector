@@ -14,6 +14,8 @@
 
 div {
   @extend :root;
+
+  display: contents;
   box-sizing: border-box !important;
 
   line-height: 1.5 !important;
