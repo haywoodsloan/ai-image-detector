@@ -114,8 +114,17 @@ async function reload() {
     </v-card-item>
     <v-card-text
       v-if="storedSettings !== null"
-      class="pa-0 d-flex overflow-hidden"
+      class="pa-0 d-flex flex-column overflow-hidden"
     >
+      <v-fade-transition>
+        <div v-if="reloadNeeded" class="text-medium-emphasis d-flex px-4 py-2">
+          A reload is required for changes to take effect.
+          <v-btn class="ml-6" :color="RealIndicatorColor" @click="reload">
+            Reload Site
+          </v-btn>
+        </div>
+      </v-fade-transition>
+
       <v-list
         v-model:selected="toggles"
         class="pa-0"
@@ -123,17 +132,6 @@ async function reload() {
         density="comfortable"
         select-strategy="leaf"
       >
-        <v-fade-transition>
-          <v-list-item v-if="reloadNeeded">
-            <v-list-item-action class="text-medium-emphasis">
-              A reload is required for changes to take effect.
-              <v-btn class="ml-6" :color="RealIndicatorColor" @click="reload">
-                Reload Site
-              </v-btn>
-            </v-list-item-action>
-          </v-list-item>
-        </v-fade-transition>
-
         <v-list-item class="px-4" value="autoCheck">
           <v-list-item-title class="d-flex mb-1 gc-2">
             Automatically check images
