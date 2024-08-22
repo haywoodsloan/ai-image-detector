@@ -1,11 +1,11 @@
 <script setup>
 import { createAuth } from '@/api/auth.js';
-import { useEmail, useVerificationSocket } from '@/utilities/auth.js';
+import { useEmail, useVerifySocket } from '@/utilities/auth.js';
 import { PrimaryColor, RealIndicatorColor } from '@/utilities/color.js';
 import { subAuthVerify } from '@/utilities/pubsub.js';
 import { userAuth } from '@/utilities/storage.js';
 
-import DonateLinks from '../DonateLinks.vue';
+import DonateLinks from './DonateLinks.vue';
 
 const FailedToSendMsg = 'Verification email failed to send, please try again';
 
@@ -16,7 +16,7 @@ const createPending = ref(false);
 
 /** @type {() => void} */
 let unsubAuthVerify;
-const verifySocket = useVerificationSocket();
+const verifySocket = useVerifySocket();
 
 watch(
   verifySocket,

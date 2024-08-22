@@ -5,7 +5,7 @@ import { PrimaryColor } from '@/utilities/color.js';
 import { userAuth } from '@/utilities/storage.js';
 import { validate as validateEmail } from 'email-validator';
 
-import DonateLinks from '../DonateLinks.vue';
+import DonateLinks from './DonateLinks.vue';
 
 const InvalidEmailMsg = 'A valid email is required';
 const FailedToSendMsg = 'Verification email failed to send, please try again';
