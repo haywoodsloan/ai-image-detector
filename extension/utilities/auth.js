@@ -1,23 +1,18 @@
-import memoize from 'memoize';
-
 import { useStorage, userAuth } from './storage.js';
 
-export const useAuthVerified = memoize(() =>
+export const useAuthVerified = () =>
   useAuthComputed(
     (auth) => !!auth?.accessToken && auth?.verification === 'verified'
-  )
-);
+  );
 
-export const useAuthPending = memoize(() =>
+export const useAuthPending = () =>
   useAuthComputed(
     (auth) => !!auth?.accessToken && auth?.verification === 'pending'
-  )
-);
+  );
 
-export const useEmail = memoize(() => useAuthComputed((auth) => auth?.email));
-export const useVerificationSocket = memoize(() =>
-  useAuthComputed((auth) => auth?.verificationSocket)
-);
+export const useEmail = () => useAuthComputed((auth) => auth?.email);
+export const useVerificationSocket = () =>
+  useAuthComputed((auth) => auth?.verificationSocket);
 
 /**
  * @template T
