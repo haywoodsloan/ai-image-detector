@@ -8,14 +8,14 @@ import { useVerifyStatus } from '@/utilities/auth.js';
 import { InitAction } from '../background/actions/init.js';
 
 InitAction.invoke();
-const authStatus = useVerifyStatus();
+const verifyStatus = useVerifyStatus();
 </script>
 
 <template>
   <StyleProvider>
-    <v-scroll-x-reverse-transition v-if="authStatus !== null" mode="out-in">
-      <SettingsCard v-if="authStatus === 'verified'" />
-      <VerifyLoginCard v-else-if="authStatus === 'pending'" />
+    <v-scroll-x-reverse-transition v-if="verifyStatus !== null" mode="out-in">
+      <SettingsCard v-if="verifyStatus === 'verified'" />
+      <VerifyLoginCard v-else-if="verifyStatus === 'pending'" />
       <CreateLoginCard v-else />
     </v-scroll-x-reverse-transition>
   </StyleProvider>
