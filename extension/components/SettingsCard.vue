@@ -112,10 +112,7 @@ async function reload() {
         <v-icon class="icon mb-2" :icon="SettingsSvg" />
       </template>
     </v-card-item>
-    <v-card-text
-      v-if="storedSettings !== null"
-      class="pa-0 d-flex flex-column overflow-hidden"
-    >
+    <v-card-text class="pa-0 d-flex flex-column overflow-hidden">
       <v-fade-transition>
         <div v-if="reloadNeeded" class="text-medium-emphasis d-flex px-4 py-2">
           A reload is required for changes to take effect.
@@ -126,6 +123,7 @@ async function reload() {
       </v-fade-transition>
 
       <v-list
+        v-show="storedSettings !== null"
         v-model:selected="toggles"
         class="pa-0"
         lines="two"

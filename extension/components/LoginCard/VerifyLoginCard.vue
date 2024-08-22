@@ -21,7 +21,9 @@ const verifySocket = useVerificationSocket();
 watch(
   verifySocket,
   (newSocket) => {
+    if (!newSocket) return;
     unsubAuthVerify?.();
+
     unsubAuthVerify = subAuthVerify(newSocket, async () => {
       unsubAuthVerify();
       const storedAuth = await userAuth.getValue();
@@ -39,8 +41,11 @@ onUnmounted(() => {
 async function login() {
   try {
     createPending.value = true;
-    const newAuth = await createAuth(storedEmail.value);
-    await userAuth.setValue({ ...newAuth, email: storedEmail.value });
+    const email = storedEmail.value;
+
+    const newAuth = await createAuth(email);
+    await userAuth.setValue({ ...newAuth, email });
+    
     createError.value = null;
   } catch (error) {
     createError.value = FailedToSendMsg;

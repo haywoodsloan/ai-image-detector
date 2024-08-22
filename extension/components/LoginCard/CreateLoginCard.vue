@@ -21,8 +21,11 @@ const createPending = ref(false);
 async function login() {
   try {
     createPending.value = true;
-    const newAuth = await createAuth(newEmail.value);
-    await userAuth.setValue({ ...newAuth, email: newEmail.value });
+    const email = newEmail.value;
+
+    const newAuth = await createAuth(email);
+    await userAuth.setValue({ ...newAuth, email });
+    
     createError.value = null;
   } catch (error) {
     createError.value = FailedToSendMsg;
