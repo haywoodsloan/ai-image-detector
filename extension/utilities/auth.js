@@ -1,18 +1,23 @@
 import { useStorage, userAuth } from './storage.js';
 
-export const useAuthVerified = () =>
-  useAuthComputed(
+export function useAuthVerified() {
+  return useAuthComputed(
     (auth) => !!auth?.accessToken && auth?.verification === 'verified'
   );
+}
 
-export const useAuthPending = () =>
-  useAuthComputed(
+export function useAuthPending() {
+  return useAuthComputed(
     (auth) => !!auth?.accessToken && auth?.verification === 'pending'
   );
+}
 
-export const useEmail = () => useAuthComputed((auth) => auth?.email);
-export const useVerificationSocket = () =>
-  useAuthComputed((auth) => auth?.verificationSocket);
+export function useEmail() {
+  return useAuthComputed((auth) => auth?.email);
+}
+export function useVerificationSocket() {
+  return useAuthComputed((auth) => auth?.verificationSocket);
+}
 
 /**
  * @template T
