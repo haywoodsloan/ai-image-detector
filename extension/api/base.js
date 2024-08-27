@@ -36,6 +36,7 @@ export function post(endpoint, body) {
 /**
  * @param {string} endpoint
  * @param {RequestInit} init
+ * @throws {ApiError}
  */
 export async function request(endpoint, init = {}) {
   // Use the background script if not already in it

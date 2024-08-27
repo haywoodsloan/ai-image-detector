@@ -3,6 +3,7 @@ import { checkImage } from '@/api/detector.js';
 import DetectorSvg from '@/assets/detector.svg';
 import { useVerifyStatus } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
+import { analyzeImage } from '@/utilities/image.js';
 import { useResizeObserver } from '@vueuse/core';
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { wait } from 'common/utilities/sleep.js';
@@ -63,21 +64,14 @@ const needsAuth = computed(
   () => verifyStatus.value !== null && verifyStatus.value !== 'verified'
 );
 
+// Wait for the size to become medium or large
+// This only needs to run once
 const unwatch = watch(
   [size, verifyStatus],
   async () => {
-    // Wait for the size to become medium or large
     if (verifyStatus.value === 'verified' && size.value !== 'small') {
-      // waitForAuth().then(async () => {
-      //   const analysis = await checkImage(image.src);
-      //   iconColor.value = getIndicatorColor(analysis.artificial)
-      // });
-
-      // This only needs to run once
       unwatch();
-
-      await wait(TimeSpan.fromSeconds(1));
-      analysis.value = { artificial: Math.random(), scoreType: 'detector' };
+      analysis.value = await analyzeImage(image);
     }
   },
   { immediate: true }
