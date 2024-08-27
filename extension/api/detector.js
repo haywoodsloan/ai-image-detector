@@ -7,5 +7,5 @@ const CheckImageEndpoint = '/checkImage';
  * @returns {Promise<ImageAnalysis>}
  */
 export function checkImage(url) {
-  return post(CheckImageEndpoint, {url});
+  return post(CheckImageEndpoint, { url });
 }

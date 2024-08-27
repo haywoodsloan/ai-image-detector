@@ -28,13 +28,16 @@ div {
   tab-size: 4 !important;
 }
 
+@layer base, vuetify;
 :deep() {
   $layers: true;
   $color-pack: false;
   @import 'vuetify';
 
-  * {
-    font-family: 'Roboto', sans-serif !important;
+  @layer base {
+    * {
+      font-family: 'Roboto', sans-serif !important;
+    }
   }
 }
 </style>

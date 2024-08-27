@@ -21,6 +21,9 @@ app.http('checkImage', {
   handler: async (request, context) => {
     captureConsole(context);
 
+    /** @type {{url: string}} */
+    const { url } = await request.json();
+    
     // Check the access token is valid
     let userId;
     try {
@@ -30,9 +33,6 @@ app.http('checkImage', {
       console.error(error);
       return createErrorResponse(401, error);
     }
-
-    /** @type {{url: string}} */
-    const { url } = await request.json();
 
     // Check url is valid
     if (!isHttpUrl(url) && !isDataUrl(url)) {
