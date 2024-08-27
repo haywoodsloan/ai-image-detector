@@ -1,4 +1,5 @@
 import { request } from '@/api/base.js';
+
 import { BaseAction } from './base.js';
 
 export class ApiAction extends BaseAction {
@@ -11,4 +12,3 @@ export class ApiAction extends BaseAction {
     return request(endpoint, init);
   }
 }
-

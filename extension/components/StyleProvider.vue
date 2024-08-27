@@ -15,22 +15,22 @@
 div {
   @extend :root;
 
-  display: contents;
+  display: contents !important;
   box-sizing: border-box !important;
 
   line-height: 1.5 !important;
   font-size: 1rem !important;
-  
+
   -webkit-text-size-adjust: 100% !important;
   word-break: normal !important;
-  
+
   -moz-tab-size: 4 !important;
   tab-size: 4 !important;
 }
 
 :deep() {
-  $color-pack: false;
   $layers: true;
+  $color-pack: false;
   @import 'vuetify';
 
   * {

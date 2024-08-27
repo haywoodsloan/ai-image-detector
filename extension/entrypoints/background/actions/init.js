@@ -1,6 +1,7 @@
+import memoize from 'memoize';
+
 import { checkAuth } from '@/api/auth.js';
 import { userAuth } from '@/utilities/storage.js';
-import memoize from 'memoize';
 
 import { BaseAction } from './base.js';
 
@@ -8,7 +9,7 @@ export class InitAction extends BaseAction {
   static actionName = 'InitAction';
   static invoke = memoize(async () => {
     const auth = await userAuth.getValue();
-    
+
     // If no auth yet just skip
     if (!auth) return;
 

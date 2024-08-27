@@ -1,8 +1,9 @@
 <script setup>
-import DetectorSvg from '@/assets/detector.svg';
-import { AiIndicatorColor, RealIndicatorColor } from '@/utilities/color.js';
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { wait } from 'common/utilities/sleep.js';
+
+import DetectorSvg from '@/assets/detector.svg';
+import { AiIndicatorColor, RealIndicatorColor } from '@/utilities/color.js';
 
 import DonateLinks from './DonateLinks.vue';
 

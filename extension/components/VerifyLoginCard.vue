@@ -45,7 +45,7 @@ async function login() {
 
     const newAuth = await createAuth(email);
     await userAuth.setValue({ ...newAuth, email });
-    
+
     createError.value = null;
   } catch (error) {
     createError.value = FailedToSendMsg;

@@ -1,15 +1,16 @@
 <script setup>
-import { checkImage } from '@/api/detector.js';
+import { useResizeObserver } from '@vueuse/core';
+
+import StyleProvider from './StyleProvider.vue';
+
 import DetectorSvg from '@/assets/detector.svg';
 import { useVerifyStatus } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
 import { analyzeImage } from '@/utilities/image.js';
-import { useResizeObserver } from '@vueuse/core';
-import TimeSpan from 'common/utilities/TimeSpan.js';
-import { wait } from 'common/utilities/sleep.js';
 
 import AnalysisCard from './AnalysisCard.vue';
-import StyleProvider from './StyleProvider.vue';
+import CreateLoginCard from './CreateLoginCard.vue';
+import VerifyLoginCard from './VerifyLoginCard.vue';
 
 const { value: host } = defineModel('host', {
   type: HTMLElement,
@@ -56,13 +57,14 @@ useResizeObserver([image, image.offsetParent], () => {
   }
 });
 
-/** @type {Ref<ImageAnalysis>} */
-const analysis = ref(null);
-
 const verifyStatus = useVerifyStatus();
+const pendingAuth = computed(() => verifyStatus.value === 'pending');
 const needsAuth = computed(
   () => verifyStatus.value !== null && verifyStatus.value !== 'verified'
 );
+
+/** @type {Ref<ImageAnalysis>} */
+const analysis = ref(null);
 
 // Wait for the size to become medium or large
 // This only needs to run once
@@ -118,7 +120,9 @@ const iconColor = computed(() => {
         </v-fade-transition>
       </template>
       <StyleProvider>
-        <AnalysisCard :analysis="analysis" />
+        <VerifyLoginCard v-if="pendingAuth" />
+        <CreateLoginCard v-else-if="needsAuth" />
+        <AnalysisCard v-else :analysis="analysis" />
       </StyleProvider>
     </v-menu>
   </StyleProvider>

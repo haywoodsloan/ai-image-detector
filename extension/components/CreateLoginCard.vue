@@ -1,9 +1,10 @@
 <script setup>
+import { validate as validateEmail } from 'email-validator';
+
 import { createAuth } from '@/api/auth.js';
 import DetectorSvg from '@/assets/detector.svg';
 import { PrimaryColor } from '@/utilities/color.js';
 import { userAuth } from '@/utilities/storage.js';
-import { validate as validateEmail } from 'email-validator';
 
 import DonateLinks from './DonateLinks.vue';
 
@@ -25,7 +26,7 @@ async function login() {
 
     const newAuth = await createAuth(email);
     await userAuth.setValue({ ...newAuth, email });
-    
+
     createError.value = null;
   } catch (error) {
     createError.value = FailedToSendMsg;

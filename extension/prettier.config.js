@@ -3,6 +3,6 @@ export default {
   trailingComma: 'es5',
   importOrderSeparation: true,
   importOrderSortSpecifiers: true,
-  importOrder: ['^[./]'],
+  importOrder: ['StyleProvider.vue$', '^@\\/', '^[./]'],
   plugins: ['@trivago/prettier-plugin-sort-imports'],
 };

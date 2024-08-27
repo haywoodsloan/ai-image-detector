@@ -1,7 +1,8 @@
 <script setup>
+import StyleProvider from '@/components/StyleProvider.vue';
+
 import CreateLoginCard from '@/components/CreateLoginCard.vue';
 import SettingsCard from '@/components/SettingsCard.vue';
-import StyleProvider from '@/components/StyleProvider.vue';
 import VerifyLoginCard from '@/components/VerifyLoginCard.vue';
 import { useVerifyStatus } from '@/utilities/auth.js';
 
