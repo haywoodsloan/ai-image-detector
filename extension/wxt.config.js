@@ -19,7 +19,7 @@ export default defineConfig({
             ignoreFiles: ['index.html', 'popup.html'],
             exclude: [
               /\[data-aid-bi39lk5g\]/,
-              /\[data-v-[^\]]+\]/,
+              /\[data-v-[a-z0-9A-Z]+\]/,
               /\.v-overlay/,
               /\.v-dialog/,
             ],
