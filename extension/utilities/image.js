@@ -1,4 +1,5 @@
 import { checkImage } from '@/api/detector.js';
+import { deleteImageVote, voteImageLabel } from '@/api/vote.js';
 
 /**
  * @param {HTMLImageElement} image
@@ -9,6 +10,32 @@ export function analyzeImage(image) {
   } catch (error) {
     if (error?.status !== 404) throw error;
     return checkImage(imageToDataUrl(image));
+  }
+}
+
+/**
+ * @param {HTMLImageElement} image
+ * @param {LabelType} label
+ */
+export function reportImage(image, label) {
+  try {
+    return voteImageLabel(image.src, label);
+  } catch (error) {
+    if (error?.status !== 404) throw error;
+    return voteImageLabel(imageToDataUrl(image), label);
+  }
+}
+
+/**
+ * @param {HTMLImageElement} image
+ * @param {LabelType} label
+ */
+export function deleteImageReport(image) {
+  try {
+    return deleteImageVote(image.src);
+  } catch (error) {
+    if (error?.status !== 404) throw error;
+    return deleteImageVote(imageToDataUrl(image));
   }
 }
 

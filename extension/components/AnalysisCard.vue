@@ -1,38 +1,57 @@
 <script setup>
-import TimeSpan from 'common/utilities/TimeSpan.js';
-import { wait } from 'common/utilities/sleep.js';
-
 import DetectorSvg from '@/assets/detector.svg';
 import { AiIndicatorColor, RealIndicatorColor } from '@/utilities/color.js';
+import {
+  analyzeImage,
+  deleteImageReport,
+  reportImage,
+} from '@/utilities/image.js';
 
 import DonateLinks from './DonateLinks.vue';
 
-/** @type {{readonly analysis: ImageAnalysis}} */
 const props = defineProps({
-  analysis: {
-    type: Object,
+  image: {
+    type: HTMLImageElement,
     required: true,
   },
 });
 
+/** @type {ModelRef<ImageAnalysis>} */
+const model = defineModel({
+  type: Object,
+  required: true,
+});
+
 // Show the score as a percent
 const scoreText = computed(() => {
-  if (props.analysis.scoreType === 'detector') {
-    const percent = props.analysis?.artificial * 100;
+  if (model.value.scoreType === 'detector') {
+    const percent = model.value?.artificial * 100;
     return `${percent?.toFixed(1)}%`;
-  } else return props.analysis.artificial > 0 ? 'AI' : 'Real';
+  } else return model.value.artificial > 0 ? 'AI' : 'Real';
 });
 
 /** @type {Ref<LabelType>} */
 const pendingVote = ref(null);
 
 /**
- * @param {LabelType} label
+ * @param {LabelType | 'cancel'} label
  */
 async function vote(label) {
-  pendingVote.value = label;
-  await wait(TimeSpan.fromSeconds(2));
-  pendingVote.value = '';
+  try {
+    pendingVote.value = label;
+    if (label === 'cancel') {
+      await deleteImageReport(props.image);
+      model.value = await analyzeImage(props.image);
+    } else {
+      await reportImage(props.image, label);
+      model.value = {
+        artificial: label === 'artificial' ? 1 : 0,
+        scoreType: 'user',
+      };
+    }
+  } finally {
+    pendingVote.value = '';
+  }
 }
 </script>
 
@@ -40,48 +59,42 @@ async function vote(label) {
   <v-card>
     <v-card-item class="pb-0">
       <v-card-title>
-        <template v-if="analysis.scoreType === 'detector'">
+        <template v-if="model.scoreType === 'detector'">
           AI Analysis Score: {{ scoreText }}
         </template>
 
-        <template v-else-if="analysis.scoreType === 'vote'">
+        <template v-else-if="model.scoreType === 'vote'">
           Users Reported: {{ scoreText }}
         </template>
 
-        <template v-else-if="analysis.scoreType === 'user'">
+        <template v-else-if="model.scoreType === 'user'">
           You Reported: {{ scoreText }}
         </template>
       </v-card-title>
-      <v-card-subtitle v-if="analysis.scoreType !== 'user'">
-        <template v-if="analysis.scoreType === 'detector'">
-          <template v-if="analysis.artificial >= 0.9">
-            Very likely AI
-          </template>
+      <v-card-subtitle v-if="model.scoreType !== 'user'">
+        <template v-if="model.scoreType === 'detector'">
+          <template v-if="model.artificial >= 0.9"> Very likely AI </template>
 
-          <template v-else-if="analysis.artificial >= 0.75">
-            Likely AI
-          </template>
+          <template v-else-if="model.artificial >= 0.75"> Likely AI </template>
 
-          <template v-else-if="analysis.artificial >= 0.5">
-            Possibly AI
-          </template>
+          <template v-else-if="model.artificial >= 0.5"> Possibly AI </template>
 
-          <template v-else-if="analysis.artificial >= 0.25">
+          <template v-else-if="model.artificial >= 0.25">
             Likely Real
           </template>
 
           <template v-else> Very Likely Real </template>
         </template>
 
-        <template v-else-if="analysis.scoreType === 'vote'">
-          Based on {{ analysis.voteCount }} user reports
+        <template v-else-if="model.scoreType === 'vote'">
+          Based on {{ model.voteCount }} user reports
         </template>
       </v-card-subtitle>
     </v-card-item>
 
     <v-card-actions class="pt-0">
       <v-list density="compact" min-width="100%" class="pa-0 overflow-visible">
-        <template v-if="analysis.scoreType !== 'user'">
+        <template v-if="model.scoreType !== 'user'">
           <v-list-item class="px-0">
             <v-list-item-action>
               <v-btn
@@ -123,6 +136,7 @@ async function vote(label) {
                 size="large"
                 class="justify-start flex-fill"
                 :loading="pendingVote === 'cancel'"
+                :color="AiIndicatorColor"
                 @click="vote('cancel')"
               >
                 Cancel my report

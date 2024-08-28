@@ -1,5 +1,7 @@
 import('common/types.d.ts');
 
+declare type ModelRef<T> = import('vue').ModelRef<T>;
+
 declare type WxtStorageItem<T> = import('wxt/storage').WxtStorageItem<T, {}>;
 declare type ContentScriptContext = import('wxt/client').ContentScriptContext;
 declare type ShadowRootContentScriptUi<T = void> =
@@ -17,7 +19,7 @@ declare type UserAuth = {
   verification: 'pending' | 'verified';
   verificationSocket: string;
   expiresAt: Date;
-  email: string
+  email: string;
 };
 
 declare type ImageAnalysis = {
@@ -41,4 +43,4 @@ declare type UserSettings = {
   uploadImagesPrivate: boolean;
 
   disabledSites: string[];
-}
+};

@@ -122,7 +122,7 @@ const iconColor = computed(() => {
       <StyleProvider>
         <VerifyLoginCard v-if="pendingAuth" />
         <CreateLoginCard v-else-if="needsAuth" />
-        <AnalysisCard v-else :analysis="analysis" />
+        <AnalysisCard v-else v-model="analysis" :image="image" />
       </StyleProvider>
     </v-menu>
   </StyleProvider>
