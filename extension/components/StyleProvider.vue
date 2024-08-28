@@ -1,10 +1,14 @@
 <template>
-  <div>
+  <div data-aid-style-provider>
     <slot />
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style lang="scss">
+@use 'vuetify' with (
+  $color-pack: false
+);
+
 @use '@fontsource/roboto/scss/mixins' as Roboto;
 @include Roboto.faces(
   $directory: '@fontsource/roboto/files',
@@ -12,7 +16,7 @@
   $styles: all
 );
 
-div {
+[data-aid-style-provider] {
   @extend :root;
 
   display: contents !important;
@@ -26,18 +30,9 @@ div {
 
   -moz-tab-size: 4 !important;
   tab-size: 4 !important;
-}
 
-@layer base, vuetify;
-:deep() {
-  $layers: true;
-  $color-pack: false;
-  @import 'vuetify';
-
-  @layer base {
-    * {
-      font-family: 'Roboto', sans-serif !important;
-    }
+  * {
+    font-family: 'Roboto', sans-serif !important;
   }
 }
 </style>

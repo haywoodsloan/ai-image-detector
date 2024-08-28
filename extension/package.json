@@ -30,17 +30,18 @@
     "vite-plugin-vuetify": "^2.0.4",
     "vite-svg-loader": "^5.1.0",
     "vue": "^3.4.31",
-    "vuetify": "^3.7.0"
+    "vuetify": "^3.7.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.7.0",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@wxt-dev/module-vue": "^1.0.1",
-    "eslint": "^9.9.0",
+    "eslint": "^9.9.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-vue": "^9.27.0",
     "globals": "^15.9.0",
     "icon-gen": "^5.0.0",
+    "postcss-prefix-selector": "^1.16.1",
     "prettier": "^3.3.3",
     "typescript": "^5.5.4",
     "vue-tsc": "^2.0.29",
