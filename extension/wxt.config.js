@@ -15,10 +15,10 @@ export default defineConfig({
       postcss: {
         plugins: [
           prefixer({
-            prefix: '[data-aid-style-provider]',
+            prefix: '[data-aid-bi39lk5g]',
             ignoreFiles: ['index.html', 'popup.html'],
             exclude: [
-              /\[data-aid-style-provider\]/,
+              /\[data-aid-bi39lk5g\]/,
               /\[data-v-[^\]]+\]/,
               /\.v-overlay/,
               /\.v-dialog/,

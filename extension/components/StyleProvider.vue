@@ -1,5 +1,5 @@
 <template>
-  <div data-aid-style-provider>
+  <div data-aid-bi39lk5g>
     <slot />
   </div>
 </template>
@@ -16,23 +16,13 @@
   $styles: all
 );
 
-[data-aid-style-provider] {
-  @extend :root;
-
+[data-aid-bi39lk5g] {
+  @extend :root, html, body;
   display: contents !important;
-  box-sizing: border-box !important;
-
-  line-height: 1.5 !important;
-  font-size: 1rem !important;
-
-  -webkit-text-size-adjust: 100% !important;
-  word-break: normal !important;
-
-  -moz-tab-size: 4 !important;
-  tab-size: 4 !important;
 
   * {
     font-family: 'Roboto', sans-serif !important;
+    text-transform: unset;
   }
 }
 </style>
