@@ -1,8 +1,6 @@
 <script setup>
 import { useResizeObserver } from '@vueuse/core';
 
-import StyleProvider from './StyleProvider.vue';
-
 import DetectorSvg from '@/assets/detector.svg';
 import { useVerifyStatus } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
@@ -10,6 +8,7 @@ import { analyzeImage } from '@/utilities/image.js';
 
 import AnalysisCard from './AnalysisCard.vue';
 import CreateLoginCard from './CreateLoginCard.vue';
+import StyleProvider from './StyleProvider.vue';
 import VerifyLoginCard from './VerifyLoginCard.vue';
 
 const { value: host } = defineModel('host', {
@@ -73,6 +72,7 @@ const unwatch = watch(
   async () => {
     if (verifyStatus.value === 'verified' && size.value !== 'small') {
       unwatch();
+      menuOpen.value = false;
       analysis.value = await analyzeImage(image);
     }
   },

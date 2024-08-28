@@ -15,23 +15,22 @@ export function analyzeImage(image) {
 /**
  * @param {HTMLImageElement} image
  */
-function imageToDataUrl(image) {
-  return new Promise((res) => {
-    const clone = new Image();
-    clone.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.height = clone.naturalWidth;
-      canvas.width = clone.naturalHeight;
+async function imageToDataUrl(image) {
+  const clone = new Image();
+  clone.crossOrigin = 'anonymous';
 
-      const context = canvas.getContext('2d');
-      context.drawImage(clone, 0, 0);
-      const dataUrl = canvas.toDataURL();
+  clone.srcset = image.srcset;
+  clone.src = image.src;
 
-      console.log('data url for image', dataUrl);
-      res(dataUrl);
-    };
+  await clone.decode();
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
 
-    clone.crossOrigin = 'anonymous';
-    clone.src = image.src;
-  });
+  canvas.height = clone.height;
+  canvas.width = clone.width;
+
+  context.drawImage(clone, 0, 0);
+  const dataUrl = canvas.toDataURL();
+
+  return dataUrl;
 }

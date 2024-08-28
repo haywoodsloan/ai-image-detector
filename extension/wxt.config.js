@@ -21,6 +21,7 @@ export default defineConfig({
               /\[data-aid-style-provider\]/,
               /\[data-v-[^\]]+\]/,
               /\.v-overlay/,
+              /\.v-dialog/,
             ],
           }),
         ],

@@ -2,8 +2,6 @@
 import { mdiInformationOutline } from '@mdi/js';
 import { isHttpUrl } from 'common/utilities/url.js';
 
-import StyleProvider from './StyleProvider.vue';
-
 import SettingsSvg from '@/assets/settings.svg';
 import {
   AiIndicatorColor,
@@ -14,6 +12,7 @@ import { useSettings } from '@/utilities/settings.js';
 import { userAuth, userSettings } from '@/utilities/storage.js';
 
 import DonateLinks from './DonateLinks.vue';
+import StyleProvider from './StyleProvider.vue';
 
 /** @type {Ref<string>} */
 const currentSite = ref(null);
