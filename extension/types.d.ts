@@ -23,7 +23,7 @@ declare type UserAuth = {
 declare type ImageAnalysis = {
   artificial: number;
   scoreType: 'user' | 'detector' | 'vote';
-  voteType?: number;
+  voteCount?: number;
 };
 
 declare type ImageVote = {
