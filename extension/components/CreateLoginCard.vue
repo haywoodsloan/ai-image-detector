@@ -4,14 +4,14 @@ import { validate as validateEmail } from 'email-validator';
 import { createAuth } from '@/api/auth.js';
 import DetectorSvg from '@/assets/detector.svg';
 import { PrimaryColor } from '@/utilities/color.js';
-import { userAuth } from '@/utilities/storage.js';
-
 import DonateLinks from './DonateLinks.vue';
+import { useAuth } from '@/utilities/auth.js';
 
 const InvalidEmailMsg = 'A valid email is required';
 const FailedToSendMsg = 'Verification email failed to send, please try again';
 
 const newEmail = ref('');
+const storedAuth = useAuth();
 
 const valid = ref(null);
 const isValidEmail = (email) => validateEmail(email) || InvalidEmailMsg;
@@ -25,7 +25,7 @@ async function login() {
     const email = newEmail.value;
 
     const newAuth = await createAuth(email);
-    await userAuth.setValue({ ...newAuth, email });
+    storedAuth.value = { ...newAuth, email };
 
     createError.value = null;
   } catch (error) {

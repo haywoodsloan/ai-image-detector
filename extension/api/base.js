@@ -50,8 +50,19 @@ export async function request(endpoint, init = {}) {
   });
 
   if (!response.ok) {
-    const { error } = await response.json();
-    const errorText = `Status: ${response.status}, ${error}`;
+    const contentType = response.headers.get('Content-Type');
+
+    let errorText;
+    if (contentType === 'application/json') {
+      const { error } = await response.json();
+      errorText = `Status: ${response.status}, ${error}`;
+    } else {
+      const error = await response.text();
+      errorText = error
+        ? `Status: ${response.status}, ${error}`
+        : `Status: ${response.status}`;
+    }
+
     throw new ApiError(
       response.status,
       `API ${init.method ?? 'GET'} request failed [${errorText}]`

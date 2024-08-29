@@ -1,3 +1,4 @@
+import cloneDeep from 'clone-deep';
 import { sha1 } from 'hash-wasm';
 
 /** @type {WxtStorageItem<UserSettings>} */
@@ -30,13 +31,34 @@ export async function getAnalysisStorage(url) {
  * @param {WxtStorageItem<T>} storage
  * */
 export function useStorage(storage) {
-  /** @type {Ref<T | null>} */
-  const item = ref(null);
+  /** @type {T} */
+  let stored = null;
+  let initialized = false;
 
-  storage.getValue().then((val) => {
-    item.value = val ?? undefined;
-    storage.watch((newVal) => (item.value = newVal ?? undefined));
-  });
+  return customRef((track, trigger) => ({
+    get() {
+      track();
 
-  return item;
+      if (!initialized) {
+        initialized = true;
+
+        storage.getValue().then((val) => {
+          stored = val ?? undefined;
+          trigger();
+
+          storage.watch((newVal) => {
+            stored = newVal ?? undefined;
+            trigger();
+          });
+        });
+      }
+
+      return stored;
+    },
+    async set(newVal) {
+      // Use a deep clone to remove proxies
+      if (newVal === null) await storage.defaultValue();
+      else await storage.setValue(cloneDeep(newVal));
+    },
+  }));
 }

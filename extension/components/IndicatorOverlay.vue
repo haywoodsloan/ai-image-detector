@@ -2,7 +2,7 @@
 import { useResizeObserver } from '@vueuse/core';
 
 import DetectorSvg from '@/assets/detector.svg';
-import { useVerifyStatus } from '@/utilities/auth.js';
+import { useAuth } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
 import { analyzeImage } from '@/utilities/image.js';
 
@@ -11,14 +11,15 @@ import CreateLoginCard from './CreateLoginCard.vue';
 import StyleProvider from './StyleProvider.vue';
 import VerifyLoginCard from './VerifyLoginCard.vue';
 
-const { value: host } = defineModel('host', {
-  type: HTMLElement,
-  required: true,
-});
-
-const { image } = defineProps({
+// Allow deep mutations of the host element
+/* eslint vue/no-mutating-props: ['error', {shallowOnly: true}] */
+const { image, host } = defineProps({
   image: {
     type: HTMLImageElement,
+    required: true,
+  },
+  host: {
+    type: HTMLElement,
     required: true,
   },
 });
@@ -56,21 +57,19 @@ useResizeObserver([image, image.offsetParent], () => {
   }
 });
 
-const verifyStatus = useVerifyStatus();
-const pendingAuth = computed(() => verifyStatus.value === 'pending');
-const needsAuth = computed(
-  () => verifyStatus.value !== null && verifyStatus.value !== 'verified'
-);
-
 /** @type {Ref<ImageAnalysis>} */
 const analysis = ref(null);
+const storedAuth = useAuth();
 
 // Wait for the size to become medium or large
 // This only needs to run once
 const unwatch = watch(
-  [size, verifyStatus],
+  [size, storedAuth],
   async () => {
-    if (verifyStatus.value === 'verified' && size.value !== 'small') {
+    if (
+      storedAuth.value?.verification === 'verified' &&
+      size.value !== 'small'
+    ) {
       unwatch();
       menuOpen.value = false;
       analysis.value = await analyzeImage(image);
@@ -80,8 +79,11 @@ const unwatch = watch(
 );
 
 const iconColor = computed(() => {
-  if (analysis.value) return getIndicatorColor(analysis.value.artificial);
-  else if (needsAuth.value) return DefaultIndicatorColor;
+  const auth = storedAuth.value;
+  const needsAuth = auth !== null && auth?.verification !== 'verified';
+
+  if (needsAuth) return DefaultIndicatorColor;
+  else if (analysis.value) return getIndicatorColor(analysis.value.artificial);
   else return null;
 });
 </script>
@@ -114,15 +116,16 @@ const iconColor = computed(() => {
                 class="icon"
                 :icon="DetectorSvg"
               />
+
               <div v-else-if="size === 'medium'" class="icon"></div>
             </div>
           </button>
         </v-fade-transition>
       </template>
-      <StyleProvider>
-        <VerifyLoginCard v-if="pendingAuth" />
-        <CreateLoginCard v-else-if="needsAuth" />
-        <AnalysisCard v-else v-model="analysis" :image="image" />
+      <StyleProvider v-if="storedAuth !== null">
+        <VerifyLoginCard v-if="storedAuth?.verification === 'pending'" />
+        <CreateLoginCard v-else-if="storedAuth?.verification !== 'verified'" />
+        <AnalysisCard v-if="analysis" v-model="analysis" :image="image" />
       </StyleProvider>
     </v-menu>
   </StyleProvider>

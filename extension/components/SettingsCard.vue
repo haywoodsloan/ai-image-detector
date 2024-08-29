@@ -47,10 +47,10 @@ const toggles = computed({
       (key) => storedSettings.value[key] === true
     ),
   set: async (newVal) =>
-    await userSettings.setValue({
+    (storedSettings.value = {
       ...Object.fromEntries(newVal.map((key) => [key, true])),
       ...Object.fromEntries(
-        Object.entries(await userSettings.getValue()).filter(
+        Object.entries(storedSettings.value).filter(
           ([, value]) => typeof value !== 'boolean'
         )
       ),
@@ -60,8 +60,8 @@ const toggles = computed({
 const disabledSites = computed({
   get: () => storedSettings.value?.disabledSites ?? [],
   set: async (newVal) =>
-    await userSettings.setValue({
-      ...(await userSettings.getValue()),
+    (storedSettings.value = {
+      ...storedSettings.value,
       disabledSites: newVal,
     }),
 });
