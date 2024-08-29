@@ -3,6 +3,21 @@ import { ApiError } from '@/api/base.js';
 import * as actions from './actions';
 
 export default defineBackground(() => {
+  // Add context menu
+  browser.contextMenus.create({
+    contexts: ['image'],
+    title: 'Check if image is AI',
+    id: 'analyze-image',
+  });
+
+  // Handle context menu clicks
+  browser.contextMenus.onClicked.addListener((info) => {
+    if (info.menuItemId === 'analyze-image') {
+      console.log('menu item clicked');
+    }
+  });
+
+  // Create a map of task names to the task definition
   const actionMap = new Map();
   for (const key in actions) {
     /** @type {ActionType} */
@@ -10,6 +25,7 @@ export default defineBackground(() => {
     actionMap.set(action.actionName, action);
   }
 
+  // Handle background tasks being sent
   browser.runtime.onMessage.addListener(({ name, data }, _, sendResponse) => {
     if (actionMap.has(name)) {
       try {
