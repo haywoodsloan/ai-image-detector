@@ -5,9 +5,6 @@ import StyleProvider from '@/components/StyleProvider.vue';
 import VerifyLoginCard from '@/components/VerifyLoginCard.vue';
 import { useAuth } from '@/utilities/auth.js';
 
-import { InitAction } from '../background/actions/init.js';
-
-InitAction.invoke();
 const storedAuth = useAuth();
 </script>
 

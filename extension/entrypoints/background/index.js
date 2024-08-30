@@ -1,8 +1,10 @@
+import { checkAuth } from '@/api/auth.js';
 import { ApiError } from '@/api/base.js';
+import { userAuth } from '@/utilities/storage.js';
 
 import * as actions from './actions';
 
-export default defineBackground(() => {
+export default defineBackground(async () => {
   // Add context menu
   browser.contextMenus.create({
     contexts: ['image'],
@@ -45,6 +47,19 @@ export default defineBackground(() => {
 
     throw new Error(`Missing action handler for ${name}`);
   });
+
+  // If no auth yet just skip
+  const auth = await userAuth.getValue();
+  if (!auth) return;
+
+  // If an auth exists check it's still valid
+  try {
+    const authUpdate = await checkAuth();
+    await userAuth.setValue({ ...auth, ...authUpdate });
+  } catch (error) {
+    if (error.status === 401) await userAuth.removeValue();
+    throw error;
+  }
 });
 
 /**

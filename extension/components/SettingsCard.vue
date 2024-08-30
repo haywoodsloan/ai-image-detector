@@ -80,8 +80,13 @@ const reloadNeeded = computed(() => {
   );
 });
 
+/**
+ * @param {string} site
+ */
 async function toggleDisabledSite(site) {
   const sites = disabledSites.value;
+  site = site.toLowerCase();
+
   if (sites.includes(site)) {
     disabledSites.value = sites.filter((s) => s !== site);
   } else {

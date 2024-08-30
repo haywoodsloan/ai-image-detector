@@ -1,14 +1,24 @@
 import { checkImage } from '@/api/detector.js';
 import { deleteImageVote, voteImageLabel } from '@/api/vote.js';
 
+import { getAnalysisStorage, useStorage, userSettings } from './storage.js';
+
+/**
+ * @param {string} url
+ */
+export function useImageAnalysis(url) {
+  return useStorage(getAnalysisStorage(url));
+}
+
 /**
  * @param {HTMLImageElement} image
  */
-export function analyzeImage(image) {
+export async function analyzeImage(image) {
   try {
     return checkImage(image.src);
   } catch (error) {
-    if (error?.status !== 404) throw error;
+    const { autoCheck, autoCheckPrivate } = await userSettings.getValue();
+    if (error?.status !== 404 || !(autoCheckPrivate && autoCheck)) throw error;
     return checkImage(imageToDataUrl(image));
   }
 }
@@ -17,12 +27,14 @@ export function analyzeImage(image) {
  * @param {HTMLImageElement} image
  * @param {LabelType} label
  */
-export function reportImage(image, label) {
+export async function reportImage(image, label) {
+  const { uploadImages, uploadImagesPrivate } = await userSettings.getValue();
   try {
-    return voteImageLabel(image.src, label);
+    return voteImageLabel(image.src, label, !uploadImages);
   } catch (error) {
     if (error?.status !== 404) throw error;
-    return voteImageLabel(imageToDataUrl(image), label);
+    const shouldUpload = !(uploadImagesPrivate && uploadImages);
+    return voteImageLabel(imageToDataUrl(image), label, shouldUpload);
   }
 }
 

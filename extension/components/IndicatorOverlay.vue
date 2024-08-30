@@ -4,7 +4,7 @@ import { useResizeObserver } from '@vueuse/core';
 import DetectorSvg from '@/assets/detector.svg';
 import { useAuth } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
-import { analyzeImage } from '@/utilities/image.js';
+import { analyzeImage, useImageAnalysis } from '@/utilities/image.js';
 
 import AnalysisCard from './AnalysisCard.vue';
 import CreateLoginCard from './CreateLoginCard.vue';
@@ -31,6 +31,7 @@ onMounted(() => {
   host.style.position = 'absolute';
 });
 
+/** @type {Ref<'small' | 'medium' | 'large'>} */
 const size = ref('small');
 useResizeObserver([image, image.offsetParent], () => {
   const imgRect = image?.getBoundingClientRect();
@@ -58,15 +59,20 @@ useResizeObserver([image, image.offsetParent], () => {
 });
 
 /** @type {Ref<ImageAnalysis>} */
-const analysis = ref(null);
+const analysis = useImageAnalysis(image.src);
 const storedAuth = useAuth();
 
 // Wait for the size to become medium or large
 // This only needs to run once
 const unwatch = watch(
-  [size, storedAuth],
+  [size, storedAuth, analysis],
   async () => {
-    if (
+    if (analysis.value === null) return;
+
+    if (analysis.value?.scoreType) {
+      unwatch();
+      menuOpen.value = false;
+    } else if (
       storedAuth.value?.verification === 'verified' &&
       size.value !== 'small'
     ) {
