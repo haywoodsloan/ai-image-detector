@@ -14,6 +14,8 @@ const Vuetify = createVuetify({
   },
 });
 
+export const AltProviderClasses = ['v-overlay-container'];
+
 /**
  * @param {Component} root
  * @param {Data} [props]

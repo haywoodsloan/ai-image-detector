@@ -13,7 +13,7 @@ export default defineBackground(() => {
   // Add context menu
   browser.contextMenus.create({
     contexts: ['image'],
-    title: 'Check if image is AI',
+    title: 'Check if image is AI generated',
     id: AnalyzeImageId,
   });
 

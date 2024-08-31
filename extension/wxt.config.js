@@ -3,6 +3,8 @@ import vuetify from 'vite-plugin-vuetify';
 import svgLoader from 'vite-svg-loader';
 import { defineConfig } from 'wxt';
 
+import { AltProviderClasses } from './utilities/vue.js';
+
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ['@wxt-dev/module-vue'],
@@ -15,15 +17,18 @@ export default defineConfig({
       postcss: {
         plugins: [
           prefixer({
-            prefix: '[data-aid-bi39lk5g]',
+            prefix: '[data-aid-3bi9lk5g]',
             ignoreFiles: ['index.html', 'popup.html'],
-            exclude: [
-              /\[data-aid-bi39lk5g\]/,
-              /\[data-v-[a-z0-9A-Z]+\]/,
-              /\.v-snackbar/,
-              /\.v-overlay/,
-              /\.v-dialog/,
-            ],
+            exclude: [/\[data-aid-3bi9lk5g\]/, /\[data-v-[a-z0-9A-Z]+\]/],
+
+            transform(prefix, selector, prefixedSelector) {
+              const isAltProvider = AltProviderClasses.some((cls) =>
+                selector.startsWith(`.${cls}`)
+              );
+
+              if (isAltProvider) return `${prefix}${selector}`;
+              else return prefixedSelector;
+            },
           }),
         ],
       },
