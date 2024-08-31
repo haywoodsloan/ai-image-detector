@@ -1,21 +1,29 @@
-import { checkAuth } from '@/api/auth.js';
 import { ApiError } from '@/api/base.js';
-import { userAuth } from '@/utilities/storage.js';
 
 import * as actions from './actions';
 
-export default defineBackground(async () => {
+export const AnalyzeImageId = 'analyze-image';
+
+export default defineBackground(() => {
+  // Let content script access session storage
+  browser.storage.session.setAccessLevel({
+    accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS',
+  });
+
   // Add context menu
   browser.contextMenus.create({
     contexts: ['image'],
     title: 'Check if image is AI',
-    id: 'analyze-image',
+    id: AnalyzeImageId,
   });
 
   // Handle context menu clicks
-  browser.contextMenus.onClicked.addListener((info) => {
-    if (info.menuItemId === 'analyze-image') {
-      console.log('menu item clicked');
+  browser.contextMenus.onClicked.addListener(async (info, tab) => {
+    if (info.menuItemId === AnalyzeImageId) {
+      await browser.tabs.sendMessage(tab.id, {
+        name: AnalyzeImageId,
+        data: info.srcUrl,
+      });
     }
   });
 
@@ -47,19 +55,6 @@ export default defineBackground(async () => {
 
     throw new Error(`Missing action handler for ${name}`);
   });
-
-  // If no auth yet just skip
-  const auth = await userAuth.getValue();
-  if (!auth) return;
-
-  // If an auth exists check it's still valid
-  try {
-    const authUpdate = await checkAuth();
-    await userAuth.setValue({ ...auth, ...authUpdate });
-  } catch (error) {
-    if (error.status === 401) await userAuth.removeValue();
-    throw error;
-  }
 });
 
 /**

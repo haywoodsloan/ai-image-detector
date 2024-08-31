@@ -7,7 +7,7 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   modules: ['@wxt-dev/module-vue'],
   manifest: {
-    permissions: ['storage', 'webNavigation', 'contextMenus'],
+    permissions: ['storage', 'webNavigation', 'contextMenus', 'activeTab'],
   },
   vite: () => ({
     plugins: [svgLoader(), vuetify()],
@@ -20,6 +20,7 @@ export default defineConfig({
             exclude: [
               /\[data-aid-bi39lk5g\]/,
               /\[data-v-[a-z0-9A-Z]+\]/,
+              /\.v-snackbar/,
               /\.v-overlay/,
               /\.v-dialog/,
             ],

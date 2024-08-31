@@ -1,5 +1,7 @@
+import AnalysisDialog from '@/components/AnalysisDialog.vue';
 import IndicatorOverlay from '@/components/IndicatorOverlay.vue';
 import { mergeSignals } from '@/utilities/abort.js';
+import { invokeBackgroundTask } from '@/utilities/background.js';
 import {
   getChildrenDeep,
   getCoveredElements,
@@ -11,6 +13,9 @@ import {
 } from '@/utilities/element.js';
 import { userSettings } from '@/utilities/storage.js';
 import { createAppEx } from '@/utilities/vue.js';
+
+import { InitAction } from '../background/actions/init.js';
+import { AnalyzeImageId } from '../background/index.js';
 
 const MinVis = 0.2;
 const VisThreshes = [0.2, 0.6, 1];
@@ -28,6 +33,16 @@ const StyleObsOpts = {
 export default defineContentScript({
   matches: ['<all_urls>'],
   async main(ctx) {
+    // Make sure the extension has been initialized
+    await invokeBackgroundTask(InitAction);
+
+    browser.runtime.onMessage.addListener(({ name, data }) => {
+      if (name === AnalyzeImageId) {
+        createDialogUi(data);
+      }
+    });
+
+    // Check if we should do the auto check observing
     const site = location.host?.toLowerCase();
     const { autoCheck, disabledSites } = await userSettings.getValue();
     if (!autoCheck || disabledSites.includes(site)) return;
@@ -196,6 +211,33 @@ export default defineContentScript({
       if (signal.aborted) return;
       ui.mount();
 
+      return ui;
+    }
+
+    /**
+     * @param {string} image
+     */
+    function createDialogUi(image) {
+      const ui = createIntegratedUi(ctx, {
+        position: 'overlay',
+        anchor: document.body,
+
+        onMount(host) {
+          const app = createAppEx(AnalysisDialog, {
+            onClose: () => ui.remove(),
+            image,
+          });
+
+          app.mount(host);
+          return app;
+        },
+
+        onRemove(app) {
+          app?.unmount();
+        },
+      });
+
+      ui.mount();
       return ui;
     }
   },

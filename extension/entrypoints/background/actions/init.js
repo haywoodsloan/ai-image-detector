@@ -1,0 +1,25 @@
+import memoize from 'memoize';
+
+import { checkAuth } from '@/api/auth.js';
+import { userAuth } from '@/utilities/storage.js';
+
+import { BaseAction } from './base.js';
+
+export class InitAction extends BaseAction {
+  static actionName = 'InitAction';
+  static invoke = memoize(async () => {
+    const auth = await userAuth.getValue();
+
+    // If no auth yet just skip
+    if (!auth) return;
+
+    // If an auth exists check it's still valid
+    try {
+      const authUpdate = await checkAuth();
+      await userAuth.setValue({ ...auth, ...authUpdate });
+    } catch (error) {
+      if (error.status === 401) await userAuth.removeValue();
+      throw error;
+    }
+  });
+}

@@ -11,55 +11,53 @@ export function useImageAnalysis(url) {
 }
 
 /**
- * @param {HTMLImageElement} image
+ * @param {string} src
  */
-export async function analyzeImage(image) {
+export async function analyzeImage(src) {
   try {
-    return checkImage(image.src);
+    return checkImage(src);
   } catch (error) {
     const { autoCheck, autoCheckPrivate } = await userSettings.getValue();
     if (error?.status !== 404 || !(autoCheckPrivate && autoCheck)) throw error;
-    return checkImage(imageToDataUrl(image));
+    return checkImage(imageToDataUrl(src));
   }
 }
 
 /**
- * @param {HTMLImageElement} image
+ * @param {string} src
  * @param {LabelType} label
  */
-export async function reportImage(image, label) {
+export async function reportImage(src, label) {
   const { uploadImages, uploadImagesPrivate } = await userSettings.getValue();
   try {
-    return voteImageLabel(image.src, label, !uploadImages);
+    return voteImageLabel(src, label, !uploadImages);
   } catch (error) {
     if (error?.status !== 404) throw error;
     const shouldUpload = !(uploadImagesPrivate && uploadImages);
-    return voteImageLabel(imageToDataUrl(image), label, shouldUpload);
+    return voteImageLabel(imageToDataUrl(src), label, shouldUpload);
   }
 }
 
 /**
- * @param {HTMLImageElement} image
+ * @param {string} src
  * @param {LabelType} label
  */
-export function deleteImageReport(image) {
+export function deleteImageReport(src) {
   try {
-    return deleteImageVote(image.src);
+    return deleteImageVote(src);
   } catch (error) {
     if (error?.status !== 404) throw error;
-    return deleteImageVote(imageToDataUrl(image));
+    return deleteImageVote(imageToDataUrl(src));
   }
 }
 
 /**
- * @param {HTMLImageElement} image
+ * @param {string} src
  */
-async function imageToDataUrl(image) {
+async function imageToDataUrl(src) {
   const clone = new Image();
   clone.crossOrigin = 'anonymous';
-
-  clone.srcset = image.srcset;
-  clone.src = image.src;
+  clone.src = src;
 
   await clone.decode();
   const canvas = document.createElement('canvas');

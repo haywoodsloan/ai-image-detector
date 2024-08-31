@@ -59,7 +59,7 @@ useResizeObserver([image, image.offsetParent], () => {
 });
 
 /** @type {Ref<ImageAnalysis>} */
-const analysis = useImageAnalysis(image.src);
+const analysis = useImageAnalysis(image.currentSrc);
 const storedAuth = useAuth();
 
 // Wait for the size to become medium or large
@@ -68,7 +68,6 @@ const unwatch = watch(
   [size, storedAuth, analysis],
   async () => {
     if (analysis.value === null) return;
-
     if (analysis.value?.scoreType) {
       unwatch();
       menuOpen.value = false;
@@ -78,7 +77,7 @@ const unwatch = watch(
     ) {
       unwatch();
       menuOpen.value = false;
-      analysis.value = await analyzeImage(image);
+      analysis.value = await analyzeImage(image.currentSrc);
     }
   },
   { immediate: true }

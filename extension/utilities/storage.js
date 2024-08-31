@@ -19,16 +19,19 @@ export const userAuth = storage.defineItem('sync:userAuth');
 
 /**
  * @param {string} url
- * @returns {WxtStorageItem<ImageAnalysis}
  */
 export async function getAnalysisStorage(url) {
   const hash = await sha1(url);
-  return storage.defineItem(`session:analysis-${hash}`);
+
+  /** @type {WxtStorageItem<ImageAnalysis>} */
+  const item = storage.defineItem(`session:analysis-${hash}`);
+
+  return item;
 }
 
 /**
  * @template T
- * @param {WxtStorageItem<T>} storage
+ * @param {WxtStorageItem<T> | Promise<WxtStorageItem<T>>} storage
  * */
 export function useStorage(storage) {
   /** @type {T} */
@@ -41,16 +44,16 @@ export function useStorage(storage) {
 
       if (!initialized) {
         initialized = true;
-
-        storage.getValue().then((val) => {
-          stored = val ?? undefined;
+        (async () => {
+          const item = await storage;
+          stored = (await item.getValue()) ?? undefined;
           trigger();
 
-          storage.watch((newVal) => {
+          item.watch((newVal) => {
             stored = newVal ?? undefined;
             trigger();
           });
-        });
+        })();
       }
 
       return stored;

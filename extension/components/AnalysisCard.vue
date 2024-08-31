@@ -11,7 +11,7 @@ import DonateLinks from './DonateLinks.vue';
 
 const props = defineProps({
   image: {
-    type: HTMLImageElement,
+    type: String,
     required: true,
   },
 });
