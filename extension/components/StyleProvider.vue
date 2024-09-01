@@ -1,6 +1,6 @@
 <script setup>
 import { getParentChain } from '@/utilities/element.js';
-import { AltProviderClasses } from '@/utilities/vue.js';
+import { OverlayClasses } from '@/utilities/vue.js';
 
 const DataSetId = 'aid-3bi9lk5g';
 
@@ -9,10 +9,10 @@ const wrapper = ref(null);
 
 onMounted(() => {
   // Walk up the parent chain and look for overlay wrappers
-  for (const ancestor of getParentChain(wrapper.value)) {
-    if (AltProviderClasses.some((cls) => ancestor.classList.contains(cls))) {
+  for (const { classList, dataset } of getParentChain(wrapper.value)) {
+    if (OverlayClasses.some((c) => classList.contains(c))) {
       // Stop after the first overlay wrapper
-      ancestor.dataset[DataSetId] = '';
+      dataset[DataSetId] = '';
       break;
     }
   }
@@ -38,8 +38,10 @@ onMounted(() => {
 );
 
 [data-aid-3bi9lk5g] {
+  @extend :root;
+
   &.aid-style-root {
-    @extend :root, html, body;
+    @extend html, body;
     display: contents !important;
   }
 

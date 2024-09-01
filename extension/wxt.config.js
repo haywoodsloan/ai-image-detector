@@ -3,7 +3,7 @@ import vuetify from 'vite-plugin-vuetify';
 import svgLoader from 'vite-svg-loader';
 import { defineConfig } from 'wxt';
 
-import { AltProviderClasses } from './utilities/vue.js';
+import { OverlayClasses } from './utilities/vue.js';
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
@@ -21,13 +21,13 @@ export default defineConfig({
             ignoreFiles: ['index.html', 'popup.html'],
             exclude: [/\[data-aid-3bi9lk5g\]/, /\[data-v-[a-z0-9A-Z]+\]/],
 
-            transform(prefix, selector, prefixedSelector) {
-              const isAltProvider = AltProviderClasses.some((cls) =>
-                selector.startsWith(`.${cls}`)
+            transform(prefix, orig, prefixed) {
+              const isOverlay = OverlayClasses.some((c) =>
+                orig.startsWith(`.${c}`)
               );
 
-              if (isAltProvider) return `${prefix}${selector}`;
-              else return prefixedSelector;
+              if (isOverlay) return `${prefix}${orig}`;
+              else return prefixed;
             },
           }),
         ],
@@ -35,3 +35,4 @@ export default defineConfig({
     },
   }),
 });
+[];

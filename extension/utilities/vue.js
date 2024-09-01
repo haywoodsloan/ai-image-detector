@@ -1,6 +1,8 @@
 import { createVuetify } from 'vuetify';
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg';
 
+export const OverlayClasses = ['v-overlay-container'];
+
 const Vuetify = createVuetify({
   theme: {
     defaultTheme: 'dark',
@@ -13,8 +15,6 @@ const Vuetify = createVuetify({
     },
   },
 });
-
-export const AltProviderClasses = ['v-overlay-container'];
 
 /**
  * @param {Component} root

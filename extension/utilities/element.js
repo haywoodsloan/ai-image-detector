@@ -19,7 +19,7 @@ export function isElementCovered(ele) {
 }
 
 /**
- * @param {Element} ele
+ * @param {HTMLElement} ele
  */
 export function* getCoveredElements(ele) {
   for (const { x, y } of getElementGrid(ele)) {
@@ -33,7 +33,7 @@ export function* getCoveredElements(ele) {
 }
 
 /**
- * @param {Element} ele
+ * @param {HTMLElement} ele
  */
 export async function waitForAnimations(ele) {
   await Promise.all(
@@ -42,14 +42,14 @@ export async function waitForAnimations(ele) {
 }
 
 /**
- * @param {Element} ele
+ * @param {HTMLElement} ele
  */
 export function isImageElement(ele) {
   return ele.nodeName === 'IMG';
 }
 
 /**
- * @param {Element} ele
+ * @param {HTMLElement} ele
  */
 export function isStyleHidden(ele) {
   const styles = getComputedStyle(ele);
@@ -61,7 +61,7 @@ export function isStyleHidden(ele) {
 }
 
 /**
- * @param {Element} ele
+ * @param {HTMLElement} ele
  */
 export function* getChildrenDeep(ele) {
   const stack = [...ele.children];
@@ -76,12 +76,12 @@ export function* getChildrenDeep(ele) {
 }
 
 /**
- * @param {Element} ele 
+ * @param {HTMLElement} ele 
  */
 export function* getParentChain(ele) {
   let parent = ele.parentNode;
   while(parent) {
-    if (parent instanceof Element) yield parent;
+    if (parent instanceof HTMLElement) yield parent;
     parent = parent.parentNode || parent.host;
   }
 }
@@ -121,7 +121,7 @@ function getVisibleRect(ele) {
 }
 
 /**
- * @param {Element} ele
+ * @param {HTMLElement} ele
  */
 function* getElementGrid(ele) {
   // Use just the visible rect of the image

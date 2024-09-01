@@ -8,9 +8,7 @@ import { userAuth } from '@/utilities/storage.js';
 import AnalysisCard from './AnalysisCard.vue';
 import StyleProvider from './StyleProvider.vue';
 
-const NeedsSignInError =
-  'Please sign into the AI Image Detector ' +
-  'extension to check for AI generated images.';
+const SignInError = 'Please sign in to check for AI generated images.';
 
 const emit = defineEmits(['close']);
 const { image } = defineProps({
@@ -28,7 +26,7 @@ const analysis = ref(null);
   if (storedAuth?.verification === 'verified') {
     analysis.value = await analyzeImage(image);
   } else {
-    error.value = NeedsSignInError;
+    error.value = SignInError;
     await invokeBackgroundTask(PopupAction);
   }
 })();
