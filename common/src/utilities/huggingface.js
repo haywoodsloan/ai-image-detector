@@ -440,7 +440,10 @@ export function setHfAccessToken(hfToken) {
  * @param {ClassificationOptions} options
  */
 export async function getImageClassification(args, options) {
-  return getHfInterface().imageClassification(args, options);
+  return getHfInterface().imageClassification(
+    { ...args, accessToken: credentials?.accessToken },
+    options
+  );
 }
 
 /**

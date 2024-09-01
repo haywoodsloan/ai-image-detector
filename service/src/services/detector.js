@@ -25,5 +25,5 @@ export async function classifyIfAi(data) {
     .filter(({ label }) => label === AiLabel)
     .map(({ score }) => score);
 
-  return aiScores.reduce((sum, score) => sum + score) / aiScores.length;
+  return aiScores.reduce((sum, score) => sum + score, 0) / aiScores.length;
 }
