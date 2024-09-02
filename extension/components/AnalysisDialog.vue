@@ -2,7 +2,7 @@
 import { PopupAction } from '@/entrypoints/background/actions/index.js';
 import { invokeBackgroundTask } from '@/utilities/background.js';
 import { AiIndicatorColor } from '@/utilities/color.js';
-import { analyzeImage } from '@/utilities/image.js';
+import { analyzeImage, useImageAnalysis } from '@/utilities/image.js';
 import { userAuth } from '@/utilities/storage.js';
 
 import AnalysisCard from './AnalysisCard.vue';
@@ -19,7 +19,7 @@ const { image } = defineProps({
 });
 
 const error = ref('');
-const analysis = ref(null);
+const analysis = useImageAnalysis(image);
 
 (async () => {
   const storedAuth = await userAuth.getValue();
@@ -35,6 +35,7 @@ const analysis = ref(null);
 <template>
   <v-snackbar
     v-if="error"
+    timer
     :model-value="true"
     :color="AiIndicatorColor"
     @update:model-value="!$event && emit('close')"
@@ -44,7 +45,21 @@ const analysis = ref(null);
     </StyleProvider>
   </v-snackbar>
 
-  <v-dialog v-else-if="analysis">
-    <AnalysisCard v-model="analysis" :image="image" />
+  <v-dialog
+    v-else-if="analysis"
+    :model-value="true"
+    max-width="max-content"
+    @after-leave="emit('close')"
+  >
+    <template #default="{ isActive }">
+      <StyleProvider>
+        <AnalysisCard
+          v-model="analysis"
+          show-close
+          :image="image"
+          @close="isActive.value = false"
+        />
+      </StyleProvider>
+    </template>
   </v-dialog>
 </template>

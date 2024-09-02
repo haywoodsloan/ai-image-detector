@@ -1,4 +1,6 @@
 <script setup>
+import { mdiClose, mdiCloseCircle, mdiCloseCircleOutline } from '@mdi/js';
+
 import DetectorSvg from '@/assets/detector.svg';
 import { AiIndicatorColor, RealIndicatorColor } from '@/utilities/color.js';
 import {
@@ -9,10 +11,15 @@ import {
 
 import DonateLinks from './DonateLinks.vue';
 
+defineEmits(['close']);
 const props = defineProps({
   image: {
     type: String,
     required: true,
+  },
+  showClose: {
+    type: Boolean,
+    default: false,
   },
 });
 
@@ -57,39 +64,60 @@ async function vote(label) {
 
 <template>
   <v-card>
-    <v-card-item class="pb-0">
-      <v-card-title>
-        <template v-if="model.scoreType === 'detector'">
-          AI Analysis Score: {{ scoreText }}
-        </template>
+    <v-card-item class="pb-0 pr-2">
+      <div class="d-flex">
+        <div>
+          <v-card-title>
+            <template v-if="model.scoreType === 'detector'">
+              AI Analysis Score: {{ scoreText }}
+            </template>
 
-        <template v-else-if="model.scoreType === 'vote'">
-          Users Reported: {{ scoreText }}
-        </template>
+            <template v-else-if="model.scoreType === 'vote'">
+              Users Reported: {{ scoreText }}
+            </template>
 
-        <template v-else-if="model.scoreType === 'user'">
-          You Reported: {{ scoreText }}
-        </template>
-      </v-card-title>
-      <v-card-subtitle v-if="model.scoreType !== 'user'">
-        <template v-if="model.scoreType === 'detector'">
-          <template v-if="model.artificial >= 0.9"> Very likely AI </template>
+            <template v-else-if="model.scoreType === 'user'">
+              You Reported: {{ scoreText }}
+            </template>
+          </v-card-title>
+          <v-card-subtitle v-if="model.scoreType !== 'user'">
+            <template v-if="model.scoreType === 'detector'">
+              <template v-if="model.artificial >= 0.9">
+                Very likely AI
+              </template>
 
-          <template v-else-if="model.artificial >= 0.75"> Likely AI </template>
+              <template v-else-if="model.artificial >= 0.75">
+                Likely AI
+              </template>
 
-          <template v-else-if="model.artificial >= 0.5"> Possibly AI </template>
+              <template v-else-if="model.artificial >= 0.5">
+                Possibly AI
+              </template>
 
-          <template v-else-if="model.artificial >= 0.25">
-            Likely Real
-          </template>
+              <template v-else-if="model.artificial >= 0.25">
+                Likely Real
+              </template>
 
-          <template v-else> Very Likely Real </template>
-        </template>
+              <template v-else> Very Likely Real </template>
+            </template>
 
-        <template v-else-if="model.scoreType === 'vote'">
-          Based on {{ model.voteCount }} user reports
-        </template>
-      </v-card-subtitle>
+            <template v-else-if="model.scoreType === 'vote'">
+              Based on {{ model.voteCount }} user reports
+            </template>
+          </v-card-subtitle>
+        </div>
+
+        <v-btn
+          v-if="showClose"
+          icon
+          class="ml-4"
+          variant="plain"
+          size="20"
+          @click="$emit('close')"
+        >
+          <v-icon :icon="mdiCloseCircle" size="20" />
+        </v-btn>
+      </div>
     </v-card-item>
 
     <v-card-actions class="pt-0">

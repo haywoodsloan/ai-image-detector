@@ -90,7 +90,7 @@ export function* getParentChain(ele) {
  * @param {HTMLElement} ele 
  */
 function getVisibleRect(ele) {
-  if (!ele.offsetParent) console.log('no offset parent for', ele);
+  if (!ele.offsetParent) return;
 
   // Use the element rect and offset parent rect
   const eleRect = ele.getBoundingClientRect();
@@ -126,6 +126,7 @@ function getVisibleRect(ele) {
 function* getElementGrid(ele) {
   // Use just the visible rect of the image
   const visRect = getVisibleRect(ele);
+  if (!visRect) return;
 
   const left = visRect.left + GridInset;
   const top = visRect.top + GridInset;

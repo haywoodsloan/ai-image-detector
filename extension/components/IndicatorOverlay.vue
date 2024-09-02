@@ -100,7 +100,7 @@ const iconColor = computed(() => {
       location="right top"
       z-index="2147483647"
       open-on-click
-      open-on-hover2
+      open-on-hover
       :offset="[6, -8]"
       :close-on-content-click="false"
       @click.stop
@@ -130,7 +130,11 @@ const iconColor = computed(() => {
       <StyleProvider v-if="storedAuth !== null">
         <VerifyLoginCard v-if="storedAuth?.verification === 'pending'" />
         <CreateLoginCard v-else-if="storedAuth?.verification !== 'verified'" />
-        <AnalysisCard v-if="analysis" v-model="analysis" :image="image" />
+        <AnalysisCard
+          v-if="analysis"
+          v-model="analysis"
+          :image="image.currentSrc"
+        />
       </StyleProvider>
     </v-menu>
   </StyleProvider>
