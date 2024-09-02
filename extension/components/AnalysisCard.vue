@@ -1,8 +1,12 @@
 <script setup>
-import { mdiClose, mdiCloseCircle, mdiCloseCircleOutline } from '@mdi/js';
+import { mdiCloseCircle } from '@mdi/js';
 
 import DetectorSvg from '@/assets/detector.svg';
-import { AiIndicatorColor, RealIndicatorColor } from '@/utilities/color.js';
+import {
+  AiIndicatorColor,
+  RealIndicatorColor,
+  getIndicatorColor,
+} from '@/utilities/color.js';
 import {
   analyzeImage,
   deleteImageReport,
@@ -37,6 +41,14 @@ const scoreText = computed(() => {
   } else return model.value.artificial > 0 ? 'AI' : 'Real';
 });
 
+const scoreColor = computed(() => {
+  if (model.value.scoreType === 'detector') {
+    return getIndicatorColor(model.value.artificial);
+  } else {
+    return model.value.artificial > 0 ? AiIndicatorColor : RealIndicatorColor;
+  }
+});
+
 /** @type {Ref<LabelType>} */
 const pendingVote = ref(null);
 
@@ -57,30 +69,34 @@ async function vote(label) {
       };
     }
   } finally {
-    pendingVote.value = '';
+    pendingVote.value = null;
   }
 }
 </script>
 
 <template>
   <v-card>
-    <v-card-item class="pb-0 pr-2">
+    <v-card-item class="pb-0" :class="{ 'pr-2': showClose }">
       <div class="d-flex">
         <div>
           <v-card-title>
             <template v-if="model.scoreType === 'detector'">
-              AI Analysis Score: {{ scoreText }}
+              AI Analysis Score:
             </template>
 
             <template v-else-if="model.scoreType === 'vote'">
-              Users Reported: {{ scoreText }}
+              Users Reported As:
             </template>
 
             <template v-else-if="model.scoreType === 'user'">
-              You Reported: {{ scoreText }}
+              You Reported As:
             </template>
+
+            <span :style="{ color: scoreColor }">
+              {{ scoreText }}
+            </span>
           </v-card-title>
-          <v-card-subtitle v-if="model.scoreType !== 'user'">
+          <v-card-subtitle>
             <template v-if="model.scoreType === 'detector'">
               <template v-if="model.artificial >= 0.9">
                 Very likely AI
@@ -95,14 +111,18 @@ async function vote(label) {
               </template>
 
               <template v-else-if="model.artificial >= 0.25">
-                Likely Real
+                Likely real
               </template>
 
-              <template v-else> Very Likely Real </template>
+              <template v-else> Very likely real </template>
             </template>
 
             <template v-else-if="model.scoreType === 'vote'">
               Based on {{ model.voteCount }} user reports
+            </template>
+
+            <template v-else-if="model.scoreType === 'user'">
+              Thank you for your input
             </template>
           </v-card-subtitle>
         </div>
@@ -121,58 +141,56 @@ async function vote(label) {
     </v-card-item>
 
     <v-card-actions class="pt-0">
-      <v-list density="compact" min-width="100%" class="pa-0 overflow-visible">
-        <template v-if="model.scoreType !== 'user'">
-          <v-list-item class="px-0">
-            <v-list-item-action>
-              <v-btn
-                size="large"
-                class="justify-start flex-fill"
-                :loading="pendingVote === 'artificial' ? aiColor : false"
-                :disabled="!!pendingVote && pendingVote !== 'artificial'"
-                @click="vote('artificial')"
-              >
-                <template #prepend>
-                  <v-icon class="icon ai" :icon="DetectorSvg" />
-                </template>
-                Report AI Image
-              </v-btn>
-            </v-list-item-action>
-          </v-list-item>
-          <v-list-item class="px-0">
-            <v-list-item-action>
-              <v-btn
-                size="large"
-                class="justify-start flex-fill"
-                :loading="pendingVote === 'real' ? realColor : false"
-                :disabled="!!pendingVote && pendingVote !== 'real'"
-                @click="vote('real')"
-              >
-                <template #prepend>
-                  <v-icon class="icon real" :icon="DetectorSvg" />
-                </template>
-                Report Real Image
-              </v-btn>
-            </v-list-item-action>
-          </v-list-item>
-        </template>
-
-        <template v-else>
-          <v-list-item class="px-0">
-            <v-list-item-action>
-              <v-btn
-                size="large"
-                class="justify-start flex-fill"
-                :loading="pendingVote === 'cancel'"
-                :color="AiIndicatorColor"
-                @click="vote('cancel')"
-              >
-                Cancel my report
-              </v-btn>
-            </v-list-item-action>
-          </v-list-item>
-        </template>
+      <v-list
+        v-if="model.scoreType !== 'user'"
+        density="compact"
+        min-width="100%"
+        class="pa-0 overflow-visible"
+      >
+        <v-list-item class="px-0">
+          <v-list-item-action>
+            <v-btn
+              size="large"
+              class="justify-start flex-fill"
+              :loading="pendingVote === 'artificial' ? AiIndicatorColor : false"
+              :disabled="!!pendingVote && pendingVote !== 'artificial'"
+              @click="vote('artificial')"
+            >
+              <template #prepend>
+                <v-icon class="icon ai" :icon="DetectorSvg" />
+              </template>
+              Report AI Image
+            </v-btn>
+          </v-list-item-action>
+        </v-list-item>
+        <v-list-item class="px-0">
+          <v-list-item-action>
+            <v-btn
+              size="large"
+              class="justify-start flex-fill"
+              :loading="pendingVote === 'real' ? RealIndicatorColor : false"
+              :disabled="!!pendingVote && pendingVote !== 'real'"
+              @click="vote('real')"
+            >
+              <template #prepend>
+                <v-icon class="icon real" :icon="DetectorSvg" />
+              </template>
+              Report Real Image
+            </v-btn>
+          </v-list-item-action>
+        </v-list-item>
       </v-list>
+
+      <template v-else>
+        <v-btn
+          class="justify-start flex-fill"
+          :loading="pendingVote === 'cancel'"
+          :color="AiIndicatorColor"
+          @click="vote('cancel')"
+        >
+          Cancel my report
+        </v-btn>
+      </template>
     </v-card-actions>
     <DonateLinks />
   </v-card>

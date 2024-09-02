@@ -1,7 +1,7 @@
 import { post } from './base.js';
 
 const VoteImageLabelEndpoint = '/voteImageLabel';
-const DeleteImageVoteEndpoint = '/voteImageLabel';
+const DeleteImageVoteEndpoint = '/deleteImageVote';
 
 /**
  * @param {string} url

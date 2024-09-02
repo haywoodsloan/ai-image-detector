@@ -59,8 +59,10 @@ export function useStorage(storage) {
       return stored;
     },
     async set(newVal) {
-      // Use a deep clone to remove proxies
+      stored = newVal;
       const item = await storage;
+      
+      // Use a deep clone to remove proxies
       if (newVal === null) await item.removeValue();
       else await item.setValue(cloneDeep(newVal));
     },

@@ -149,8 +149,10 @@ async function reload() {
                 />
               </template>
 
-              Data used for image analysis is never stored. Requires a page
-              reload for changes to take effect.
+              <StyleProvider>
+                Data used for image analysis is never stored. Requires a page
+                reload for changes to take effect.
+              </StyleProvider>
             </v-tooltip>
           </v-list-item-title>
 
@@ -187,8 +189,11 @@ async function reload() {
                   :color="PrimaryColorLight"
                 />
               </template>
-              Metadata (GPS, camera info, etc.) will be removed before sending
-              the image for analysis. May increase bandwidth usage.
+
+              <StyleProvider>
+                Metadata (GPS, camera info, etc.) will be removed before sending
+                the image for analysis. May increase bandwidth usage.
+              </StyleProvider>
             </v-tooltip>
           </v-list-item-title>
 
@@ -221,8 +226,10 @@ async function reload() {
                 />
               </template>
 
-              Images are kept secure and private, they will only used to improve
-              the detector.
+              <StyleProvider>
+                Images are kept secure and private, they will only used to
+                improve the detector.
+              </StyleProvider>
             </v-tooltip>
           </v-list-item-title>
 
@@ -260,8 +267,10 @@ async function reload() {
                 />
               </template>
 
-              Metadata (GPS, camera info, etc.) will be removed before
-              uploading.
+              <StyleProvider>
+                Metadata (GPS, camera info, etc.) will be removed before
+                uploading.
+              </StyleProvider>
             </v-tooltip>
           </v-list-item-title>
 

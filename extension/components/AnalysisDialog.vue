@@ -21,10 +21,12 @@ const { image } = defineProps({
 const error = ref('');
 const analysis = useImageAnalysis(image);
 
+const pending = ref(true);
 (async () => {
   const storedAuth = await userAuth.getValue();
   if (storedAuth?.verification === 'verified') {
     analysis.value = await analyzeImage(image);
+    pending.value = false;
   } else {
     error.value = SignInError;
     await invokeBackgroundTask(PopupAction);
@@ -46,7 +48,7 @@ const analysis = useImageAnalysis(image);
   </v-snackbar>
 
   <v-dialog
-    v-else-if="analysis"
+    v-else-if="!pending"
     :model-value="true"
     max-width="max-content"
     @after-leave="emit('close')"
