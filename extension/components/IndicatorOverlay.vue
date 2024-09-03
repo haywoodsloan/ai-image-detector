@@ -72,6 +72,7 @@ const unwatch = watch(
       unwatch();
       menuOpen.value = false;
     } else if (
+      image.currentSrc &&
       storedAuth.value?.verification === 'verified' &&
       size.value !== 'small'
     ) {
@@ -82,6 +83,19 @@ const unwatch = watch(
   },
   { immediate: true }
 );
+
+watch([analysis], async () => {
+  if (
+    analysis.value !== null &&
+    !analysis.value?.scoreType &&
+    storedAuth.value?.verification === 'verified' &&
+    size.value !== 'small' &&
+    image.currentSrc
+  ) {
+    menuOpen.value = false;
+    analysis.value = await analyzeImage(image.currentSrc);
+  }
+});
 
 const iconColor = computed(() => {
   const auth = storedAuth.value;

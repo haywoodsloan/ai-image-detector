@@ -2,7 +2,6 @@
 import { createAuth } from '@/api/auth.js';
 import { useAuth } from '@/utilities/auth.js';
 import { PrimaryColor, RealIndicatorColor } from '@/utilities/color.js';
-import { subAuthVerify } from '@/utilities/pubsub.js';
 
 import DonateLinks from './DonateLinks.vue';
 
@@ -12,29 +11,6 @@ const createError = ref();
 const createPending = ref(false);
 
 const storedAuth = useAuth();
-
-/** @type {() => void} */
-let unsubAuthVerify;
-watch(
-  storedAuth,
-  (newAuth) => {
-    unsubAuthVerify?.();
-
-    const newSocket = newAuth?.verificationSocket;
-    if (!newSocket) return;
-
-    unsubAuthVerify = subAuthVerify(newSocket, async () => {
-      unsubAuthVerify();
-      storedAuth.value = { ...storedAuth.value, verification: 'verified' };
-    });
-  },
-  { immediate: true }
-);
-
-// Unsub from the auth subscription when unmounted
-onUnmounted(() => {
-  unsubAuthVerify?.();
-});
 
 async function login() {
   try {

@@ -1,5 +1,12 @@
 import cloneDeep from 'clone-deep';
+import TimeSpan from 'common/utilities/TimeSpan.js';
 import { sha1 } from 'hash-wasm';
+
+import { TtlAction } from '@/entrypoints/background/actions/ttl.js';
+
+import { invokeBackgroundTask } from './background.js';
+
+const AnalysisTtl = TimeSpan.fromMinutes(5);
 
 /** @type {WxtStorageItem<UserSettings>} */
 export const userSettings = storage.defineItem('sync:userSettings', {
@@ -22,9 +29,16 @@ export const userAuth = storage.defineItem('sync:userAuth');
  */
 export async function getAnalysisStorage(url) {
   const hash = await sha1(url);
+  const storageKey = `session:analysis-${hash}`;
 
   /** @type {WxtStorageItem<ImageAnalysis>} */
-  const item = storage.defineItem(`session:analysis-${hash}`);
+  const item = storage.defineItem(storageKey);
+
+  const oldSet = item.setValue.bind(item);
+  item.setValue = (...args) => {
+    invokeBackgroundTask(TtlAction, { storageKey, ttl: AnalysisTtl });
+    return oldSet(...args);
+  };
 
   return item;
 }
@@ -61,7 +75,7 @@ export function useStorage(storage) {
     async set(newVal) {
       stored = newVal;
       const item = await storage;
-      
+
       // Use a deep clone to remove proxies
       if (newVal === null) await item.removeValue();
       else await item.setValue(cloneDeep(newVal));

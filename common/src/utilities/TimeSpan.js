@@ -83,5 +83,13 @@ export class TimeSpan {
   valueOf() {
     return this.#value;
   }
+
+  toJSON() {
+    return this.#value;
+  }
+
+  toString() {
+    return this.#value.toString();
+  }
 }
 export default TimeSpan;

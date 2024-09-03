@@ -2,8 +2,8 @@
 import { PopupAction } from '@/entrypoints/background/actions/index.js';
 import { invokeBackgroundTask } from '@/utilities/background.js';
 import { AiIndicatorColor } from '@/utilities/color.js';
-import { analyzeImage, useImageAnalysis } from '@/utilities/image.js';
-import { userAuth } from '@/utilities/storage.js';
+import { analyzeImage } from '@/utilities/image.js';
+import { getAnalysisStorage, userAuth } from '@/utilities/storage.js';
 
 import AnalysisCard from './AnalysisCard.vue';
 import StyleProvider from './StyleProvider.vue';
@@ -18,14 +18,18 @@ const { image } = defineProps({
   },
 });
 
+/** @type {Ref<ImageAnalysis>} */
+const analysis = ref(null);
 const error = ref('');
-const analysis = useImageAnalysis(image);
 
 const pending = ref(true);
 (async () => {
   const storedAuth = await userAuth.getValue();
   if (storedAuth?.verification === 'verified') {
     analysis.value = await analyzeImage(image);
+    const item = await getAnalysisStorage(image);
+    
+    item.setValue(analysis.value);
     pending.value = false;
   } else {
     error.value = SignInError;
