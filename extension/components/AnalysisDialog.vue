@@ -28,14 +28,23 @@ const pending = ref(true);
   if (storedAuth?.verification === 'verified') {
     analysis.value = await analyzeImage(image);
     const item = await getAnalysisStorage(image);
-    
-    item.setValue(analysis.value);
+
+    await item.setValue(analysis.value);
     pending.value = false;
   } else {
     error.value = SignInError;
     await invokeBackgroundTask(PopupAction);
   }
 })();
+
+/**
+ * @param {ImageAnalysis} newVal
+ */
+async function onChange(newVal) {
+  analysis.value = newVal;
+  const item = await getAnalysisStorage(image);
+  await item.setValue(newVal);
+}
 </script>
 
 <template>
@@ -60,10 +69,11 @@ const pending = ref(true);
     <template #default="{ isActive }">
       <StyleProvider>
         <AnalysisCard
-          v-model="analysis"
           show-close
+          :model-value="analysis"
           :image="image"
           @close="isActive.value = false"
+          @update:model-value="onChange"
         />
       </StyleProvider>
     </template>

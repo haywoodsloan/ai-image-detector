@@ -22,8 +22,8 @@ const getVoteCollection = memoize(
 export async function queryVotedLabel(imageHash) {
   const votes = await getVoteCollection();
 
-  /** @type {{_id: string, count: number}} */
-  const result = await votes
+  /** @type {{_id: string, count: number}[]} */
+  const [top, second] = await votes
     .aggregate([
       { $match: { imageHash } },
       {
@@ -39,11 +39,13 @@ export async function queryVotedLabel(imageHash) {
       { $group: { _id: '$voteLabel', count: { $sum: 1 } } },
       { $match: { count: { $gte: MinVoteCount } } },
       { $sort: { count: -1 } },
-      { $limit: 1 },
+      { $limit: 2 },
     ])
-    .tryNext();
+    .toArray();
 
-  return result ? { voteLabel: result._id, count: result.count } : null;
+  if ((top?.count ?? 0) - (second?.count ?? 0) >= MinVoteCount) {
+    return { voteLabel: top._id, count: top.count };
+  }
 }
 
 /**
