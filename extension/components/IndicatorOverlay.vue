@@ -68,16 +68,15 @@ watch(
   [size, storedAuth, analysis],
   async ([newSize, newAuth, newAnalysis], [, , oldAnalysis]) => {
     if (analysis.value === null) return;
-    if (!oldAnalysis?.scoreType && newAnalysis?.scoreType) {
+    if (!oldAnalysis?.scoreType && newAnalysis?.scoreType)
       menuOpen.value = false;
-    } else if (
+    else if (
       image.currentSrc &&
       !newAnalysis?.scoreType &&
       newAuth?.verification === 'verified' &&
       newSize !== 'small'
-    ) {
+    )
       analysis.value = await analyzeImage(image.currentSrc);
-    }
   },
   { immediate: true }
 );
