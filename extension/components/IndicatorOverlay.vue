@@ -64,38 +64,23 @@ const storedAuth = useAuth();
 
 // Wait for the size to become medium or large
 // This only needs to run once
-const unwatch = watch(
+watch(
   [size, storedAuth, analysis],
-  async () => {
+  async ([newSize, newAuth, newAnalysis], [, , oldAnalysis]) => {
     if (analysis.value === null) return;
-    if (analysis.value?.scoreType) {
-      unwatch();
+    if (!oldAnalysis?.scoreType && newAnalysis?.scoreType) {
       menuOpen.value = false;
     } else if (
       image.currentSrc &&
-      storedAuth.value?.verification === 'verified' &&
-      size.value !== 'small'
+      !newAnalysis?.scoreType &&
+      newAuth?.verification === 'verified' &&
+      newSize !== 'small'
     ) {
-      unwatch();
-      menuOpen.value = false;
       analysis.value = await analyzeImage(image.currentSrc);
     }
   },
   { immediate: true }
 );
-
-watch([analysis], async () => {
-  if (
-    analysis.value !== null &&
-    !analysis.value?.scoreType &&
-    storedAuth.value?.verification === 'verified' &&
-    size.value !== 'small' &&
-    image.currentSrc
-  ) {
-    menuOpen.value = false;
-    analysis.value = await analyzeImage(image.currentSrc);
-  }
-});
 
 const iconColor = computed(() => {
   const auth = storedAuth.value;
