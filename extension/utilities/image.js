@@ -13,12 +13,13 @@ export function useImageAnalysis(url) {
 /**
  * @param {string} src
  */
-export async function analyzeImage(src) {
+export async function analyzeImage(src, force = false) {
   try {
     return checkImage(src);
   } catch (error) {
+    if (error?.status !== 404) throw error;
     const { autoCheck, autoCheckPrivate } = await userSettings.getValue();
-    if (error?.status !== 404 || !(autoCheckPrivate && autoCheck)) throw error;
+    if (!force && !(autoCheck && autoCheckPrivate)) return null;
     return checkImage(imageToDataUrl(src));
   }
 }

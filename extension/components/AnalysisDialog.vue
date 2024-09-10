@@ -9,6 +9,7 @@ import AnalysisCard from './AnalysisCard.vue';
 import StyleProvider from './StyleProvider.vue';
 
 const SignInError = 'Please sign in to check for AI generated images.';
+const AnalysisError = 'Failed to check image, please try again.';
 
 const emit = defineEmits(['close']);
 const { image } = defineProps({
@@ -26,8 +27,13 @@ const pending = ref(true);
 onMounted(async () => {
   const storedAuth = await userAuth.getValue();
   if (storedAuth?.verification === 'verified') {
-    analysis.value = await analyzeImage(image);
-    pending.value = false;
+    const newAnalysis = await analyzeImage(image, true);
+    if (newAnalysis) {
+      analysis.value = newAnalysis;
+      pending.value = false;
+    } else {
+      error.value = AnalysisError;
+    }
   } else {
     error.value = SignInError;
     await invokeBackgroundTask(PopupAction);
