@@ -17,9 +17,9 @@ export async function analyzeImage(src, force = false) {
   try {
     return checkImage(src);
   } catch (error) {
-    if (error?.status !== 404) throw error;
     const { autoCheck, autoCheckPrivate } = await userSettings.getValue();
-    if (!force && !(autoCheck && autoCheckPrivate)) return null;
+    const checkPrivate = force || (autoCheck && autoCheckPrivate);
+    if (error?.status !== 404 || !checkPrivate) throw error;
     return checkImage(imageToDataUrl(src));
   }
 }

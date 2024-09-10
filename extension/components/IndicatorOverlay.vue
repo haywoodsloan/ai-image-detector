@@ -76,8 +76,7 @@ watch(
       newAuth?.verification === 'verified' &&
       newSize !== 'small'
     ) {
-      const newAnalysis = await analyzeImage(image.currentSrc);
-      if (newAnalysis) analysis.value = newAnalysis;
+      analysis.value = await analyzeImage(image.currentSrc);
     }
   },
   { immediate: true }

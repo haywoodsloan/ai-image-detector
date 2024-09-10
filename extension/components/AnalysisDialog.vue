@@ -27,11 +27,10 @@ const pending = ref(true);
 onMounted(async () => {
   const storedAuth = await userAuth.getValue();
   if (storedAuth?.verification === 'verified') {
-    const newAnalysis = await analyzeImage(image, true);
-    if (newAnalysis) {
-      analysis.value = newAnalysis;
+    try {
+      analysis.value = await analyzeImage(image, true);
       pending.value = false;
-    } else {
+    } catch {
       error.value = AnalysisError;
     }
   } else {
