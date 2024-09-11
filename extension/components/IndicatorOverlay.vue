@@ -34,29 +34,31 @@ onMounted(() => {
 
 /** @type {Ref<'small' | 'medium' | 'large'>} */
 const size = ref('small');
-useResizeObserver([image, image.offsetParent], () => {
-  const imgRect = image?.getBoundingClientRect();
-  const offsetRect = image?.offsetParent?.getBoundingClientRect();
+useResizeObserver(image, () => {
+  requestAnimationFrame(() => {
+    const imgRect = image?.getBoundingClientRect();
+    const offsetRect = image?.offsetParent?.getBoundingClientRect();
 
-  // Skip if one of the rects can't get found, this element is being removed.
-  if (!imgRect || !offsetRect) return;
+    // Skip if one of the rects can't get found, this element is being removed.
+    if (!imgRect || !offsetRect) return;
 
-  const top = Math.max(imgRect.top - offsetRect.top, 0);
-  const left = Math.max(imgRect.left - offsetRect.left, 0);
+    const top = Math.max(imgRect.top - offsetRect.top, 0);
+    const left = Math.max(imgRect.left - offsetRect.left, 0);
 
-  host.style.top = `${top}px`;
-  host.style.left = `${left}px`;
+    host.style.top = `${top}px`;
+    host.style.left = `${left}px`;
 
-  const width = Math.min(imgRect.width, offsetRect.width);
-  const height = Math.min(imgRect.height, offsetRect.height);
+    const width = Math.min(imgRect.width, offsetRect.width);
+    const height = Math.min(imgRect.height, offsetRect.height);
 
-  if (width > 300 && height > 150) {
-    size.value = 'large';
-  } else if (width > 100 && height > 50) {
-    size.value = 'medium';
-  } else {
-    size.value = 'small';
-  }
+    if (width > 300 && height > 150) {
+      size.value = 'large';
+    } else if (width > 100 && height > 50) {
+      size.value = 'medium';
+    } else {
+      size.value = 'small';
+    }
+  });
 });
 
 /** @type {Ref<ImageAnalysis>} */

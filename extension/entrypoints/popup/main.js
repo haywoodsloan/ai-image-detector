@@ -1,8 +1,7 @@
+import { invokeBackgroundTask } from '@/utilities/background.js';
 import { createAppEx } from '@/utilities/vue';
 
-import App from './App.vue';
-import { invokeBackgroundTask } from '@/utilities/background.js';
 import { InitAction } from '../background/actions/init.js';
+import App from './App.vue';
 
-await invokeBackgroundTask(InitAction);
-createAppEx(App).mount('#app');
+invokeBackgroundTask(InitAction).then(() => createAppEx(App).mount('#app'));
