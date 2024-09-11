@@ -3,6 +3,7 @@ import { PopupAction } from '@/entrypoints/background/actions/index.js';
 import { invokeBackgroundTask } from '@/utilities/background.js';
 import { AiIndicatorColor } from '@/utilities/color.js';
 import { analyzeImage, useImageAnalysis } from '@/utilities/image.js';
+import { debugError } from '@/utilities/log.js';
 import { userAuth } from '@/utilities/storage.js';
 
 import AnalysisCard from './AnalysisCard.vue';
@@ -30,8 +31,9 @@ onMounted(async () => {
     try {
       analysis.value = await analyzeImage(image, true);
       pending.value = false;
-    } catch {
+    } catch (err) {
       error.value = AnalysisError;
+      debugError(err);
     }
   } else {
     error.value = SignInError;
