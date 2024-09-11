@@ -15,12 +15,12 @@ export function useImageAnalysis(url) {
  */
 export async function analyzeImage(src, force = false) {
   try {
-    return checkImage(src);
+    return await checkImage(src);
   } catch (error) {
     const { autoCheck, autoCheckPrivate } = await userSettings.getValue();
     const checkPrivate = force || (autoCheck && autoCheckPrivate);
     if (error?.status !== 404 || !checkPrivate) throw error;
-    return checkImage(imageToDataUrl(src));
+    return await checkImage(await imageToDataUrl(src));
   }
 }
 
@@ -31,11 +31,11 @@ export async function analyzeImage(src, force = false) {
 export async function reportImage(src, label) {
   const { uploadImages, uploadImagesPrivate } = await userSettings.getValue();
   try {
-    return voteImageLabel(src, label, !uploadImages);
+    return await voteImageLabel(src, label, !uploadImages);
   } catch (error) {
     if (error?.status !== 404) throw error;
     const shouldUpload = !(uploadImagesPrivate && uploadImages);
-    return voteImageLabel(imageToDataUrl(src), label, shouldUpload);
+    return await voteImageLabel(await imageToDataUrl(src), label, shouldUpload);
   }
 }
 
@@ -43,12 +43,12 @@ export async function reportImage(src, label) {
  * @param {string} src
  * @param {LabelType} label
  */
-export function deleteImageReport(src) {
+export async function deleteImageReport(src) {
   try {
-    return deleteImageVote(src);
+    return await deleteImageVote(src);
   } catch (error) {
     if (error?.status !== 404) throw error;
-    return deleteImageVote(imageToDataUrl(src));
+    return await deleteImageVote(await imageToDataUrl(src));
   }
 }
 

@@ -63,20 +63,30 @@ const analysis = useImageAnalysis(image.currentSrc);
 const storedAuth = useAuth();
 
 // Wait for the size to become medium or large
-// This only needs to run once
+let pending = false;
 watch(
   [size, storedAuth, analysis],
   async ([newSize, newAuth, newAnalysis], [, , oldAnalysis]) => {
     if (analysis.value === null) return;
+
     if (!oldAnalysis?.scoreType && newAnalysis?.scoreType) {
       menuOpen.value = false;
-    } else if (
+    }
+
+    if (
+      !pending &&
       image.currentSrc &&
       !newAnalysis?.scoreType &&
       newAuth?.verification === 'verified' &&
       newSize !== 'small'
     ) {
-      analysis.value = await analyzeImage(image.currentSrc);
+      try {
+        pending = true;
+        analysis.value = await analyzeImage(image.currentSrc);
+        pending = false;
+      } catch {
+        // ignore errors
+      }
     }
   },
   { immediate: true }

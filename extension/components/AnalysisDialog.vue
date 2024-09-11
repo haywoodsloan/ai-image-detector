@@ -47,7 +47,7 @@ watch(analysis, (newVal) => {
 
 <template>
   <v-snackbar
-    :model-value="error"
+    :model-value="!!error"
     :color="AiIndicatorColor"
     @update:model-value="!$event && emit('close')"
   >
