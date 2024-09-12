@@ -44,6 +44,22 @@ export async function waitForAnimations(ele) {
 /**
  * @param {HTMLElement} ele
  */
+export async function waitForStablePosition(ele) {
+  return new Promise((res) => {
+    let rect = ele.getBoundingClientRect();
+    requestAnimationFrame(function check() {
+      const newRect = ele.getBoundingClientRect();
+      if (!compareRects(rect, newRect)) {
+        rect = newRect;
+        requestAnimationFrame(check);
+      } else res();
+    });
+  });
+}
+
+/**
+ * @param {HTMLElement} ele
+ */
 export function isImageElement(ele) {
   return ele.nodeName === 'IMG';
 }
@@ -76,18 +92,18 @@ export function* getChildrenDeep(ele) {
 }
 
 /**
- * @param {HTMLElement} ele 
+ * @param {HTMLElement} ele
  */
 export function* getParentChain(ele) {
   let parent = ele.parentNode;
-  while(parent) {
+  while (parent) {
     if (parent instanceof HTMLElement) yield parent;
     parent = parent.parentNode || parent.host;
   }
 }
 
 /**
- * @param {HTMLElement} ele 
+ * @param {HTMLElement} ele
  */
 function getVisibleRect(ele) {
   if (!ele.offsetParent) return;
@@ -163,4 +179,17 @@ function* elementsFromPoint(x, y) {
       expanded.add(ele);
     } else yield ele;
   }
+}
+
+/**
+ * @param {DOMRectReadOnly} rect1
+ * @param {DOMRectReadOnly} rect2
+ */
+function compareRects(rect1, rect2) {
+  return (
+    rect1.top === rect2.top &&
+    rect1.left === rect2.left &&
+    rect1.bottom === rect2.bottom &&
+    rect1.right === rect2.right
+  );
 }

@@ -4,6 +4,7 @@ import { useResizeObserver } from '@vueuse/core';
 import DetectorSvg from '@/assets/detector.svg';
 import { useAuth } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
+import { waitForStablePosition } from '@/utilities/element.js';
 import { analyzeImage, useImageAnalysis } from '@/utilities/image.js';
 import { debugError } from '@/utilities/log.js';
 
@@ -25,8 +26,6 @@ const { image, host } = defineProps({
   },
 });
 
-const menuOpen = ref(false);
-
 // Use absolute position for host element
 onMounted(() => {
   host.style.position = 'absolute';
@@ -34,58 +33,68 @@ onMounted(() => {
 
 /** @type {Ref<'small' | 'medium' | 'large'>} */
 const size = ref('small');
-useResizeObserver(image, () => {
-  requestAnimationFrame(() => {
-    const imgRect = image?.getBoundingClientRect();
-    const offsetRect = image?.offsetParent?.getBoundingClientRect();
 
-    // Skip if one of the rects can't get found, this element is being removed.
-    if (!imgRect || !offsetRect) return;
+const imageSrc = image.currentSrc || image.src;
+if (!imageSrc) throw new Error('Missing image source');
 
-    const top = Math.max(imgRect.top - offsetRect.top, 0);
-    const left = Math.max(imgRect.left - offsetRect.left, 0);
+/** @type {AbortController} */
+let aborter;
 
-    host.style.top = `${top}px`;
-    host.style.left = `${left}px`;
+useResizeObserver(image, async () => {
+  aborter?.abort();
+  aborter = new AbortController();
 
-    const width = Math.min(imgRect.width, offsetRect.width);
-    const height = Math.min(imgRect.height, offsetRect.height);
+  const signal = aborter.signal;
+  await waitForStablePosition(image);
+  if (signal.aborted) return;
 
-    if (width > 300 && height > 150) {
-      size.value = 'large';
-    } else if (width > 100 && height > 50) {
-      size.value = 'medium';
-    } else {
-      size.value = 'small';
-    }
-  });
+  const imgRect = image?.getBoundingClientRect();
+  const offsetRect = image?.offsetParent?.getBoundingClientRect();
+
+  // Skip if one of the rects can't get found, this element is being removed.
+  if (!imgRect || !offsetRect) return;
+
+  const top = Math.max(imgRect.top - offsetRect.top, 0);
+  const left = Math.max(imgRect.left - offsetRect.left, 0);
+
+  host.style.top = `${top}px`;
+  host.style.left = `${left}px`;
+
+  const width = Math.min(imgRect.width, offsetRect.width);
+  const height = Math.min(imgRect.height, offsetRect.height);
+
+  if (width > 300 && height > 150) {
+    size.value = 'large';
+  } else if (width > 100 && height > 50) {
+    size.value = 'medium';
+  } else {
+    size.value = 'small';
+  }
 });
 
-/** @type {Ref<ImageAnalysis>} */
-const analysis = useImageAnalysis(image.currentSrc);
+const analysis = useImageAnalysis(imageSrc);
 const storedAuth = useAuth();
+const menuOpen = ref(false);
 
 // Wait for the size to become medium or large
 let pending = false;
 watch(
   [size, storedAuth, analysis],
   async ([newSize, newAuth, newAnalysis], [, , oldAnalysis]) => {
-    if (analysis.value === null) return;
-
+    if (newAnalysis === null) return;
     if (!oldAnalysis?.scoreType && newAnalysis?.scoreType) {
       menuOpen.value = false;
     }
 
     if (
       !pending &&
-      image.currentSrc &&
       !newAnalysis?.scoreType &&
       newAuth?.verification === 'verified' &&
       newSize !== 'small'
     ) {
       try {
         pending = true;
-        analysis.value = await analyzeImage(image.currentSrc);
+        analysis.value = await analyzeImage(imageSrc);
         pending = false;
       } catch (error) {
         debugError(error);
@@ -142,11 +151,7 @@ const iconColor = computed(() => {
       <StyleProvider v-if="storedAuth !== null">
         <VerifyLoginCard v-if="storedAuth?.verification === 'pending'" />
         <CreateLoginCard v-else-if="storedAuth?.verification !== 'verified'" />
-        <AnalysisCard
-          v-if="analysis"
-          v-model="analysis"
-          :image="image.currentSrc"
-        />
+        <AnalysisCard v-if="analysis" v-model="analysis" :image="imageSrc" />
       </StyleProvider>
     </v-menu>
   </StyleProvider>
