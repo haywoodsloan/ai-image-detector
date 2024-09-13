@@ -16,6 +16,6 @@ export function voteImageLabel(url, voteLabel, skipUpload = false) {
  * @param {string} url
  * @returns {Promise<void>}
  */
-export function deleteImageVote(url) {
-  return post(DeleteImageVoteEndpoint, { url });
+export function deleteImageVote(url, skipUpload = false) {
+  return post(DeleteImageVoteEndpoint, { url, skipUpload });
 }

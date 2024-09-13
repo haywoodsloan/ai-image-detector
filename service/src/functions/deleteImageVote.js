@@ -9,11 +9,12 @@ import { assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
 import { UploadImageEntity } from './uploadImage.js';
-import { EntityId, getClient } from 'durable-functions';
+import { EntityId, getClient, input } from 'durable-functions';
 
 app.http('deleteImageVote', {
   methods: ['POST'],
   authLevel: 'anonymous',
+  extraInputs: [input.durableClient()],
   handler: async (request, context) => {
     captureConsole(context);
 
@@ -62,8 +63,8 @@ app.http('deleteImageVote', {
       console.log(l`Skip upload requested ${{ url: shortenUrl(url) }}`);
     } else {
       const entityId = new EntityId(UploadImageEntity, hash);
-      const input = { data, ...(isHttpUrl(url) && { url }), label: newLabel };
-      await getClient(context).signalEntity(entityId, null, input);
+      const options = { data, ...(isHttpUrl(url) && { url }), label: newLabel };
+      await getClient(context).signalEntity(entityId, null, options);
     }
 
     return { status: 204 };

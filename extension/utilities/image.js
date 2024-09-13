@@ -37,9 +37,9 @@ export async function reportImage(src, label) {
     return await voteImageLabel(src, label, !uploadImages);
   } catch (error) {
     if (error?.status !== 404) throw error;
-    const shouldUpload = !(uploadImagesPrivate && uploadImages);
+    const skipUpload = !(uploadImagesPrivate && uploadImages);
     const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
-    return await voteImageLabel(dataUrl, label, shouldUpload);
+    return await voteImageLabel(dataUrl, label, skipUpload);
   }
 }
 
@@ -48,11 +48,13 @@ export async function reportImage(src, label) {
  * @param {LabelType} label
  */
 export async function deleteImageReport(src) {
+  const { uploadImages, uploadImagesPrivate } = await userSettings.getValue();
   try {
-    return await deleteImageVote(src);
+    return await deleteImageVote(src, !uploadImages);
   } catch (error) {
     if (error?.status !== 404) throw error;
+    const skipUpload = !(uploadImagesPrivate && uploadImages);
     const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
-    return await deleteImageVote(dataUrl);
+    return await deleteImageVote(dataUrl, skipUpload);
   }
 }

@@ -117,7 +117,7 @@ export async function deleteImage(image, branch = MainBranch) {
 
       // Add the new image's url
       console.log(y`Successfully deleted image ${oldPath}`);
-      await uploadKnownUrls(image.origin, branch);
+      await deleteKnownUrl(image.origin, branch);
     },
     (error) => {
       console.warn(rl`Retrying move ${error}`);

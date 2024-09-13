@@ -65,12 +65,12 @@ app.http('voteImageLabel', {
 
     // Check if the voted label has changed and upload if so
     // Skip upload if requested in vote
-    if (skipUpload) {
+    if (skipUpload && newLabel) {
       console.log(l`Skip upload requested ${{ url: shortenUrl(url) }}`);
-    } else if (newLabel) {
+    } else {
       const entityId = new EntityId(UploadImageEntity, hash);
-      const input = { data, ...(isHttpUrl(url) && { url }), label: newLabel };
-      await getClient(context).signalEntity(entityId, null, input);
+      const options = { data, ...(isHttpUrl(url) && { url }), label: newLabel };
+      await getClient(context).signalEntity(entityId, null, options);
     }
 
     return { jsonBody: vote };
