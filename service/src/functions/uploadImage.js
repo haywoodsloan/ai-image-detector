@@ -1,5 +1,5 @@
 import { createHash } from 'common/utilities/hash.js';
-import { replaceImage } from 'common/utilities/huggingface.js';
+import { deleteImage, replaceImage } from 'common/utilities/huggingface.js';
 import { TrainSplit } from 'common/utilities/huggingface.js';
 import { uploadImages } from 'common/utilities/huggingface.js';
 import { sanitizeImage } from 'common/utilities/image.js';
@@ -14,6 +14,7 @@ import { captureConsole } from '../utilities/log.js';
 export const UploadImageEntity = 'uploadImage';
 
 const PendingBranch = 'pending';
+const DataUrlExtRegex = /data:image\/(?<ext>[^;]+);/i;
 
 df.app.entity(UploadImageEntity, async (context) => {
   captureConsole(context);
@@ -38,7 +39,10 @@ df.app.entity(UploadImageEntity, async (context) => {
     const { pathname } = new URL(url);
     ext = extname(pathname);
     origin = new URL(url);
-  } else ext = '.png';
+  } else {
+    const match = DataUrlExtRegex.exec(url);
+    ext = match?.groups?.ext;
+  }
 
   // Build the image properties, always use the train split
   // Use the hash of the sanitized image to store it
@@ -49,14 +53,19 @@ df.app.entity(UploadImageEntity, async (context) => {
 
   /** @type {HfImage} */
   const image = { fileName, label, split, content, origin };
-  try {
-    // If an existing image either replace ir or skip the image (if label is the same)
-    (await replaceImage(image, PendingBranch))
-      ? console.log(l`Image replaced on Hugging Face ${{ fileName, label }}`)
-      : console.log(l`Matching image on Hugging Face ${{ fileName, label }}`);
-  } catch {
-    // If replace errors then it's a new file to upload
-    await uploadImages([image], PendingBranch);
-    console.log(l`Image uploaded to Hugging Face ${{ fileName, label }}`);
+  if (label) {
+    try {
+      // If an existing image either replace ir or skip the image (if label is the same)
+      (await replaceImage(image, PendingBranch))
+        ? console.log(l`Image replaced on Hugging Face ${{ fileName, label }}`)
+        : console.log(l`Matching image on Hugging Face ${{ fileName, label }}`);
+    } catch {
+      // If replace errors then it's a new file to upload
+      await uploadImages([image], PendingBranch);
+      console.log(l`Image uploaded to Hugging Face ${{ fileName, label }}`);
+    }
+  } else {
+    await deleteImage(image, PendingBranch);
+    console.log(l`Image deleted from Hugging Face ${{ fileName }}`);
   }
 });

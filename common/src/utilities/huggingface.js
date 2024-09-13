@@ -1,5 +1,6 @@
 import {
   commit,
+  deleteFile,
   downloadFile,
   fileExists,
   listCommits,
@@ -81,6 +82,47 @@ const getHfInterface = memoize(
  */
 export async function isExistingImage(fileName, branch = MainBranch) {
   return !!(await getFullImagePath(fileName, branch));
+}
+
+/**
+ * @param {HfImage} image
+ */
+export async function deleteImage(image, branch = MainBranch) {
+  // Error if the files doesn't exists already
+  const { fileName } = image;
+
+  // Move the image
+  return await retry(
+    async () => {
+      console.log(y`Deleting image on HF ${fileName}`);
+      const head = await getHeadCommit(branch);
+
+      // If there isn't an existing file skip retries and throw
+      const oldPath = await getFullImagePath(fileName, head.oid);
+      if (!oldPath) {
+        const error = new NonRetryableError('Image to delete missing from HF');
+        console.warn(y`${error.message}`);
+        throw error;
+      }
+
+      await deleteFile({
+        path: oldPath,
+        repo: DatasetRepo,
+        branch,
+        credentials,
+        useWebWorkers: true,
+        title: `Delete image ${oldPath}`,
+        parentCommit: head.oid,
+      });
+
+      // Add the new image's url
+      console.log(y`Successfully deleted image ${oldPath}`);
+      await uploadKnownUrls(image.origin, branch);
+    },
+    (error) => {
+      console.warn(rl`Retrying move ${error}`);
+    }
+  );
 }
 
 /**
@@ -305,6 +347,61 @@ export async function fetchKnownUrls(branch = MainBranch) {
     },
     (error) => {
       console.warn(rl`Retrying URL list fetch ${error}`);
+    }
+  );
+}
+
+/**
+ * @param {string | URL} url
+ */
+export async function deleteKnownUrl(url, branch = MainBranch) {
+  // Skip data urls
+  const validUrl = isHttpUrl(url) ? url.toString() : null;
+
+  // Skip if not a valid url
+  if (!validUrl) return;
+
+  await retry(
+    async () => {
+      // Get the current list of urls from the HEAD
+      const head = await getHeadCommit(branch);
+      const allUrls = new Set(await fetchKnownUrls(head.oid));
+      console.log(y`Deleting ${validUrl} URL from HF`);
+
+      // Don't upload if the url doesn't exist yet
+      if (!allUrls.has(validUrl)) {
+        console.log(y`Not deleting ${url} [URL not on HF]`);
+        return;
+      }
+
+      // Filter out the url to delete
+      allUrls.delete(validUrl);
+
+      // Build the url list upload data
+      const urlData = new Blob([[...allUrls].join('\n')]);
+      const urlsUpload = { path: UrlListPath, content: urlData };
+
+      // Upload the new urls requiring the parent commit be
+      // the same as the one we fetched the URLs from
+      await uploadFile({
+        file: urlsUpload,
+        repo: DatasetRepo,
+        branch,
+        credentials,
+        useWebWorkers: true,
+        commitTitle: `Delete URL ${validUrl}`,
+        parentCommit: head.oid,
+      });
+
+      console.log(g`URL deleted [${validUrl}]`);
+    },
+    async (error, retryCount) => {
+      if (isRateLimitError(error)) {
+        // Warn about rate limiting and wait a few minutes
+        await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
+        const delay = RateLimitDelay / 60 / 1000;
+        console.warn(r`Rate-limited, waiting ${delay} mins`);
+      } else console.warn(rl`Retrying URL list upload ${error}`);
     }
   );
 }

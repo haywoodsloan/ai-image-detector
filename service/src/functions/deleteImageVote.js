@@ -4,10 +4,12 @@ import { getImageData, normalizeImage } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
 import { isDataUrl, isHttpUrl, shortenUrl } from 'common/utilities/url.js';
 
-import { deleteVote } from '../services/db/voteColl.js';
+import { deleteVote, queryVotedLabel } from '../services/db/voteColl.js';
 import { assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
+import { UploadImageEntity } from './uploadImage.js';
+import { EntityId, getClient } from 'durable-functions';
 
 app.http('deleteImageVote', {
   methods: ['POST'],
@@ -24,8 +26,8 @@ app.http('deleteImageVote', {
       return createErrorResponse(401, error);
     }
 
-    /** @type {{url: string}} */
-    const { url } = await request.json();
+    /** @type {{url: string, skipUpload?: boolean}} */
+    const { url, skipUpload = false } = await request.json();
 
     // Check the url is valid
     if (!isHttpUrl(url) && !isDataUrl(url)) {
@@ -49,6 +51,20 @@ app.http('deleteImageVote', {
     // Delete the vote if it exists
     console.log(l`Delete vote ${{ url: shortenUrl(url), userId }}`);
     await deleteVote(userId, hash);
+
+    // Check if the label changed
+    const { voteLabel: newLabel } = (await queryVotedLabel(hash)) ?? {};
+    console.log(l`New voted label ${{ hash, label: newLabel }}`);
+
+    // Check if the voted label has changed and upload if so
+    // Skip upload if requested in vote
+    if (skipUpload && newLabel) {
+      console.log(l`Skip upload requested ${{ url: shortenUrl(url) }}`);
+    } else {
+      const entityId = new EntityId(UploadImageEntity, hash);
+      const input = { data, ...(isHttpUrl(url) && { url }), label: newLabel };
+      await getClient(context).signalEntity(entityId, null, input);
+    }
 
     return { status: 204 };
   },
