@@ -10,6 +10,9 @@ export default defineConfig({
   modules: ['@wxt-dev/module-vue'],
   manifest: {
     permissions: ['storage', 'webNavigation', 'contextMenus', 'activeTab'],
+    browser_specific_settings: {
+      gecko: { id: 'DoNotReply@ai-image-detector.com' },
+    },
   },
   vite: () => ({
     plugins: [svgLoader(), vuetify()],

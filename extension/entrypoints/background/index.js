@@ -6,7 +6,7 @@ export const AnalyzeImageId = 'analyze-image';
 
 export default defineBackground(() => {
   // Let content script access session storage
-  browser.storage.session.setAccessLevel({
+  browser.storage.session.setAccessLevel?.({
     accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS',
   });
 
