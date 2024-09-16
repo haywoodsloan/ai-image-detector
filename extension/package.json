@@ -1,6 +1,6 @@
 {
-  "name": "AI Image Detector",
-  "description": "AI Image Detector Browser Extension",
+  "name": "ai-image-detector-extension",
+  "description": "Checks for AI generated images and incorporates community feedback",
   "version": "0.1.0",
   "types": "./types.d.ts",
   "type": "module",

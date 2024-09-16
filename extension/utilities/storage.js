@@ -29,7 +29,7 @@ export const userAuth = storage.defineItem('sync:userAuth');
  */
 export async function getAnalysisStorage(url) {
   const hash = await sha1(url);
-  const storageKey = `session:analysis-${hash}`;
+  const storageKey = `local:analysis-${hash}`;
 
   /** @type {WxtStorageItem<ImageAnalysis>} */
   const item = storage.defineItem(storageKey);

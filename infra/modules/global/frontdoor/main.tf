@@ -143,6 +143,13 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
       }
 
       match_condition {
+        match_variable     = "RequestMethod"
+        match_values       = ["OPTIONS"]
+        negation_condition = true
+        operator           = "Equal"
+      }
+
+      match_condition {
         match_variable     = "RequestUri"
         match_values       = ["(?i)\\/verifyAuth"]
         negation_condition = true
@@ -188,6 +195,22 @@ resource "azurerm_cdn_frontdoor_rule" "url_rewrite" {
       source_pattern          = "/"
       destination             = "/api/"
       preserve_unmatched_path = true
+    }
+  }
+}
+
+resource "azurerm_cdn_frontdoor_rule" "cors_header" {
+  depends_on = [azurerm_cdn_frontdoor_origin.origin, azurerm_cdn_frontdoor_origin_group.origin_group]
+
+  name                      = "CorsHeader"
+  cdn_frontdoor_rule_set_id = azurerm_cdn_frontdoor_rule_set.default.id
+  order                     = 2
+
+  actions {
+    response_header_action {
+      header_name   = "Access-Control-Allow-Origin"
+      header_action = "Overwrite"
+      value         = "*"
     }
   }
 }

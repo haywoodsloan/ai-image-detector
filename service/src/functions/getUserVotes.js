@@ -7,7 +7,7 @@ import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
 
 app.http('getUserVotes', {
-  methods: ['GET'],
+  methods: ['GET', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: async (request, context) => {
     captureConsole(context);

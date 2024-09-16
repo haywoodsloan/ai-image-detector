@@ -13,7 +13,7 @@ import { captureConsole } from '../utilities/log.js';
 import { UploadImageEntity } from './uploadImage.js';
 
 app.http('voteImageLabel', {
-  methods: ['POST'],
+  methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
   extraInputs: [input.durableClient()],
   handler: async (request, context) => {

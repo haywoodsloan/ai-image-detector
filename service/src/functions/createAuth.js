@@ -11,11 +11,17 @@ import { sendVerificationMail } from '../services/email.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
 
+const methods = ['POST', 'OPTIONS'];
 app.http('createAuth', {
-  methods: ['POST'],
+  methods,
   authLevel: 'anonymous',
+
   handler: async (request, context) => {
     captureConsole(context);
+    if (request.method === 'OPTIONS') {
+      console.log(l`OPTIONS `);
+      return { status: 200, headers: { Allow: methods } };
+    }
 
     /** @type {{email: string}} */
     const { email } = await request.json();

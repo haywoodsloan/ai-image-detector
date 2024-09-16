@@ -9,6 +9,7 @@ import { OverlayClasses } from './utilities/vue.js';
 export default defineConfig({
   modules: ['@wxt-dev/module-vue'],
   manifest: {
+    name: 'AI Image Detector',
     permissions: ['storage', 'webNavigation', 'contextMenus', 'activeTab'],
     browser_specific_settings: {
       gecko: { id: 'DoNotReply@ai-image-detector.com' },
@@ -28,9 +29,7 @@ export default defineConfig({
               const isOverlay = OverlayClasses.some((c) =>
                 orig.startsWith(`.${c}`)
               );
-
-              if (isOverlay) return `${prefix}${orig}`;
-              else return prefixed;
+              return isOverlay ? `${prefix}${orig}` : prefixed;
             },
           }),
         ],

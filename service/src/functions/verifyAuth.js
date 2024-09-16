@@ -13,7 +13,7 @@ const VerifyMissingHtml = 'verifyMissing';
 const HtmlHeaders = { 'Content-Type': 'text/html' };
 
 app.http('verifyAuth', {
-  methods: ['GET'],
+  methods: ['GET', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: async (request, context) => {
     captureConsole(context);

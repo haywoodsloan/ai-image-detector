@@ -8,7 +8,7 @@ import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
 
 app.http('checkAuth', {
-  methods: ['GET'],
+  methods: ['GET', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: async (request, context) => {
     captureConsole(context);

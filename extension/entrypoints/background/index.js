@@ -5,28 +5,6 @@ import * as actions from './actions';
 export const AnalyzeImageId = 'analyze-image';
 
 export default defineBackground(() => {
-  // Let content script access session storage
-  browser.storage.session.setAccessLevel?.({
-    accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS',
-  });
-
-  // Add context menu
-  browser.contextMenus.create({
-    contexts: ['image'],
-    title: 'Check if image is AI generated',
-    id: AnalyzeImageId,
-  });
-
-  // Handle context menu clicks
-  browser.contextMenus.onClicked.addListener(async (info, tab) => {
-    if (info.menuItemId === AnalyzeImageId) {
-      await browser.tabs.sendMessage(tab.id, {
-        name: AnalyzeImageId,
-        data: info.srcUrl,
-      });
-    }
-  });
-
   // Create a map of task names to the task definition
   const actionMap = new Map();
   for (const key in actions) {

@@ -1,6 +1,4 @@
 <script setup>
-import { PopupAction } from '@/entrypoints/background/actions/index.js';
-import { invokeBackgroundTask } from '@/utilities/background.js';
 import { AiIndicatorColor } from '@/utilities/color.js';
 import { analyzeImage, useImageAnalysis } from '@/utilities/image.js';
 import { debugError } from '@/utilities/log.js';
@@ -12,7 +10,7 @@ import StyleProvider from './StyleProvider.vue';
 const SignInError = 'Please sign in to check for AI generated images.';
 const AnalysisError = 'Failed to check image, please try again.';
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'error']);
 const { image } = defineProps({
   image: {
     type: String,
@@ -37,7 +35,6 @@ onMounted(async () => {
     }
   } else {
     error.value = SignInError;
-    await invokeBackgroundTask(PopupAction);
   }
 });
 

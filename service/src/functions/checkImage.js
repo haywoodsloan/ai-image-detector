@@ -16,14 +16,14 @@ const UserScoreType = 'user';
 const VoteScoreType = 'vote';
 
 app.http('checkImage', {
-  methods: ['POST'],
+  methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
   handler: async (request, context) => {
     captureConsole(context);
 
     /** @type {{url: string}} */
     const { url } = await request.json();
-    
+
     // Check the access token is valid
     let userId;
     try {

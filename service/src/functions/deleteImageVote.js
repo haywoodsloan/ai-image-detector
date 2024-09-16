@@ -3,16 +3,16 @@ import { createHash } from 'common/utilities/hash.js';
 import { getImageData, normalizeImage } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
 import { isDataUrl, isHttpUrl, shortenUrl } from 'common/utilities/url.js';
+import { EntityId, getClient, input } from 'durable-functions';
 
 import { deleteVote, queryVotedLabel } from '../services/db/voteColl.js';
 import { assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
 import { UploadImageEntity } from './uploadImage.js';
-import { EntityId, getClient, input } from 'durable-functions';
 
 app.http('deleteImageVote', {
-  methods: ['POST'],
+  methods: ['POST', 'OPTIONS'],
   authLevel: 'anonymous',
   extraInputs: [input.durableClient()],
   handler: async (request, context) => {

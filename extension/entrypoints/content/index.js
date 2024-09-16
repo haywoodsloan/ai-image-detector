@@ -35,11 +35,8 @@ export default defineContentScript({
   async main(ctx) {
     // Make sure the extension has been initialized
     await invokeBackgroundTask(InitAction);
-
     browser.runtime.onMessage.addListener(({ name, data }) => {
-      if (name === AnalyzeImageId) {
-        createDialogUi(data);
-      }
+      if (name === AnalyzeImageId) createDialogUi(data);
     });
 
     // Check if we should do the auto check observing
@@ -224,8 +221,8 @@ export default defineContentScript({
 
         onMount(host) {
           const app = createAppEx(AnalysisDialog, {
-            onClose: () => ui.remove(),
             image,
+            onClose: () => ui.remove(),
           });
 
           app.mount(host);
