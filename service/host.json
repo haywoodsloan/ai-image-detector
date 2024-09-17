@@ -19,6 +19,12 @@
       "storageProvider": {
         "connectionStringName": "AzureWebJobsStorage"
       }
+    },
+    "http": {
+      "routePrefix": "api",
+      "customHeaders": {
+        "Access-Control-Allow-Origin": "*"
+      }
     }
   }
 }
