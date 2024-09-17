@@ -15,11 +15,17 @@ const DetectorScoreType = 'detector';
 const UserScoreType = 'user';
 const VoteScoreType = 'vote';
 
+const methods = ['POST', 'OPTIONS'];
 app.http('checkImage', {
-  methods: ['POST', 'OPTIONS'],
+  methods,
   authLevel: 'anonymous',
+
   handler: async (request, context) => {
     captureConsole(context);
+    if (request.method === 'OPTIONS') {
+      console.log(l`OPTIONS request ${{ methods }}`);
+      return { status: 200, headers: { Allow: methods } };
+    }
 
     /** @type {{url: string}} */
     const { url } = await request.json();

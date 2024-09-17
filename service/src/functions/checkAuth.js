@@ -7,11 +7,17 @@ import { assertAccessToken } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
 
+const methods = ['GET', 'OPTIONS'];
 app.http('checkAuth', {
-  methods: ['GET', 'OPTIONS'],
+  methods,
   authLevel: 'anonymous',
+
   handler: async (request, context) => {
     captureConsole(context);
+    if (request.method === 'OPTIONS') {
+      console.log(l`OPTIONS request ${{ methods }}`);
+      return { status: 200, headers: { Allow: methods } };
+    }
 
     // Check if an access token was specified
     let accessToken;

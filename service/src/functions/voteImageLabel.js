@@ -12,12 +12,18 @@ import { createErrorResponse } from '../utilities/error.js';
 import { captureConsole } from '../utilities/log.js';
 import { UploadImageEntity } from './uploadImage.js';
 
+const methods = ['POST', 'OPTIONS'];
 app.http('voteImageLabel', {
-  methods: ['POST', 'OPTIONS'],
+  methods,
   authLevel: 'anonymous',
   extraInputs: [input.durableClient()],
+
   handler: async (request, context) => {
     captureConsole(context);
+    if (request.method === 'OPTIONS') {
+      console.log(l`OPTIONS request ${{ methods }}`);
+      return { status: 200, headers: { Allow: methods } };
+    }
 
     // Check the access token is valid
     let userId;

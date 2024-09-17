@@ -12,11 +12,17 @@ const VerifyMissingHtml = 'verifyMissing';
 
 const HtmlHeaders = { 'Content-Type': 'text/html' };
 
+const methods = ['GET', 'OPTIONS'];
 app.http('verifyAuth', {
-  methods: ['GET', 'OPTIONS'],
+  methods,
   authLevel: 'anonymous',
+
   handler: async (request, context) => {
     captureConsole(context);
+    if (request.method === 'OPTIONS') {
+      console.log(l`OPTIONS request ${{ methods }}`);
+      return { status: 200, headers: { Allow: methods } };
+    }
 
     // Error if the code is missing
     const code = request.query.get('code');

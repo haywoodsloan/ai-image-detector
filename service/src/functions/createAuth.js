@@ -19,7 +19,7 @@ app.http('createAuth', {
   handler: async (request, context) => {
     captureConsole(context);
     if (request.method === 'OPTIONS') {
-      console.log(l`OPTIONS `);
+      console.log(l`OPTIONS request ${{ methods }}`);
       return { status: 200, headers: { Allow: methods } };
     }
 
