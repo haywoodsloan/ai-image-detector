@@ -13,12 +13,13 @@ data:
     target_column: label
 
 params:
-  epochs: 12
+  epochs: 1
   batch_size: 12
   auto_find_batch_size: true
-  lr: 2e-5
+  lr: 3e-5
   optimizer: adamw_torch
-  scheduler: linear
+  scheduler: cosine
+  warmup_ratio: 0
   gradient_accumulation: 1
   mixed_precision: bf16
   early_stopping_patience: 10
