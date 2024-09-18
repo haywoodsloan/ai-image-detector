@@ -8,7 +8,7 @@ import {
   getIndicatorColor,
 } from '@/utilities/color.js';
 import {
-  analyzeImage,
+  checkImage,
   deleteImageReport,
   reportImage,
 } from '@/utilities/image.js';
@@ -59,8 +59,8 @@ async function vote(label) {
   try {
     pendingVote.value = label;
     if (label === 'cancel') {
-      await deleteImageReport(props.image);
-      model.value = await analyzeImage(props.image);
+      await deleteImageReport(model.value.voteId);
+      model.value = await checkImage(props.image);
     } else {
       await reportImage(props.image, label);
       model.value = {

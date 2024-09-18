@@ -5,7 +5,7 @@ import DetectorSvg from '@/assets/detector.svg';
 import { useAuth } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
 import { waitForStablePosition } from '@/utilities/element.js';
-import { analyzeImage, useImageAnalysis } from '@/utilities/image.js';
+import { checkImage, useImageAnalysis } from '@/utilities/image.js';
 import { debugError } from '@/utilities/log.js';
 
 import AnalysisCard from './AnalysisCard.vue';
@@ -94,7 +94,7 @@ watch(
     ) {
       try {
         pending = true;
-        analysis.value = await analyzeImage(imageSrc);
+        analysis.value = await checkImage(imageSrc);
         pending = false;
       } catch (error) {
         debugError(error);

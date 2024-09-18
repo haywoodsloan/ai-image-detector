@@ -1,11 +1,11 @@
 import { post } from './base.js';
 
-const CheckImageEndpoint = '/checkImage';
+const ImageAnalysisEndpoint = '/imageAnalysis';
 
 /**
  * @param {string} url
  * @returns {Promise<ImageAnalysis>}
  */
-export function checkImage(url) {
-  return post(CheckImageEndpoint, { url });
+export function analyzeImage(url) {
+  return post(ImageAnalysisEndpoint, { url });
 }

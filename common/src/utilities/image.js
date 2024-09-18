@@ -62,7 +62,7 @@ export async function getImageData(uri) {
 }
 
 export async function normalizeImage(img) {
-  return await sharp(img).ensureAlpha().png().toBuffer();
+  return await sharp(img).ensureAlpha().raw().toBuffer();
 }
 
 /**
@@ -70,7 +70,7 @@ export async function normalizeImage(img) {
  */
 export async function sanitizeImage(img) {
   // Check if the image matches one of the excluded
-  let imgData = img instanceof Buffer ? img : await getImageData(img);
+  const imgData = img instanceof Buffer ? img : await getImageData(img);
   for (const exclude of await getExcludedImages()) {
     const { equal } = await looksSame(exclude.data, imgData, {
       stopOnFirstFail: true,
@@ -79,7 +79,9 @@ export async function sanitizeImage(img) {
   }
 
   // Make sure the image isn't too big
-  const { height, width } = await sharp(imgData).metadata();
+  const imgSharp = sharp(imgData);
+
+  const { height, width } = await imgSharp.metadata();
   const pixelCount = height * width;
 
   // If too big scale it to the max allowed size
@@ -89,10 +91,8 @@ export async function sanitizeImage(img) {
     const scaledWidth = Math.floor(width * scale);
     const scaledHeight = Math.floor(height * scale);
 
-    imgData = await sharp(imgData)
-      .resize(scaledWidth, scaledHeight, { fit: 'inside' })
-      .toBuffer();
+    imgSharp.resize(scaledWidth, scaledHeight, { fit: 'inside' });
   }
 
-  return imgData;
+  return await imgSharp.toBuffer();
 }

@@ -60,9 +60,8 @@ app.http('imageVote', {
         }
 
         // Track the vote by the image's hash
-        console.log(
-          l`Vote image ${{ url: shortenUrl(url), userId, voteLabel }}`
-        );
+        const shortUrl = shortenUrl(url);
+        console.log(l`Vote image ${{ url: shortUrl, userId, voteLabel }}`);
         const hash = createHash(await normalizeImage(data), { alg: 'sha256' });
 
         // Add the vote and check the new label

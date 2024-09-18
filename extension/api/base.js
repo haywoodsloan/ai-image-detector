@@ -35,6 +35,13 @@ export function post(endpoint, body) {
 
 /**
  * @param {string} endpoint
+ */
+export function del(endpoint) {
+  return request(endpoint, { method: 'DELETE' });
+}
+
+/**
+ * @param {string} endpoint
  * @param {RequestInit} init
  * @throws {ApiError}
  */

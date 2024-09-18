@@ -1,4 +1,4 @@
-import { checkImage } from '@/api/detector.js';
+import { analyzeImage } from '@/api/detector.js';
 import { deleteImageVote, voteImageLabel } from '@/api/vote.js';
 import { DataUrlAction } from '@/entrypoints/background/actions/dataUrl.js';
 
@@ -15,15 +15,15 @@ export function useImageAnalysis(url) {
 /**
  * @param {string} src
  */
-export async function analyzeImage(src, force = false) {
+export async function checkImage(src, force = false) {
   try {
-    return await checkImage(src);
+    return await analyzeImage(src);
   } catch (error) {
     const { autoCheck, autoCheckPrivate } = await userSettings.getValue();
     const checkPrivate = force || (autoCheck && autoCheckPrivate);
     if (error?.status !== 404 || !checkPrivate) throw error;
     const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
-    return await checkImage(dataUrl);
+    return await analyzeImage(dataUrl);
   }
 }
 
@@ -44,17 +44,9 @@ export async function reportImage(src, label) {
 }
 
 /**
- * @param {string} src
+ * @param {string} id
  * @param {LabelType} label
  */
-export async function deleteImageReport(src) {
-  const { uploadImages, uploadImagesPrivate } = await userSettings.getValue();
-  try {
-    return await deleteImageVote(src, !uploadImages);
-  } catch (error) {
-    if (error?.status !== 404) throw error;
-    const skipUpload = !(uploadImagesPrivate && uploadImages);
-    const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
-    return await deleteImageVote(dataUrl, skipUpload);
-  }
+export async function deleteImageReport(id) {
+    return await deleteImageVote(id);
 }

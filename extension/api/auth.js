@@ -2,15 +2,14 @@ import { get, post } from './base.js';
 
 /** @typedef {Omit<UserAuth, 'email'>} ApiUserAuth*/
 
-const CreateAuthEndpoint = '/createAuth';
-const CheckAuthEndpoint = '/checkAuth';
+const AuthEndpoint = '/auth';
 
 /**
  * @param {string} email
  * @returns {Promise<ApiUserAuth>}
  */
 export async function createAuth(email) {
-  return post(CreateAuthEndpoint, { email });
+  return post(AuthEndpoint, { email });
 }
 
 /**
@@ -18,5 +17,5 @@ export async function createAuth(email) {
  * @returns {Promise<Omit<ApiUserAuth, 'accessToken'>}
  */
 export async function checkAuth() {
-  return get(CheckAuthEndpoint);
+  return get(AuthEndpoint);
 }

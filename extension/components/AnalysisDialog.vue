@@ -1,6 +1,6 @@
 <script setup>
 import { AiIndicatorColor } from '@/utilities/color.js';
-import { analyzeImage, useImageAnalysis } from '@/utilities/image.js';
+import { checkImage, useImageAnalysis } from '@/utilities/image.js';
 import { debugError } from '@/utilities/log.js';
 import { userAuth } from '@/utilities/storage.js';
 
@@ -27,7 +27,7 @@ onMounted(async () => {
   const storedAuth = await userAuth.getValue();
   if (storedAuth?.verification === 'verified') {
     try {
-      analysis.value = await analyzeImage(image, true);
+      analysis.value = await checkImage(image, true);
       pending.value = false;
     } catch (err) {
       error.value = AnalysisError;

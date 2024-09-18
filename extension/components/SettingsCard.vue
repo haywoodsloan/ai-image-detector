@@ -191,8 +191,8 @@ async function reload() {
               </template>
 
               <StyleProvider>
-                Metadata (GPS, camera info, etc.) will be removed before sending
-                the image for analysis. May increase bandwidth usage.
+                Metadata (GPS, camera info, etc.) will not be used for image
+                analysis. May increase bandwidth usage.
               </StyleProvider>
             </v-tooltip>
           </v-list-item-title>

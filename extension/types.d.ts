@@ -22,11 +22,27 @@ declare type UserAuth = {
   email: string;
 };
 
-declare type ImageAnalysis = {
+declare type DetectorImageAnalysis = {
   artificial: number;
-  scoreType: 'user' | 'detector' | 'vote';
-  voteCount?: number;
+  scoreType: 'detector';
 };
+
+declare type VoteImageAnalysis = {
+  artificial: number;
+  scoreType: 'vote';
+  voteCount: number;
+};
+
+declare type UserImageAnalysis = {
+  artificial: number;
+  scoreType: 'user';
+  voteId: string;
+};
+
+declare type ImageAnalysis =
+  | DetectorImageAnalysis
+  | VoteImageAnalysis
+  | UserImageAnalysis;
 
 declare type ImageVote = {
   imageHash: string;

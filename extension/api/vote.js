@@ -1,7 +1,6 @@
-import { post } from './base.js';
+import { del, post } from './base.js';
 
-const VoteImageLabelEndpoint = '/voteImageLabel';
-const DeleteImageVoteEndpoint = '/deleteImageVote';
+const ImageVoteEndpoint = '/imageVote';
 
 /**
  * @param {string} url
@@ -9,13 +8,13 @@ const DeleteImageVoteEndpoint = '/deleteImageVote';
  * @returns {Promise<ImageVote>}
  */
 export function voteImageLabel(url, voteLabel, skipUpload = false) {
-  return post(VoteImageLabelEndpoint, { url, voteLabel, skipUpload });
+  return post(ImageVoteEndpoint, { url, voteLabel, skipUpload });
 }
 
 /**
- * @param {string} url
+ * @param {string} voteId
  * @returns {Promise<void>}
  */
-export function deleteImageVote(url, skipUpload = false) {
-  return post(DeleteImageVoteEndpoint, { url, skipUpload });
+export function deleteImageVote(voteId) {
+  return del(`${ImageVoteEndpoint}/${voteId}`);
 }
