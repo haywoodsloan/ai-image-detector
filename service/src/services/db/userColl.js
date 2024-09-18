@@ -1,4 +1,5 @@
 import memoize from 'memoize';
+import { ObjectId } from 'mongodb';
 
 import { getServiceDb } from './serviceDb.js';
 
@@ -25,7 +26,7 @@ export async function updateUserActivity(userId) {
   const users = await getUserCollection();
 
   const result = await users.updateOne(
-    { _id: userId },
+    { _id: new ObjectId(userId) },
     { $set: { lastAccessAt: new Date() } }
   );
 

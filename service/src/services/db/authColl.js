@@ -1,6 +1,7 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { cryptoString } from 'common/utilities/string.js';
 import memoize from 'memoize';
+import { ObjectId } from 'mongodb';
 
 import { getValidationSocketUrl } from '../pubsub.js';
 import { getServiceDb } from './serviceDb.js';
@@ -19,12 +20,12 @@ const getAuthCollection = memoize(
 );
 
 /**
- * @param {ObjectId} userId
+ * @param {string | ObjectId} userId
  */
 export async function insertNewAuth(userId, verified = false) {
   /** @type {WithId<AuthDocument>} */
   const newAuth = {
-    userId,
+    userId: new ObjectId(userId),
     accessToken: cryptoString(256),
 
     verifyStatus: verified ? VerificationComplete : PendingVerification,
@@ -44,7 +45,7 @@ export async function insertNewAuth(userId, verified = false) {
 
   // Remove all other pending verifications for the user
   await auths.deleteMany({
-    userId,
+    userId: new Object(userId),
     _id: { $ne: newAuth._id },
     verifyStatus: PendingVerification,
   });
@@ -52,6 +53,9 @@ export async function insertNewAuth(userId, verified = false) {
   return newAuth;
 }
 
+/**
+ * @param {string} accessToken
+ */
 export async function queryAuth(accessToken) {
   const auths = await getAuthCollection();
   return auths.findOne({ accessToken });

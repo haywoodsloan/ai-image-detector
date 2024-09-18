@@ -2,6 +2,7 @@ import { isProd } from 'common/utilities/environment.js';
 import { AllLabels } from 'common/utilities/huggingface.js';
 import { l } from 'common/utilities/string.js';
 import memoize from 'memoize';
+import { ObjectId } from 'mongodb';
 
 import { getServiceDb } from './serviceDb.js';
 import { UserCollName } from './userColl.js';
@@ -49,34 +50,50 @@ export async function queryVotedLabel(imageHash) {
 }
 
 /**
- * @param {string} userId
+ * @param {string | ObjectId} voteId
+ */
+export async function queryVote(voteId) {
+  const votes = await getVoteCollection();
+  return await votes.findOne({ _id: new ObjectId(voteId) });
+}
+
+/**
+ * @param {string | ObjectId} userId
  */
 export async function queryVotesByUser(userId) {
   const votes = await getVoteCollection();
-  return await votes.find({ userId }).toArray();
+  return await votes.find({ userId: new ObjectId(userId) }).toArray();
 }
 
 /**
- * @param {string} userId
+ * @param {string | ObjectId} userId
  * @param {string} imageHash
  */
-export async function queryVoteByUser(userId, imageHash) {
+export async function queryVoteByImage(userId, imageHash) {
   const votes = await getVoteCollection();
-  return await votes.findOne({ userId, imageHash });
+  return await votes.findOne({ userId: new ObjectId(userId), imageHash });
 }
 
 /**
- * @param {string} userId
+ * @param {string | ObjectId} userId
  * @param {string} imageHash
  */
-export async function deleteVote(userId, imageHash) {
+export async function deleteVoteByImage(userId, imageHash) {
   const votes = await getVoteCollection();
-  return await votes.deleteOne({ userId, imageHash });
+  return await votes.deleteOne({ userId: new ObjectId(userId), imageHash });
+}
+
+/**
+ * @param {string | ObjectId} voteId
+ */
+export async function deleteVote(voteId) {
+  const votes = await getVoteCollection();
+  return await votes.deleteOne({ _id: new ObjectId(voteId) });
 }
 
 /**
  * @param {string} imageHash
- * @param {string} userId
+ * @param {string | ObjectId} userId
  * @param {LabelType} voteLabel
  * @description Always updates the `changedAt` field to now
  */
@@ -86,7 +103,7 @@ export async function upsertVotedLabel(imageHash, userId, voteLabel) {
 
   const votes = await getVoteCollection();
   const vote = await votes.findOneAndUpdate(
-    { imageHash, userId },
+    { imageHash, userId: new ObjectId(userId) },
     { $set: { voteLabel, changedAt: new Date() } },
     { upsert: true, returnDocument: 'after' }
   );

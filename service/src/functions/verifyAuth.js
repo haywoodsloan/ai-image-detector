@@ -4,7 +4,6 @@ import { l } from 'common/utilities/string.js';
 import { verifyAuth } from '../services/db/authColl.js';
 import { publishValidation } from '../services/pubsub.js';
 import { getStaticHtml } from '../utilities/html.js';
-import { captureConsole } from '../utilities/log.js';
 
 const VerifySuccessHtml = 'verifySuccess';
 const VerifyFailedHtml = 'verifyFailed';
@@ -12,18 +11,10 @@ const VerifyMissingHtml = 'verifyMissing';
 
 const HtmlHeaders = { 'Content-Type': 'text/html' };
 
-const methods = ['GET', 'OPTIONS'];
 app.http('verifyAuth', {
-  methods,
+  methods: ['GET'],
   authLevel: 'anonymous',
-
-  handler: async (request, context) => {
-    captureConsole(context);
-    if (request.method === 'OPTIONS') {
-      console.log(l`OPTIONS request ${{ methods }}`);
-      return { status: 200, headers: { Allow: methods } };
-    }
-
+  handler: async (request) => {
     // Error if the code is missing
     const code = request.query.get('code');
     if (!code) {

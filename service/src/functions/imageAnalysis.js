@@ -5,28 +5,18 @@ import { getImageData, normalizeImage } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
 import { isDataUrl, isHttpUrl, shortenUrl } from 'common/utilities/url.js';
 
-import { queryVoteByUser, queryVotedLabel } from '../services/db/voteColl.js';
+import { queryVoteByImage, queryVotedLabel } from '../services/db/voteColl.js';
 import { classifyIfAi } from '../services/detector.js';
 import { assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
-import { captureConsole } from '../utilities/log.js';
 
 const DetectorScoreType = 'detector';
 const UserScoreType = 'user';
 const VoteScoreType = 'vote';
 
-const methods = ['POST', 'OPTIONS'];
-app.http('checkImage', {
-  methods,
-  authLevel: 'anonymous',
-
-  handler: async (request, context) => {
-    captureConsole(context);
-    if (request.method === 'OPTIONS') {
-      console.log(l`OPTIONS request ${{ methods }}`);
-      return { status: 200, headers: { Allow: methods } };
-    }
-
+app.http('imageAnalysis', {
+  methods: ['POST'],
+  async handler(request) {
     /** @type {{url: string}} */
     const { url } = await request.json();
 
@@ -58,10 +48,16 @@ app.http('checkImage', {
 
     // Check if the user voted for a label themselves
     const hash = createHash(await normalizeImage(data), { alg: 'sha256' });
-    const userLabel = await queryVoteByUser(userId, hash);
+    const userLabel = await queryVoteByImage(userId, hash);
     if (userLabel) {
       const artificial = userLabel.voteLabel === AiLabel ? 1 : 0;
-      return { jsonBody: { artificial, scoreType: UserScoreType } };
+      return {
+        jsonBody: {
+          artificial,
+          scoreType: UserScoreType,
+          voteId: userLabel._id,
+        },
+      };
     }
 
     // Check for a voted class from the DB
