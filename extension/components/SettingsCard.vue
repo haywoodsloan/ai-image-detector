@@ -75,6 +75,7 @@ const reloadNeeded = computed(() => {
 
   return (
     original.autoCheck !== current.autoCheck ||
+    (!original.autoCheckPrivate && current.autoCheckPrivate) ||
     original.disabledSites.includes(site) !==
       current.disabledSites.includes(site)
   );
@@ -108,7 +109,7 @@ async function reload() {
 </script>
 
 <template>
-  <v-card min-width="425" class="d-flex flex-column">
+  <v-card min-width="450" width="min-content" class="d-flex flex-column">
     <v-card-item class="pb-0">
       <v-card-title> AI Image Detector </v-card-title>
 
@@ -198,7 +199,7 @@ async function reload() {
           </v-list-item-title>
 
           <v-list-item-subtitle>
-            Also check images that are private (not accessible by just the URL).
+            Also check private images (not accessible by just a link).
           </v-list-item-subtitle>
 
           <template #append="{ isActive }">
@@ -234,8 +235,8 @@ async function reload() {
           </v-list-item-title>
 
           <v-list-item-subtitle>
-            Upload image data to improve the detector when reporting them as
-            real or AI.
+            Upload image data, to help improve the detector, when reporting them
+            as real or AI.
           </v-list-item-subtitle>
 
           <template #append="{ isActive }">
@@ -275,7 +276,7 @@ async function reload() {
           </v-list-item-title>
 
           <v-list-item-subtitle>
-            Also upload images that are private when reporting them.
+            Also upload private images when reporting them.
           </v-list-item-subtitle>
 
           <template #append="{ isActive }">

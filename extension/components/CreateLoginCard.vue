@@ -39,7 +39,7 @@ async function login() {
 </script>
 
 <template>
-  <v-card>
+  <v-card min-width="450" width="min-content">
     <v-card-item>
       <v-card-title>AI Image Detector</v-card-title>
       <v-card-subtitle>Sign In Required</v-card-subtitle>
@@ -55,7 +55,6 @@ async function login() {
       >
         <v-text-field
           v-model="newEmail"
-          min-width="350"
           type="email"
           label="Please enter your email to sign in"
           hide-details="auto"

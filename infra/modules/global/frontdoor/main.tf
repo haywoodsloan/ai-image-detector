@@ -79,7 +79,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
   mode     = "Prevention"
 
   custom_rule {
-    name     = "AuthCreateLimit"
+    name     = "AuthLimit"
     action   = "Block"
     type     = "RateLimitRule"
     priority = 1
@@ -90,12 +90,19 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     match_condition {
       match_variable = "RequestUri"
       operator       = "RegEx"
-      match_values   = ["(?i)\\/createAuth"]
+      match_values   = ["(?i)\\/auth"]
+    }
+
+    match_condition {
+      match_variable     = "RequestMethod"
+      match_values       = ["POST"]
+      negation_condition = true
+      operator           = "Equal"
     }
   }
 
   custom_rule {
-    name     = "VoteImageLabelLimit"
+    name     = "ImageVoteLimit"
     action   = "Block"
     type     = "RateLimitRule"
     priority = 2
@@ -106,7 +113,14 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     match_condition {
       match_variable = "RequestUri"
       operator       = "RegEx"
-      match_values   = ["(?i)\\/voteImageLabel"]
+      match_values   = ["(?i)\\/imageVote"]
+    }
+
+    match_condition {
+      match_variable     = "RequestMethod"
+      match_values       = ["POST"]
+      negation_condition = true
+      operator           = "Equal"
     }
   }
 
@@ -195,6 +209,30 @@ resource "azurerm_cdn_frontdoor_rule" "url_rewrite" {
       source_pattern          = "/"
       destination             = "/api/"
       preserve_unmatched_path = true
+    }
+  }
+}
+
+resource "azurerm_cdn_frontdoor_rule" "preflight_headers" {
+  count      = var.env_name != "prod" ? 1 : 0
+  depends_on = [azurerm_cdn_frontdoor_origin.origin, azurerm_cdn_frontdoor_origin_group.origin_group]
+
+  name                      = "PreflightHeaders"
+  cdn_frontdoor_rule_set_id = azurerm_cdn_frontdoor_rule_set.default.id
+  order                     = 2
+
+  conditions {
+    request_method_condition {
+      operator     = "Equal"
+      match_values = ["OPTIONS"]
+    }
+  }
+
+  actions {
+    response_header_action {
+      header_action = "Append"
+      header_name   = "Access-Control-Allow-Headers"
+      value         = ",X-Dev-Key"
     }
   }
 }

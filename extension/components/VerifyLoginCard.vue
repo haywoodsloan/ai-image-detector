@@ -35,7 +35,7 @@ async function cancel() {
 </script>
 
 <template>
-  <v-card>
+  <v-card min-width="450" width="min-content">
     <v-card-item>
       <v-card-title>AI Image Detector</v-card-title>
       <v-card-subtitle>Pending Email Verification</v-card-subtitle>

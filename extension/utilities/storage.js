@@ -6,7 +6,7 @@ import { TtlAction } from '@/entrypoints/background/actions/ttl.js';
 
 import { invokeBackgroundTask } from './background.js';
 
-const AnalysisTtl = TimeSpan.fromMinutes(10);
+const AnalysisTtl = TimeSpan.fromMinutes(10).valueOf();
 
 /** @type {WxtStorageItem<UserSettings>} */
 export const userSettings = storage.defineItem('sync:userSettings', {

@@ -9,7 +9,6 @@ export const FunctionEndpoint =
   (isProd && 'https://api.ai-image-detector.com') ||
   (isDev && 'https://api.ai-image-detector-dev.com') ||
   'http://localhost:7071/api';
-
 console.log(l`Function endpoint ${{ url: FunctionEndpoint }}`);
 
 setHfAccessToken(process.env.HF_KEY);
@@ -23,7 +22,7 @@ app.http = (name, options) => {
     if (request.method === 'OPTIONS') {
       const headers = {
         'Access-Control-Allow-Methods': options.methods,
-        'Access-Control-Allow-Headers': isDev ? ['X-Dev-Key'] : [],
+        'Access-Control-Allow-Headers': ['Authorization'],
       };
       return { status: 200, headers };
     } else return oldHandler(request, context);
