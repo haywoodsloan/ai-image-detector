@@ -16,6 +16,6 @@ export async function createAuth(email) {
  * @throws {ApiError}
  * @returns {Promise<Omit<ApiUserAuth, 'accessToken'>}
  */
-export async function checkAuth() {
+export async function getAuth() {
   return get(AuthEndpoint);
 }

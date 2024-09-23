@@ -120,7 +120,6 @@ const iconColor = computed(() => {
       v-model="menuOpen"
       location="right top"
       z-index="2147483647"
-      open-on-click
       open-on-hover
       :offset="[6, -8]"
       :close-on-content-click="false"

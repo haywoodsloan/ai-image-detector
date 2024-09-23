@@ -1,7 +1,7 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
-import memoize from 'memoize';
+import memoize, { memoizeClear } from 'memoize';
 
-import { checkAuth } from '@/api/auth.js';
+import { getAuth } from '@/api/auth.js';
 import { subAuthVerify } from '@/utilities/pubsub.js';
 import { userAuth } from '@/utilities/storage.js';
 
@@ -27,12 +27,16 @@ export class InitAction extends BaseAction {
       const auth = await userAuth.getValue();
       if (auth) {
         try {
-          const authUpdate = await checkAuth();
+          const authUpdate = await getAuth();
           await userAuth.setValue({ ...auth, ...authUpdate });
         } catch (error) {
           if (error.status === 401) {
             await userAuth.removeValue();
-          } else throw error;
+            return;
+          }
+
+          memoizeClear(this.#checkAuth);
+          throw error;
         }
       }
     },

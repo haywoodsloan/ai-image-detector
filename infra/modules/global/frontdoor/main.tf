@@ -96,7 +96,6 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     match_condition {
       match_variable     = "RequestMethod"
       match_values       = ["POST"]
-      negation_condition = true
       operator           = "Equal"
     }
   }
@@ -119,7 +118,6 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     match_condition {
       match_variable     = "RequestMethod"
       match_values       = ["POST"]
-      negation_condition = true
       operator           = "Equal"
     }
   }
