@@ -1,3 +1,4 @@
+import { fileTypeFromBuffer } from 'file-type';
 import { readFile, readdir } from 'fs/promises';
 import looksSame from 'looks-same';
 import memoize from 'memoize';
@@ -61,8 +62,11 @@ export async function getImageData(uri) {
   return buffer;
 }
 
-export async function normalizeImage(img) {
-  return await sharp(img).ensureAlpha().raw().toBuffer();
+/**
+ * @param {Buffer} imgData
+ */
+export async function normalizeImage(imgData) {
+  return await sharp(imgData).ensureAlpha().raw().toBuffer();
 }
 
 /**
@@ -95,4 +99,14 @@ export async function sanitizeImage(img) {
   }
 
   return await imgSharp.toBuffer();
+}
+
+/**
+ * @param {Buffer} imgData
+ */
+export async function getExt(imgData) {
+  const type = await fileTypeFromBuffer(imgData);
+  if (!type?.ext) {
+    throw new Error('Could not determine extension from image data');
+  } else return type.ext;
 }

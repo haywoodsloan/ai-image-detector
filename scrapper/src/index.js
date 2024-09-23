@@ -11,12 +11,12 @@ import {
   setHfAccessToken,
   uploadImages,
 } from 'common/utilities/huggingface.js';
-import { sanitizeImage } from 'common/utilities/image.js';
+import { getExt, sanitizeImage } from 'common/utilities/image.js';
 import { withRetry } from 'common/utilities/retry.js';
 import { loadSettings } from 'common/utilities/settings.js';
 import { wait } from 'common/utilities/sleep.js';
 import { mkdir, writeFile } from 'fs/promises';
-import { basename, extname, join } from 'path';
+import { basename, join } from 'path';
 import { launch } from 'puppeteer';
 import sanitizeFileName from 'sanitize-filename';
 import UserAgent from 'user-agents';
@@ -178,8 +178,8 @@ try {
 
             // Build the file name from the hash of the data
             const hash = createHash(data);
-            const ext = extname(origin.pathname);
-            const fileName = sanitizeFileName(`${hash}${ext}`);
+            const ext = await getExt(data);
+            const fileName = sanitizeFileName(`${hash}.${ext}`);
 
             // Get a split to add the image to
             console.log(b`Found ${fileName} at ${origin}`);

@@ -199,7 +199,7 @@ async function reload() {
           </v-list-item-title>
 
           <v-list-item-subtitle>
-            Also check private images (not accessible by just a link).
+            Also check private images (not accessible by a link alone).
           </v-list-item-subtitle>
 
           <template #append="{ isActive }">

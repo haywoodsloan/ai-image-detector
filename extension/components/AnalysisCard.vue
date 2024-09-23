@@ -62,10 +62,11 @@ async function vote(label) {
       await deleteImageReport(model.value.voteId);
       model.value = await checkImage(props.image);
     } else {
-      await reportImage(props.image, label);
+      const vote = await reportImage(props.image, label);
       model.value = {
         artificial: label === 'artificial' ? 1 : 0,
         scoreType: 'user',
+        voteId: vote._id,
       };
     }
   } finally {
@@ -122,7 +123,7 @@ async function vote(label) {
             </template>
 
             <template v-else-if="model.scoreType === 'user'">
-              Thank you for your input
+              Thank you for your input!
             </template>
           </v-card-subtitle>
         </div>

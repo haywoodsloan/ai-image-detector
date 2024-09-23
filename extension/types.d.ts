@@ -13,7 +13,7 @@ declare type ActionType =
 declare type ApiError = import('./api/base').ApiError;
 
 declare type UserAuth = {
-  authId: string;
+  _id: string;
   userId: string;
   accessToken: string;
   verification: 'pending' | 'verified';
@@ -45,6 +45,7 @@ declare type ImageAnalysis =
   | UserImageAnalysis;
 
 declare type ImageVote = {
+  _id: string;
   imageHash: string;
   userId: ObjectId;
   voteLabel: LabelType;

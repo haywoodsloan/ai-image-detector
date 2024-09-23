@@ -2,11 +2,10 @@ import { createHash } from 'common/utilities/hash.js';
 import { deleteImage, replaceImage } from 'common/utilities/huggingface.js';
 import { TrainSplit } from 'common/utilities/huggingface.js';
 import { uploadImages } from 'common/utilities/huggingface.js';
-import { sanitizeImage } from 'common/utilities/image.js';
+import { getExt, sanitizeImage } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
 import { isHttpUrl } from 'common/utilities/url.js';
 import df from 'durable-functions';
-import { extname } from 'path';
 import sanitizeFileName from 'sanitize-filename';
 
 import { captureConsole } from '../utilities/log.js';
@@ -14,7 +13,6 @@ import { captureConsole } from '../utilities/log.js';
 export const UploadImageEntity = 'uploadImage';
 
 const PendingBranch = 'pending';
-const DataUrlExtRegex = /data:image\/(?<ext>[^;]+);/i;
 
 df.app.entity(UploadImageEntity, async (context) => {
   captureConsole(context);
@@ -32,22 +30,14 @@ df.app.entity(UploadImageEntity, async (context) => {
     throw error;
   }
 
-  // Only include the origin if url is http
-  // Default to a png if missing
-  let origin, ext;
-  if (isHttpUrl(url)) {
-    const { pathname } = new URL(url);
-    ext = extname(pathname);
-    origin = new URL(url);
-  } else {
-    const match = DataUrlExtRegex.exec(url);
-    ext = match?.groups?.ext;
-  }
+  // Only include the origin if url is http=
+  const origin = isHttpUrl(url) ? new URL(url) : null;
+  const ext = await getExt(data);
 
   // Build the image properties, always use the train split
   // Use the hash of the sanitized image to store it
   const hash = createHash(data);
-  const fileName = sanitizeFileName(`${hash}${ext}`);
+  const fileName = sanitizeFileName(`${hash}.${ext}`);
   const split = TrainSplit;
   const content = new Blob([data]);
 

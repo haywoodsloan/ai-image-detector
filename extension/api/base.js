@@ -62,17 +62,17 @@ export async function request(endpoint, init = {}) {
     let errorText;
     if (contentType === 'application/json') {
       const { error } = await response.json();
-      errorText = `Status: ${response.status}, ${error}`;
+      errorText = `(Status=${response.status}, Message=${error})`;
     } else {
       const error = await response.text();
       errorText = error
-        ? `Status: ${response.status}, ${error}`
-        : `Status: ${response.status}`;
+        ? `(Status=${response.status}, Message=${error})`
+        : `(Status=${response.status})`;
     }
 
     throw new ApiError(
       response.status,
-      `API ${init.method ?? 'GET'} request failed [${errorText}]`
+      `API ${init.method ?? 'GET'} request failed ${errorText}`
     );
   }
 

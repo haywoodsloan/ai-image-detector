@@ -44,7 +44,7 @@ app.http('auth', {
         // Response shouldn't include the verifyCode
         const refreshedAt = auth.refreshedAt.getTime();
         const response = {
-          authId: auth._id,
+          _id: auth._id,
           userId: auth.userId,
           verification: auth.verifyStatus,
           verificationSocket: auth.verifySocket,
@@ -102,7 +102,7 @@ app.http('auth', {
         const refreshedAt = auth.refreshedAt.getTime();
         return {
           jsonBody: {
-            authId: auth._id,
+            _id: auth._id,
             userId: auth.userId,
             accessToken: auth.accessToken,
             verification: auth.verifyStatus,

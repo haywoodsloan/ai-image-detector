@@ -10,7 +10,15 @@ export default defineConfig({
   modules: ['@wxt-dev/module-vue'],
   manifest: {
     name: 'AI Image Detector',
-    permissions: ['storage', 'webNavigation', 'contextMenus', 'activeTab'],
+    permissions: [
+      'storage',
+      'webNavigation',
+      'contextMenus',
+      'activeTab',
+      'http://*/*',
+      'https://*/*',
+      'file://*/*',
+    ],
     browser_specific_settings: {
       gecko: { id: 'DoNotReply@ai-image-detector.com' },
     },
