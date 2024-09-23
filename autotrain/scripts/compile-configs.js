@@ -44,6 +44,10 @@ Handlebars.registerHelper('datetime', () => {
   return `${year}${month}${day}-${hour}${minute}`;
 });
 
+Handlebars.registerHelper('randSeed', () => {
+  return Math.round(Math.random() * 10_000 + 1).toString();
+});
+
 /** @type {Set<string>} */
 const refreshModels = new Set();
 

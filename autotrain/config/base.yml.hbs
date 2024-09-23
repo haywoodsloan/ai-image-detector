@@ -14,16 +14,18 @@ data:
 
 params:
   epochs: 1
+  seed: {{randSeed}}
   batch_size: 12
   auto_find_batch_size: true
-  lr: 3e-5
+  lr: 4e-5
   optimizer: adamw_torch
   scheduler: cosine
   warmup_ratio: 0
+  weight_decay: 1e-3
   gradient_accumulation: 1
   mixed_precision: bf16
-  early_stopping_patience: 10
-  early_stopping_threshold: 0
+  eval_strategy: 1000
+  save_total_limit: 10
 
 hub:
   username: ${HF_USERNAME}
