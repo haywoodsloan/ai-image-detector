@@ -9,7 +9,7 @@ import { UserCollName } from './userColl.js';
 
 export const VoteCollName = 'votes';
 
-const MinVoteCount = isProd ? 5 : 1;
+const MinVoteCount = isProd ? 10 : 1;
 
 const getVoteCollection = memoize(
   /** @returns {Promise<Collection<VoteDocument>>} */

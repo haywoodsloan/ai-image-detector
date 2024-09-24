@@ -7,6 +7,7 @@ import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
 import { waitForStablePosition } from '@/utilities/element.js';
 import { checkImage, useImageAnalysis } from '@/utilities/image.js';
 import { debugError } from '@/utilities/log.js';
+import { useSettings } from '@/utilities/settings.js';
 
 import AnalysisCard from './AnalysisCard.vue';
 import CreateLoginCard from './CreateLoginCard.vue';
@@ -26,9 +27,11 @@ const { image, host } = defineProps({
   },
 });
 
-// Use absolute position for host element
+// Reset the host element positioning
 onMounted(() => {
   host.style.position = 'absolute';
+  host.style.height = null;
+  host.style.width = null;
 });
 
 /** @type {Ref<'small' | 'medium' | 'large'>} */
@@ -39,6 +42,31 @@ if (!imageSrc) throw new Error('Missing image source');
 
 /** @type {AbortController} */
 let aborter;
+
+const settings = useSettings();
+const indicatorPosition = computed(
+  () => settings.value?.indicatorPosition ?? 'top-left'
+);
+
+const menuLoc = computed(() => {
+  const position = [];
+  if (indicatorPosition.value.endsWith('-left')) position.push('right');
+  else position.push('left');
+
+  if (indicatorPosition.value.startsWith('top-')) position.push('top');
+  else position.push('bottom');
+
+  return position.join(' ');
+});
+
+watch(indicatorPosition, () => {
+  const imgRect = image?.getBoundingClientRect();
+  const offsetRect = image?.offsetParent?.getBoundingClientRect();
+
+  // Skip if one of the rects can't get found, this element is being removed.
+  if (!imgRect || !offsetRect) return;
+  updatePosition(imgRect, offsetRect);
+});
 
 useResizeObserver(image, async () => {
   aborter?.abort();
@@ -53,12 +81,7 @@ useResizeObserver(image, async () => {
 
   // Skip if one of the rects can't get found, this element is being removed.
   if (!imgRect || !offsetRect) return;
-
-  const top = Math.max(imgRect.top - offsetRect.top, 0);
-  const left = Math.max(imgRect.left - offsetRect.left, 0);
-
-  host.style.top = `${top}px`;
-  host.style.left = `${left}px`;
+  updatePosition(imgRect, offsetRect);
 
   const width = Math.min(imgRect.width, offsetRect.width);
   const height = Math.min(imgRect.height, offsetRect.height);
@@ -71,6 +94,32 @@ useResizeObserver(image, async () => {
     size.value = 'small';
   }
 });
+
+/**
+ * @param {DOMRectReadOnly} imgRect
+ * @param {DOMRectReadOnly} offsetRect
+ */
+function updatePosition(imgRect, offsetRect) {
+  if (indicatorPosition.value.startsWith('top-')) {
+    const top = Math.max(imgRect.top - offsetRect.top, 0);
+    host.style.top = `${top}px`;
+    host.style.bottom = null;
+  } else {
+    const bottom = Math.max(offsetRect.bottom - imgRect.bottom, 0);
+    host.style.bottom = `${bottom}px`;
+    host.style.top = null;
+  }
+
+  if (indicatorPosition.value.endsWith('-left')) {
+    const left = Math.max(imgRect.left - offsetRect.left, 0);
+    host.style.left = `${left}px`;
+    host.style.right = null;
+  } else {
+    const right = Math.max(offsetRect.right - imgRect.right, 0);
+    host.style.right = `${right}px`;
+    host.style.left = null;
+  }
+}
 
 const analysis = useImageAnalysis(imageSrc);
 const storedAuth = useAuth();
@@ -118,11 +167,11 @@ const iconColor = computed(() => {
   <StyleProvider v-if="size !== 'small'">
     <v-menu
       v-model="menuOpen"
-      location="right top"
       z-index="2147483647"
       open-on-hover
-      :offset="[6, -8]"
+      :offset="[6, -10]"
       :close-on-content-click="false"
+      :location="menuLoc"
       @click.stop
     >
       <template #activator="{ props: menu }">
@@ -148,9 +197,13 @@ const iconColor = computed(() => {
         </v-fade-transition>
       </template>
       <StyleProvider v-if="storedAuth !== null">
-        <VerifyLoginCard v-if="storedAuth?.verification === 'pending'" />
-        <CreateLoginCard v-else-if="storedAuth?.verification !== 'verified'" />
-        <AnalysisCard v-if="analysis" v-model="analysis" :image="imageSrc" />
+        <v-scroll-x-reverse-transition mode="out-in">
+          <VerifyLoginCard v-if="storedAuth?.verification === 'pending'" />
+          <CreateLoginCard
+            v-else-if="storedAuth?.verification !== 'verified'"
+          />
+          <AnalysisCard v-if="analysis" v-model="analysis" :image="imageSrc" />
+        </v-scroll-x-reverse-transition>
       </StyleProvider>
     </v-menu>
   </StyleProvider>
@@ -177,9 +230,7 @@ const iconColor = computed(() => {
   }
 
   &.large {
-    margin-top: 8px;
-    margin-left: 8px;
-
+    margin: 8px;
     transform-origin: center;
     transition: transform var(--transition-dur);
 
@@ -214,9 +265,7 @@ const iconColor = computed(() => {
   &.medium {
     width: 17px;
     height: 17px;
-
-    margin-top: 8px;
-    margin-left: 8px;
+    margin: 8px;
 
     .icon-wrapper {
       transition: transform var(--transition-dur);

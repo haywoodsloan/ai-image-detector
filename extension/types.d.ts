@@ -52,6 +52,7 @@ declare type ImageVote = {
   changedAt: Date;
 };
 
+declare type PositionType = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 declare type UserSettings = {
   autoCheck: boolean;
   autoCheckPrivate: boolean;
@@ -59,5 +60,6 @@ declare type UserSettings = {
   uploadImages: boolean;
   uploadImagesPrivate: boolean;
 
+  indicatorPosition: PositionType;
   disabledSites: string[];
 };

@@ -1,5 +1,7 @@
 <script setup>
-import { AiIndicatorColor } from '@/utilities/color.js';
+import { mdiCloseCircle } from '@mdi/js';
+
+import { AiIndicatorColor, PrimaryColor } from '@/utilities/color.js';
 import { checkImage, useImageAnalysis } from '@/utilities/image.js';
 import { debugError } from '@/utilities/log.js';
 import { userAuth } from '@/utilities/storage.js';
@@ -56,18 +58,48 @@ watch(analysis, (newVal) => {
   </v-snackbar>
 
   <v-dialog
-    :model-value="!pending"
+    :model-value="!error"
     max-width="max-content"
     @after-leave="emit('close')"
   >
     <template #default="{ isActive }">
       <StyleProvider>
-        <AnalysisCard
-          v-model="analysis"
-          show-close
-          :image="image"
-          @close="isActive.value = false"
-        />
+        <v-scroll-x-reverse-transition mode="out-in">
+          <AnalysisCard
+            v-if="!pending"
+            v-model="analysis"
+            show-close
+            :image="image"
+            @close="isActive.value = false"
+          />
+          <v-card v-else>
+            <v-card-item class="pr-2">
+              <div class="d-flex">
+                <div>
+                  <v-card-title> Image Analysis </v-card-title>
+                  <v-card-subtitle> In progress... </v-card-subtitle>
+                </div>
+
+                <v-btn
+                  icon
+                  class="ml-4"
+                  variant="plain"
+                  size="20"
+                  @click="$emit('close')"
+                >
+                  <v-icon :icon="mdiCloseCircle" size="20" />
+                </v-btn>
+              </div>
+            </v-card-item>
+            <v-card-text class="text-center">
+              <v-progress-circular
+                :color="PrimaryColor"
+                size="50"
+                indeterminate
+              />
+            </v-card-text>
+          </v-card>
+        </v-scroll-x-reverse-transition>
       </StyleProvider>
     </template>
   </v-dialog>

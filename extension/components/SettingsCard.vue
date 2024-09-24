@@ -66,6 +66,15 @@ const disabledSites = computed({
     }),
 });
 
+const indicatorPosition = computed({
+  get: () => storedSettings.value?.indicatorPosition ?? 'top-left',
+  set: async (newVal) =>
+    (storedSettings.value = {
+      ...storedSettings.value,
+      indicatorPosition: newVal,
+    }),
+});
+
 const reloadNeeded = computed(() => {
   const [original, current] = [originalSettings.value, storedSettings.value];
   if (!original || !current) return false;
@@ -139,7 +148,7 @@ async function reload() {
       >
         <v-list-item class="px-4" value="autoCheck">
           <v-list-item-title class="d-flex mb-1 gc-2">
-            Automatically check images
+            Automatically analyze images
 
             <v-tooltip location="top center">
               <template #activator="{ props }">
@@ -158,8 +167,8 @@ async function reload() {
           </v-list-item-title>
 
           <v-list-item-subtitle>
-            Check images as you browse and display an icon to indicate if its
-            real or AI.
+            Analyze images as you browse and display an icon on the image to
+            indicate if its real or AI.
           </v-list-item-subtitle>
 
           <template #append="{ isActive }">
@@ -176,11 +185,56 @@ async function reload() {
 
         <v-list-item
           class="pr-4 pl-8"
+          :disabled="!toggles.includes('autoCheck')"
+        >
+          <v-list-item-title class="mb-1"> Icon position </v-list-item-title>
+
+          <v-list-item-subtitle>Where to show the icon.</v-list-item-subtitle>
+
+          <template #append>
+            <v-list-item-action class="ml-3">
+              <v-select
+                v-model="indicatorPosition"
+                variant="solo-filled"
+                density="compact"
+                min-width="155"
+                :items="[
+                  {
+                    title: 'Top left',
+                    value: 'top-left',
+                    props: { class: 'overflow-hidden' },
+                  },
+                  {
+                    title: 'Top right',
+                    value: 'top-right',
+                    props: { class: 'overflow-hidden' },
+                  },
+                  {
+                    title: 'Bottom left',
+                    value: 'bottom-left',
+                    props: { class: 'overflow-hidden' },
+                  },
+                  {
+                    title: 'Bottom right',
+                    value: 'bottom-right',
+                    props: { class: 'overflow-hidden' },
+                  },
+                ]"
+                hide-details
+                flat
+              >
+              </v-select>
+            </v-list-item-action>
+          </template>
+        </v-list-item>
+
+        <v-list-item
+          class="pr-4 pl-8"
           value="autoCheckPrivate"
           :disabled="!toggles.includes('autoCheck')"
         >
           <v-list-item-title class="d-flex mb-1 gc-2">
-            Check private images
+            Analyze private images
 
             <v-tooltip location="top center">
               <template #activator="{ props }">
@@ -199,7 +253,7 @@ async function reload() {
           </v-list-item-title>
 
           <v-list-item-subtitle>
-            Also check private images (not accessible by a link alone).
+            Also analyze private images (not accessible by a link alone).
           </v-list-item-subtitle>
 
           <template #append="{ isActive }">
@@ -235,8 +289,8 @@ async function reload() {
           </v-list-item-title>
 
           <v-list-item-subtitle>
-            Upload image data, to help improve the detector, when reporting them
-            as real or AI.
+            Upload image data, to help improve the detector, when reporting as
+            real or AI.
           </v-list-item-subtitle>
 
           <template #append="{ isActive }">
@@ -297,11 +351,13 @@ async function reload() {
           :active="disabledSites.includes(currentSite)"
           @click="toggleDisabledSite(currentSite)"
         >
-          <v-list-item-title> Disable for this site </v-list-item-title>
+          <v-list-item-title class="mb-1">
+            Disable for this site
+          </v-list-item-title>
 
           <v-list-item-subtitle opacity="1">
             <span class="text-medium-emphasis">
-              Disable automatic image check for just this site:
+              Disable automatic image analysis for just this site:
             </span>
             <span :style="{ color: PrimaryColorLight }">
               {{ currentSite }}

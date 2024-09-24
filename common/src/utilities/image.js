@@ -52,7 +52,7 @@ export async function getImageData(uri) {
     const contentType = req.headers.get('Content-Type');
     const validMIME = contentType.startsWith('image/');
 
-    if (!validMIME) throw new Error(`Invalid image MIME type [${contentType}]`);
+    if (!validMIME) throw new Error(`Invalid image MIME type "${contentType}"`);
 
     return Buffer.from(await req.arrayBuffer());
   }

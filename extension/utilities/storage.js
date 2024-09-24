@@ -18,6 +18,7 @@ export const userSettings = storage.defineItem('sync:userSettings', {
     uploadImagesPrivate: false,
 
     disabledSites: [],
+    indicatorPosition: 'top-left'
   },
 });
 
