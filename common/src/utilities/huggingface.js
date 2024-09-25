@@ -100,9 +100,9 @@ export async function deleteImage(image, branch = MainBranch) {
       // If there isn't an existing file skip retries and throw
       const oldPath = await getFullImagePath(fileName, head.oid);
       if (!oldPath) {
-        const error = new NonRetryableError('Image to delete missing from HF');
+        const error = new Error('Image to delete missing from HF')
         console.warn(y`${error.message}`);
-        throw error;
+        throw new NonRetryableError(error);
       }
 
       await deleteFile({
@@ -141,9 +141,9 @@ export async function replaceImage(image, branch = MainBranch) {
       // If there isn't an existing file skip retries and throw
       const oldPath = await getFullImagePath(fileName, head.oid);
       if (!oldPath) {
-        const error = new NonRetryableError('Image to replace missing from HF');
+        const error = new Error('Image to replace missing from HF');
         console.warn(y`${error.message}`);
-        throw error;
+        throw new NonRetryableError(error);
       }
 
       // Skip if the old and new labels are the same

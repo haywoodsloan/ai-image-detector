@@ -1,7 +1,19 @@
 import { wait } from './sleep.js';
 
 /** An error that will not be retried */
-export class NonRetryableError extends Error {}
+export class NonRetryableError extends Error {
+  /** @type {Error} */
+  #inner = null;
+
+  get inner() {
+    return this.#inner;
+  }
+
+  constructor(inner) {
+    super();
+    this.#inner = inner;
+  }
+}
 
 /**
  * @param {number} retryLimit
@@ -21,7 +33,7 @@ export function withRetry(retryLimit, timeout) {
       try {
         return await action();
       } catch (error) {
-        if (error instanceof NonRetryableError) throw error;
+        if (error instanceof NonRetryableError) throw error.inner;
         if (retryCount >= retryLimit) throw error;
         retryCount++;
 
