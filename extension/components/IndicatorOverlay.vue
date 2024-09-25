@@ -184,15 +184,8 @@ const iconColor = computed(() => {
             aria-label="AI Image Detector"
             @click.stop.prevent
           >
-            <div class="icon-wrapper">
-              <v-icon
-                v-if="size === 'large'"
-                class="icon"
-                :icon="DetectorSvg"
-              />
-
-              <div v-else-if="size === 'medium'" class="icon"></div>
-            </div>
+            <v-icon v-if="size === 'large'" class="icon" :icon="DetectorSvg" />
+            <div v-else class="icon" :class="indicatorPosition"></div>
           </button>
         </v-fade-transition>
       </template>
@@ -263,32 +256,50 @@ const iconColor = computed(() => {
   }
 
   &.medium {
-    width: 17px;
-    height: 17px;
     margin: 8px;
 
-    .icon-wrapper {
-      transition: transform var(--transition-dur);
-      transform-origin: 15% 15%;
+    .icon {
+      height: 7px;
+      width: 7px;
 
-      .icon {
-        height: 7px;
-        width: 7px;
+      transition:
+        transform var(--transition-dur),
+        background-color var(--transition-dur),
+        filter var(--transition-dur);
 
-        transition:
-          background-color var(--transition-dur),
-          filter var(--transition-dur);
+      filter: drop-shadow(0 0 1.4px v-bind(iconColor));
+      background-color: v-bind(iconColor);
+      border-radius: 50%;
 
-        filter: drop-shadow(0 0 1.4px v-bind(iconColor));
-        background-color: v-bind(iconColor);
-        border-radius: 50%;
+      &.top-left{
+        margin-right: 10px;
+        margin-bottom: 10px;
+        transform-origin: 15% 15%;
+      }
+
+      &.top-right{
+        margin-left: 10px;
+        margin-bottom: 10px;
+        transform-origin: 85% 15%;
+      }
+
+      &.bottom-left {
+        margin-right: 10px;
+        margin-top: 10px;
+        transform-origin: 15% 85%;
+      }
+
+      &.bottom-right {
+        margin-left: 10px;
+        margin-top: 10px;
+        transform-origin: 85% 85%;
       }
     }
 
     &:hover,
     &:focus,
     &.menu-open {
-      .icon-wrapper {
+      .icon {
         transform: scale(2.5);
       }
     }
