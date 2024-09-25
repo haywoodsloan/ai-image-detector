@@ -188,7 +188,6 @@ async function reload() {
           :disabled="!toggles.includes('autoCheck')"
         >
           <v-list-item-title class="mb-1"> Icon position </v-list-item-title>
-
           <v-list-item-subtitle>Where to show the icon.</v-list-item-subtitle>
 
           <template #append>
