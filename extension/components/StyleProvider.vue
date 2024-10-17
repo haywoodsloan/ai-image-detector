@@ -1,8 +1,7 @@
 <script setup>
 import { getParentChain } from '@/utilities/element.js';
 import { OverlayClasses } from '@/utilities/vue.js';
-
-const DataSetId = 'aid-3bi9lk5g';
+import { ExtensionId } from '../utilities/vue.js';
 
 /** @type {Ref<HTMLElement>} */
 const wrapper = ref(null);
@@ -12,7 +11,7 @@ onMounted(() => {
   for (const { classList, dataset } of getParentChain(wrapper.value)) {
     if (OverlayClasses.some((c) => classList.contains(c))) {
       // Stop after the first overlay wrapper
-      dataset[DataSetId] = '';
+      dataset[ExtensionId] = '';
       break;
     }
   }

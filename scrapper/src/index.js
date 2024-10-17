@@ -82,6 +82,7 @@ const ImageSelector =
 const TestRatio = 0.1;
 const CleanupRemainder = 9;
 const RetryLimit = 10;
+const MaxPendingUploads = 5;
 
 const LoadStuckTimeout = TimeSpan.fromSeconds(20);
 const RedditErrorDelay = TimeSpan.fromSeconds(20);
@@ -212,6 +213,13 @@ try {
 
             pendingUploads.add(pendingUpload);
             validationQueue.clear();
+          }
+
+          if (pendingUploads.size >= MaxPendingUploads) {
+            console.log(y`Waiting for one or more uploads to complete`);
+            while (pendingUploads.size >= MaxPendingUploads)
+              await Promise.any([...pendingUploads]);
+            console.log(y`Resuming scrapping`);
           }
         }
 

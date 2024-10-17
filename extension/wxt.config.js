@@ -33,16 +33,15 @@ export default defineConfig({
             ignoreFiles: ['index.html', 'popup.html'],
             exclude: [/\[data-aid-3bi9lk5g\]/, /\[data-v-[a-z0-9A-Z]+\]/],
 
-            transform(prefix, orig, prefixed) {
-              const isOverlay = OverlayClasses.some((c) =>
-                orig.startsWith(`.${c}`)
-              );
-              return isOverlay ? `${prefix}${orig}` : prefixed;
-            },
+            transform: (prefix, orig, prefixed) =>
+              isOverlay(orig) ? `${prefix}${orig}` : prefixed,
           }),
         ],
       },
     },
   }),
 });
-[];
+
+function isOverlay(selector) {
+  return OverlayClasses.some((c) => selector.startsWith(`.${c}`));
+}
