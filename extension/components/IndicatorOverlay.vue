@@ -168,7 +168,7 @@ const iconColor = computed(() => {
     <v-menu
       v-model="menuOpen"
       z-index="2147483647"
-      open-on-hover
+      open-on-click
       :offset="[6, -10]"
       :close-on-content-click="false"
       :location="menuLoc"
@@ -239,8 +239,8 @@ const iconColor = computed(() => {
           stroke var(--transition-dur),
           fill var(--transition-dur);
 
-        stroke: v-bind(iconColor);
-        fill: v-bind(iconColor);
+        stroke: v-bind(iconColor) !important;
+        fill: v-bind(iconColor) !important;
       }
     }
 
@@ -267,8 +267,8 @@ const iconColor = computed(() => {
         background-color var(--transition-dur),
         filter var(--transition-dur);
 
-      filter: drop-shadow(0 0 1.4px v-bind(iconColor));
-      background-color: v-bind(iconColor);
+      filter: drop-shadow(0 0 1.4px v-bind(iconColor)) !important;
+      background-color: v-bind(iconColor) !important;
       border-radius: 50%;
 
       &.top-left{
