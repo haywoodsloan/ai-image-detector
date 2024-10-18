@@ -2,9 +2,9 @@
 import { mdiCloseCircle } from '@mdi/js';
 
 import { AiIndicatorColor, PrimaryColor } from '@/utilities/color.js';
-import { checkImage, useImageAnalysis } from '@/utilities/image.js';
+import { checkImage } from '@/utilities/image.js';
 import { debugError } from '@/utilities/log.js';
-import { userAuth } from '@/utilities/storage.js';
+import { getAnalysisStorage, userAuth } from '@/utilities/storage.js';
 
 import AnalysisCard from './AnalysisCard.vue';
 import StyleProvider from './StyleProvider.vue';
@@ -21,17 +21,28 @@ const { image } = defineProps({
 });
 
 /** @type {Ref<ImageAnalysis>} */
-const analysis = useImageAnalysis(image);
-const error = ref('');
+const analysis = ref(null);
 
-const pending = ref(true);
+/** @type {Ref<string>} */
+const error = ref(null);
+
+/** @type {Ref<boolean>} */
+const pending = ref(null);
+
+watch(analysis, async (newAnalysis) => {
+  const stored = await getAnalysisStorage(image);
+  await stored.setValue(newAnalysis);
+});
+
 onMounted(async () => {
   const storedAuth = await userAuth.getValue();
   if (storedAuth?.verification === 'verified') {
     try {
+      pending.value = true;
       analysis.value = await checkImage(image, true);
       pending.value = false;
     } catch (err) {
+      pending.value = null;
       error.value = AnalysisError;
       debugError(err);
     }
@@ -39,16 +50,11 @@ onMounted(async () => {
     error.value = SignInError;
   }
 });
-
-// Close the dialog if the TTL expires
-watch(analysis, (newVal) => {
-  if (!newVal && !pending.value) emit('close');
-});
 </script>
 
 <template>
   <v-snackbar
-    :model-value="!!error"
+    :model-value="error !== null"
     :color="AiIndicatorColor"
     @update:model-value="!$event && emit('close')"
   >
@@ -58,7 +64,7 @@ watch(analysis, (newVal) => {
   </v-snackbar>
 
   <v-dialog
-    :model-value="!error"
+    :model-value="pending !== null"
     max-width="max-content"
     @after-leave="emit('close')"
   >

@@ -204,15 +204,15 @@ async function vote(label) {
 
   &.ai {
     :deep(path) {
-      stroke: v-bind(AiIndicatorColor);
-      fill: v-bind(AiIndicatorColor);
+      stroke: v-bind(AiIndicatorColor) !important;
+      fill: v-bind(AiIndicatorColor) !important;
     }
   }
 
   &.real {
     :deep(path) {
-      stroke: v-bind(RealIndicatorColor);
-      fill: v-bind(RealIndicatorColor);
+      stroke: v-bind(RealIndicatorColor) !important;
+      fill: v-bind(RealIndicatorColor) !important;
     }
   }
 }

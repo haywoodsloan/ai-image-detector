@@ -52,7 +52,17 @@ declare type ImageVote = {
   changedAt: Date;
 };
 
-declare type PositionType = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+declare type PositionType =
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right';
+
+declare type LocationStrategyData = {
+  contentEl: Ref<HTMLElement | undefined>;
+  target: Ref<HTMLElement | [x: number, y: number] | undefined>;
+};
+
 declare type UserSettings = {
   autoCheck: boolean;
   autoCheckPrivate: boolean;

@@ -36,10 +36,10 @@ export function createAppEx(root, props) {
 
 function modThemeCss() {
   const styles = document.head.querySelectorAll('style[nonce]');
-  const vuetifyStyle = [...styles].find(({ nonce }) => nonce === ExtensionId);
+  const theme = [...styles].find(({ nonce }) => nonce === ExtensionId);
 
-  const original = vuetifyStyle.innerHTML;
+  const original = theme.innerHTML;
   const modified = original.replace(RootRegex, `$1[data-${ExtensionId}]$2`);
 
-  vuetifyStyle.innerHTML = modified;
+  theme.innerHTML = modified;
 }

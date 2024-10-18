@@ -48,17 +48,6 @@ const indicatorPosition = computed(
   () => settings.value?.indicatorPosition ?? 'top-left'
 );
 
-const menuLoc = computed(() => {
-  const position = [];
-  if (indicatorPosition.value.endsWith('-left')) position.push('right');
-  else position.push('left');
-
-  if (indicatorPosition.value.startsWith('top-')) position.push('top');
-  else position.push('bottom');
-
-  return position.join(' ');
-});
-
 watch(indicatorPosition, () => {
   const imgRect = image?.getBoundingClientRect();
   const offsetRect = image?.offsetParent?.getBoundingClientRect();
@@ -68,7 +57,7 @@ watch(indicatorPosition, () => {
   updatePosition(imgRect, offsetRect);
 });
 
-useResizeObserver(image, async () => {
+useResizeObserver([image, image.offsetParent], async () => {
   aborter?.abort();
   aborter = new AbortController();
 
@@ -161,6 +150,73 @@ const iconColor = computed(() => {
   else if (analysis.value) return getIndicatorColor(analysis.value.artificial);
   else return null;
 });
+
+const xOffset = 6;
+const yOffset = 10;
+
+/**
+ * @param {LocationStrategyData} data
+ * @param {Ref<Record<string, string>>} styles
+ */
+function locationStrategy(data, _, styles) {
+  const positionMenu = () => {
+    const { target, contentEl } = data;
+
+    const targetRect = target.value.getBoundingClientRect();
+    const offsetRect = contentEl.value.offsetParent.getBoundingClientRect();
+
+    const contentWidth = Math.max(
+      contentEl.value.clientWidth || 0,
+      contentEl.value.innerWidth || 0
+    );
+    const contentHeight = Math.max(
+      contentEl.value.clientHeight || 0,
+      contentEl.value.innerHeight || 0
+    );
+
+    const vw = Math.max(
+      document.documentElement.clientWidth || 0,
+      window.innerWidth || 0
+    );
+
+    const vh = Math.max(
+      document.documentElement.clientHeight || 0,
+      window.innerHeight || 0
+    );
+
+    styles.value = { transformOrigin: '' };
+    if (
+      (indicatorPosition.value.endsWith('-left') &&
+        targetRect.right + xOffset + contentWidth <= vw) ||
+      (indicatorPosition.value.endsWith('-right') &&
+        targetRect.left - xOffset - contentWidth < 0)
+    ) {
+      styles.value.transformOrigin += 'left';
+      const offset = targetRect.right - offsetRect.left;
+      styles.value.left = `${offset + 6}px`;
+    } else {
+      styles.value.transformOrigin += 'right';
+      const offset = offsetRect.right - targetRect.left;
+      styles.value.right = `${offset + 6}px`;
+    }
+
+    if (
+      (indicatorPosition.value.startsWith('top-') &&
+        targetRect.top + yOffset + contentHeight <= vh) ||
+      (indicatorPosition.value.startsWith('bottom-') &&
+        targetRect.bottom - yOffset - contentHeight < 0)
+    ) {
+      const offset = targetRect.top - offsetRect.top;
+      styles.value.top = `${offset + 10}px`;
+    } else {
+      const offset = offsetRect.bottom - targetRect.bottom;
+      styles.value.bottom = `${offset + 10}px`;
+    }
+  };
+
+  requestAnimationFrame(positionMenu);
+  return { updateLocation: positionMenu };
+}
 </script>
 
 <template>
@@ -169,9 +225,8 @@ const iconColor = computed(() => {
       v-model="menuOpen"
       z-index="2147483647"
       open-on-click
-      :offset="[6, -10]"
       :close-on-content-click="false"
-      :location="menuLoc"
+      :location-strategy="locationStrategy"
       @click.stop
     >
       <template #activator="{ props: menu }">
@@ -271,13 +326,13 @@ const iconColor = computed(() => {
       background-color: v-bind(iconColor) !important;
       border-radius: 50%;
 
-      &.top-left{
+      &.top-left {
         margin-right: 10px;
         margin-bottom: 10px;
         transform-origin: 15% 15%;
       }
 
-      &.top-right{
+      &.top-right {
         margin-left: 10px;
         margin-bottom: 10px;
         transform-origin: 85% 15%;
