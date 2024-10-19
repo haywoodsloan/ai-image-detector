@@ -2,6 +2,13 @@ export class TimeSpan {
   #value = 0;
 
   /**
+   * @param {number} milliseconds 
+   */
+  static fromMilliseconds(milliseconds) {
+    return new TimeSpan(milliseconds);
+  }
+
+  /**
    * @param {number} seconds
    */
   static fromSeconds(seconds) {
@@ -37,6 +44,13 @@ export class TimeSpan {
   }
 
   /**
+   * @param {number} milliseconds 
+   */
+  addMilliseconds(milliseconds) {
+    this.#value += milliseconds;
+  }
+
+  /**
    * @param {number} seconds
    */
   addSeconds(seconds) {
@@ -62,6 +76,10 @@ export class TimeSpan {
    */
   addDays(days) {
     this.#value += days * 24 * 60 * 60 * 1000;
+  }
+
+  getMilliseconds() {
+    return this.#value;
   }
 
   getSeconds() {

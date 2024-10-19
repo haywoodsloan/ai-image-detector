@@ -7,7 +7,7 @@ ENV PYTHONUNBUFFERED=1
 ENV HOME=/workspace
 
 RUN apt-get update
-RUN apt-get install -y build-essential cmake git git-lfs libgl1 libglib2.0-0 libaio-dev
+RUN apt-get install -y build-essential cmake git git-lfs libgl1 libglib2.0-0 libaio-dev libjpeg-dev libpng-dev libgomp1
 RUN apt-get upgrade -y
 RUN apt-get autoremove && apt-get autoclean && apt-get clean
 
@@ -22,6 +22,7 @@ RUN conda clean -y --all
 ENV HF_HOME="$HOME/.cache"
 RUN pip install -U autotrain-advanced
 RUN python -m nltk.downloader punkt
+RUN pip install -U ninja
 RUN pip install -U flash-attn --no-build-isolation
 RUN pip install -U deepspeed
 RUN pip install --upgrade --force-reinstall --no-cache-dir "unsloth[cu121-ampere-torch230] @ git+https://github.com/unslothai/unsloth.git" --no-deps
