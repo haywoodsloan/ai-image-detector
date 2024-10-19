@@ -1,4 +1,5 @@
 import { createReadStream, createWriteStream } from 'fs';
+import sanitize from 'sanitize-filename';
 import { appendFile, readdir } from 'fs/promises';
 import { EOL } from 'os';
 import { join } from 'path';
@@ -57,4 +58,11 @@ export async function appendLines(path, lines) {
     }
     await new Promise((res) => stream.end(res));
   }
+}
+
+/**
+ * @param {string} fileName
+ */
+export function sanitizeFileName(fileName) {
+  return sanitize(fileName).replace(/^x00/, '');
 }

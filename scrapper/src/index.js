@@ -1,5 +1,6 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { b, g, r, rl, y } from 'common/utilities/colors.js';
+import { sanitizeFileName } from 'common/utilities/file.js';
 import { createHash } from 'common/utilities/hash.js';
 import {
   AiLabel,
@@ -18,7 +19,6 @@ import { wait } from 'common/utilities/sleep.js';
 import { mkdir, writeFile } from 'fs/promises';
 import { basename, join } from 'path';
 import { launch } from 'puppeteer';
-import sanitizeFileName from 'sanitize-filename';
 import UserAgent from 'user-agents';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';

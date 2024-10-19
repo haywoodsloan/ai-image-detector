@@ -1,3 +1,4 @@
+import { sanitizeFileName } from 'common/utilities/file.js';
 import { createHash } from 'common/utilities/hash.js';
 import { deleteImage, replaceImage } from 'common/utilities/huggingface.js';
 import { TrainSplit } from 'common/utilities/huggingface.js';
@@ -6,7 +7,6 @@ import { getExt, sanitizeImage } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
 import { isHttpUrl } from 'common/utilities/url.js';
 import df from 'durable-functions';
-import sanitizeFileName from 'sanitize-filename';
 
 import { captureConsole } from '../utilities/log.js';
 
