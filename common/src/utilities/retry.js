@@ -27,7 +27,7 @@ export function withRetry(retryLimit, timeout) {
    *  onerror: (error: Error, retryCount: number) => Promise<void>
    * ) => Promise<T>}
    */
-  return async (action, onerror) => {
+  return async (action, onerror = null) => {
     let retryCount = 0;
     while (true) {
       try {
@@ -39,7 +39,7 @@ export function withRetry(retryLimit, timeout) {
 
         const multiplier = Math.random() * 0.15 + 1;
         await wait(timeout * retryCount * multiplier);
-        await onerror(error, retryCount);
+        await onerror?.(error, retryCount);
       }
     }
   };
