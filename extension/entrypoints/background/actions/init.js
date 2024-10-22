@@ -30,11 +30,6 @@ export class InitAction extends BaseAction {
           const authUpdate = await getAuth();
           await userAuth.setValue({ ...auth, ...authUpdate });
         } catch (error) {
-          if (error.status === 401) {
-            await userAuth.removeValue();
-            return;
-          }
-
           memoizeClear(this.#checkAuth);
           throw error;
         }

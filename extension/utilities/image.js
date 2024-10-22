@@ -3,7 +3,12 @@ import { deleteImageVote, voteImageLabel } from '@/api/vote.js';
 import { DataUrlAction } from '@/entrypoints/background/actions/dataUrl.js';
 
 import { invokeBackgroundTask } from './background.js';
+import { debugWarn } from './log.js';
 import { getAnalysisStorage, useStorage, userSettings } from './storage.js';
+
+/** @type {Set<Promise>} */
+const fullUploadQueue = new Set();
+const fullUploadLimit = 3;
 
 /**
  * @param {string} url
@@ -22,8 +27,21 @@ export async function checkImage(src, force = false) {
     const { autoCheck, autoCheckPrivate } = await userSettings.getValue();
     const checkPrivate = force || (autoCheck && autoCheckPrivate);
     if (error?.status !== 404 || !checkPrivate) throw error;
-    const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
-    return await analyzeImage(dataUrl);
+
+    while (fullUploadQueue.size >= fullUploadLimit) {
+      debugWarn('Full upload limit reached waiting for others to complete');
+      await Promise.race([...fullUploadQueue]).catch();
+    }
+
+    const hardCheck = (async () => {
+      const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
+      return await analyzeImage(dataUrl);
+    })();
+
+    fullUploadQueue.add(hardCheck);
+    hardCheck.finally(() => fullUploadQueue.delete(hardCheck));
+
+    return hardCheck;
   }
 }
 
@@ -38,8 +56,21 @@ export async function reportImage(src, label) {
   } catch (error) {
     if (error?.status !== 404) throw error;
     const skipUpload = !(uploadImagesPrivate && uploadImages);
-    const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
-    return await voteImageLabel(dataUrl, label, skipUpload);
+
+    while (fullUploadQueue.size >= fullUploadLimit) {
+      debugWarn('Full upload limit reached waiting for others to complete');
+      await Promise.race([...fullUploadQueue]).catch();
+    }
+
+    const hardReport = (async () => {
+      const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
+      return await voteImageLabel(dataUrl, label, skipUpload);
+    })();
+
+    fullUploadQueue.add(hardReport);
+    hardReport.finally(() => fullUploadQueue.delete(hardReport));
+
+    return hardReport;
   }
 }
 
@@ -48,5 +79,5 @@ export async function reportImage(src, label) {
  * @param {LabelType} label
  */
 export async function deleteImageReport(id) {
-    return await deleteImageVote(id);
+  return await deleteImageVote(id);
 }

@@ -207,8 +207,8 @@ try {
             // Skip uploading if less than the batch size after validation
             if (unique.size < UploadBatchSize) continue;
 
-            const pendingUpload = uploadImages([...unique.values()]).then(() =>
-              pendingUploads.delete(pendingUpload)
+            const pendingUpload = uploadImages([...unique.values()]).finally(
+              () => pendingUploads.delete(pendingUpload)
             );
 
             pendingUploads.add(pendingUpload);
@@ -218,7 +218,7 @@ try {
           if (pendingUploads.size >= MaxPendingUploads) {
             console.log(y`Waiting for one or more uploads to complete`);
             while (pendingUploads.size >= MaxPendingUploads)
-              await Promise.any([...pendingUploads]);
+              await Promise.race([...pendingUploads]).catch();
             console.log(y`Resuming scrapping`);
           }
         }

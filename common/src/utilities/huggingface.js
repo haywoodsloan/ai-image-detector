@@ -293,9 +293,9 @@ export async function uploadImages(images, branch = MainBranch) {
             async (error, retryCount) => {
               if (isRateLimitError(error)) {
                 // Warn about rate limiting and wait a few minutes
-                await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
                 const delay = RateLimitDelay / 60 / 1000;
                 console.warn(r`Rate-limited, waiting ${delay} mins`);
+                await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
               } else console.warn(rl`Retrying upload ${error}`);
             }
           );
@@ -398,9 +398,9 @@ export async function deleteKnownUrl(url, branch = MainBranch) {
     async (error, retryCount) => {
       if (isRateLimitError(error)) {
         // Warn about rate limiting and wait a few minutes
-        await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
         const delay = RateLimitDelay / 60 / 1000;
         console.warn(r`Rate-limited, waiting ${delay} mins`);
+        await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
       } else console.warn(rl`Retrying URL list upload ${error}`);
     }
   );
@@ -496,9 +496,9 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
             async (error, retryCount) => {
               if (isRateLimitError(error)) {
                 // Warn about rate limiting and wait a few minutes
-                await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
                 const delay = RateLimitDelay / 60 / 1000;
                 console.warn(r`Rate-limited, waiting ${delay} mins`);
+                await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
               } else console.warn(rl`Retrying URL list upload ${error}`);
             }
           );
