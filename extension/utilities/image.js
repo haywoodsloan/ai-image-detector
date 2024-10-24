@@ -25,7 +25,9 @@ export async function checkImage(src, { force = false, signal } = {}) {
   try {
     return await analyzeImage(src, { signal });
   } catch (error) {
+    if (error.name === 'AbortError') throw error;
     signal.throwIfAborted();
+
     const { autoCheck, autoCheckPrivate } = await userSettings.getValue();
     const checkPrivate = force || (autoCheck && autoCheckPrivate);
     if (error?.status !== 404 || !checkPrivate) throw error;
@@ -35,16 +37,19 @@ export async function checkImage(src, { force = false, signal } = {}) {
       await Promise.race([...fullUploadQueue]).catch();
     }
 
+    signal.throwIfAborted();
     const hardCheck = (async () => {
-      const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
-      signal.throwIfAborted();
-      return await analyzeImage(dataUrl, { signal });
+      try {
+        const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
+        signal.throwIfAborted();
+        return await analyzeImage(dataUrl, { signal });
+      } finally {
+        fullUploadQueue.delete(hardCheck);
+      }
     })();
 
     fullUploadQueue.add(hardCheck);
-    hardCheck.finally(() => fullUploadQueue.delete(hardCheck));
-
-    return hardCheck;
+    return await hardCheck;
   }
 }
 
@@ -61,7 +66,9 @@ export async function reportImage(src, label, { signal } = {}) {
       signal,
     });
   } catch (error) {
+    if (error.name === 'AbortError') throw error;
     signal.throwIfAborted();
+
     if (error?.status !== 404) throw error;
     const skipUpload = !(uploadImagesPrivate && uploadImages);
 
@@ -71,15 +78,17 @@ export async function reportImage(src, label, { signal } = {}) {
     }
 
     const hardReport = (async () => {
-      const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
-      signal.throwIfAborted();
-      return await voteImageLabel(dataUrl, label, { skipUpload, signal });
+      try {
+        const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
+        signal.throwIfAborted();
+        return await voteImageLabel(dataUrl, label, { skipUpload, signal });
+      } finally {
+        fullUploadQueue.delete(hardReport);
+      }
     })();
 
     fullUploadQueue.add(hardReport);
-    hardReport.finally(() => fullUploadQueue.delete(hardReport));
-
-    return hardReport;
+    return await hardReport;
   }
 }
 

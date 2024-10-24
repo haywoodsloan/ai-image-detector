@@ -34,8 +34,8 @@ export class ApiError extends Error {
  * @param {string} endpoint
  * @param {AbortSignal} [signal]
  */
-export function get(endpoint, signal) {
-  return request(endpoint, { signal });
+export async function get(endpoint, signal) {
+  return await request(endpoint, { signal });
 }
 
 /**
@@ -43,8 +43,8 @@ export function get(endpoint, signal) {
  * @param {any} body
  * @param {AbortSignal} [signal]
  */
-export function post(endpoint, body, signal) {
-  return request(endpoint, {
+export async function post(endpoint, body, signal) {
+  return await request(endpoint, {
     method: 'POST',
     body: JSON.stringify(body),
     signal,
@@ -55,8 +55,8 @@ export function post(endpoint, body, signal) {
  * @param {string} endpoint
  * @param {AbortSignal} [signal]
  */
-export function del(endpoint, signal) {
-  return request(endpoint, { method: 'DELETE', signal });
+export async function del(endpoint, signal) {
+  return await request(endpoint, { method: 'DELETE', signal });
 }
 
 /**
@@ -64,21 +64,21 @@ export function del(endpoint, signal) {
  * @param {RequestInit} init
  * @throws {ApiError}
  */
-export function request(endpoint, init = {}) {
+export async function request(endpoint, init = {}) {
   // Use the background script if not already in it
   if (import.meta.env.ENTRYPOINT === 'content') {
     if (!init.signal)
-      return invokeBackgroundTask(ApiAction, { endpoint, init });
+      return await invokeBackgroundTask(ApiAction, { endpoint, init });
 
     const id = crypto.randomUUID();
-    init.signal.addEventListener('abort', () =>
-      invokeBackgroundTask(AbortApiAction, { id })
+    init.signal.addEventListener('abort', async () =>
+      await invokeBackgroundTask(AbortApiAction, { id })
     );
 
-    return invokeBackgroundTask(ApiAction, { endpoint, init, id });
+    return await invokeBackgroundTask(ApiAction, { endpoint, init, id });
   }
 
-  return retry(
+  return await retry(
     async () => {
       const headers = await buildHeaders();
 
@@ -124,7 +124,7 @@ export function request(endpoint, init = {}) {
       }
 
       if (response.status === 204) return;
-      return response.json();
+      return await response.json();
     },
     (error) => debugWarn(`Retrying request to ${endpoint}`, error)
   );

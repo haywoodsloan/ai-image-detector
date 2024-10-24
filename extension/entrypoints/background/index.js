@@ -39,5 +39,6 @@ export default defineBackground(() => {
 function convertError(error) {
   const converted = { message: error.message, stack: error.stack };
   if (error instanceof ApiError) converted.status = error.status;
+  if (error.name === 'AbortError') converted.name = 'AbortError';
   return converted;
 }

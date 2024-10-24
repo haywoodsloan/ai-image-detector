@@ -7,6 +7,6 @@ const ImageAnalysisEndpoint = '/imageAnalysis';
  * @param {{signal?: AbortSignal}}
  * @returns {Promise<ImageAnalysis>}
  */
-export function analyzeImage(url, { signal } = {}) {
-  return post(ImageAnalysisEndpoint, { url }, signal);
+export async function analyzeImage(url, { signal } = {}) {
+  return await post(ImageAnalysisEndpoint, { url }, signal);
 }

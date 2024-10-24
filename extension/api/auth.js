@@ -10,7 +10,7 @@ const AuthEndpoint = '/auth';
  * @returns {Promise<ApiUserAuth>}
  */
 export async function createAuth(email, { signal } = {}) {
-  return post(AuthEndpoint, { email }, signal);
+  return await post(AuthEndpoint, { email }, signal);
 }
 
 /**
@@ -19,5 +19,5 @@ export async function createAuth(email, { signal } = {}) {
  * @returns {Promise<Omit<ApiUserAuth, 'accessToken'>}
  */
 export async function getAuth({ signal } = {}) {
-  return get(AuthEndpoint, signal);
+  return await get(AuthEndpoint, signal);
 }

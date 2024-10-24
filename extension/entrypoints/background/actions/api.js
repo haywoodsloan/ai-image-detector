@@ -15,14 +15,14 @@ export class ApiAction extends BaseAction {
    *    id?: string
    * }}
    */
-  static invoke({ endpoint, init, id }) {
-    if (!id) return request(endpoint, init);
+  static async invoke({ endpoint, init, id }) {
+    if (!id) return await request(endpoint, init);
 
     const aborter = new AbortController();
     Aborters.set(id, aborter);
 
     try {
-      return request(endpoint, { ...init, signal: aborter.signal });
+      return await request(endpoint, { ...init, signal: aborter.signal });
     } finally {
       Aborters.delete(id);
     }

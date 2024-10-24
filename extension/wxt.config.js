@@ -24,7 +24,12 @@ export default defineConfig({
     },
   },
   vite: () => ({
-    plugins: [svgLoader(), vuetify()],
+    plugins: [
+      svgLoader(),
+      vuetify({
+        styles: { configFile: 'styles/settings.scss' },
+      }),
+    ],
     css: {
       postcss: {
         plugins: [

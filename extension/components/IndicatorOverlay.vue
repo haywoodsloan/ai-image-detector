@@ -6,7 +6,7 @@ import { useAuth } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
 import { waitForStablePosition } from '@/utilities/element.js';
 import { checkImage, useImageAnalysis } from '@/utilities/image.js';
-import { debugError } from '@/utilities/log.js';
+import { debugError, debugWarn } from '@/utilities/log.js';
 import { useSettings } from '@/utilities/settings.js';
 
 import AnalysisCard from './AnalysisCard.vue';
@@ -116,7 +116,7 @@ const menuOpen = ref(false);
 
 // Wait for the size to become medium or large
 let pending = false;
-const apiAbort = new AbortController();
+let apiAbort;
 
 watch(
   [size, storedAuth, analysis],
@@ -133,13 +133,19 @@ watch(
       newSize !== 'small'
     ) {
       try {
+        apiAbort?.abort();
+        apiAbort = new AbortController();
+
         pending = true;
         analysis.value = await checkImage(imageSrc, {
           signal: apiAbort.signal,
         });
-        pending = false;
       } catch (error) {
-        debugError(error);
+        if (error.name === 'AbortError')
+          debugWarn('Check image request aborted', imageSrc);
+        else debugError(error);
+      } finally {
+        pending = false;
       }
     }
   },
@@ -148,8 +154,9 @@ watch(
 
 // Abort any pending API requests
 onUnmounted(() => {
-  apiAbort.abort();
-})
+  apiAbort?.abort();
+  resizeAbort?.abort();
+});
 
 const iconColor = computed(() => {
   const auth = storedAuth.value;

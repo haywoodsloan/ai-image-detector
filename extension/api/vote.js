@@ -8,12 +8,12 @@ const ImageVoteEndpoint = '/imageVote';
  * @param {{skipUpload?: boolean, signal?: AbortSignal}}
  * @returns {Promise<ImageVote>}
  */
-export function voteImageLabel(
+export async function voteImageLabel(
   url,
   voteLabel,
   { skipUpload = false, signal } = {}
 ) {
-  return post(ImageVoteEndpoint, { url, voteLabel, skipUpload }, signal);
+  return await post(ImageVoteEndpoint, { url, voteLabel, skipUpload }, signal);
 }
 
 /**
@@ -21,6 +21,6 @@ export function voteImageLabel(
  * @param {{signal?: AbortSignal}}
  * @returns {Promise<void>}
  */
-export function deleteImageVote(voteId, { signal } = {}) {
-  return del(`${ImageVoteEndpoint}/${voteId}`, signal);
+export async function deleteImageVote(voteId, { signal } = {}) {
+  return await del(`${ImageVoteEndpoint}/${voteId}`, signal);
 }

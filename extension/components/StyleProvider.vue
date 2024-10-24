@@ -25,9 +25,8 @@ onMounted(() => {
 </template>
 
 <style lang="scss">
-@use 'vuetify' with (
-  $color-pack: false
-);
+@use '~/styles/settings.scss';
+@use 'vuetify';
 
 @use '@fontsource/roboto/scss/mixins' as Roboto;
 @include Roboto.faces(
