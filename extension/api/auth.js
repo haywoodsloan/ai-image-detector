@@ -6,16 +6,18 @@ const AuthEndpoint = '/auth';
 
 /**
  * @param {string} email
+ * @param {{signal?: AbortSignal}}
  * @returns {Promise<ApiUserAuth>}
  */
-export async function createAuth(email) {
-  return post(AuthEndpoint, { email });
+export async function createAuth(email, { signal } = {}) {
+  return post(AuthEndpoint, { email }, signal);
 }
 
 /**
+ * @param {{signal?: AbortSignal}}
  * @throws {ApiError}
  * @returns {Promise<Omit<ApiUserAuth, 'accessToken'>}
  */
-export async function getAuth() {
-  return get(AuthEndpoint);
+export async function getAuth({ signal } = {}) {
+  return get(AuthEndpoint, signal);
 }

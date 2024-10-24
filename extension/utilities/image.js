@@ -19,11 +19,13 @@ export function useImageAnalysis(url) {
 
 /**
  * @param {string} src
+ * @param {{force?: boolean, signal?: AbortSignal}}
  */
-export async function checkImage(src, force = false) {
+export async function checkImage(src, { force = false, signal } = {}) {
   try {
-    return await analyzeImage(src);
+    return await analyzeImage(src, { signal });
   } catch (error) {
+    signal.throwIfAborted();
     const { autoCheck, autoCheckPrivate } = await userSettings.getValue();
     const checkPrivate = force || (autoCheck && autoCheckPrivate);
     if (error?.status !== 404 || !checkPrivate) throw error;
@@ -35,7 +37,8 @@ export async function checkImage(src, force = false) {
 
     const hardCheck = (async () => {
       const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
-      return await analyzeImage(dataUrl);
+      signal.throwIfAborted();
+      return await analyzeImage(dataUrl, { signal });
     })();
 
     fullUploadQueue.add(hardCheck);
@@ -48,12 +51,17 @@ export async function checkImage(src, force = false) {
 /**
  * @param {string} src
  * @param {LabelType} label
+ * @param {{signal?: AbortSignal}}
  */
-export async function reportImage(src, label) {
+export async function reportImage(src, label, { signal } = {}) {
   const { uploadImages, uploadImagesPrivate } = await userSettings.getValue();
   try {
-    return await voteImageLabel(src, label, !uploadImages);
+    return await voteImageLabel(src, label, {
+      skipUpload: !uploadImages,
+      signal,
+    });
   } catch (error) {
+    signal.throwIfAborted();
     if (error?.status !== 404) throw error;
     const skipUpload = !(uploadImagesPrivate && uploadImages);
 
@@ -64,7 +72,8 @@ export async function reportImage(src, label) {
 
     const hardReport = (async () => {
       const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
-      return await voteImageLabel(dataUrl, label, skipUpload);
+      signal.throwIfAborted();
+      return await voteImageLabel(dataUrl, label, { skipUpload, signal });
     })();
 
     fullUploadQueue.add(hardReport);
@@ -76,8 +85,8 @@ export async function reportImage(src, label) {
 
 /**
  * @param {string} id
- * @param {LabelType} label
+ * @param {{signal?: AbortSignal}}
  */
-export async function deleteImageReport(id) {
-  return await deleteImageVote(id);
+export async function deleteImageReport(id, { signal } = {}) {
+  return await deleteImageVote(id, { signal });
 }

@@ -40,9 +40,6 @@ const size = ref('small');
 const imageSrc = image.currentSrc || image.src;
 if (!imageSrc) throw new Error('Missing image source');
 
-/** @type {AbortController} */
-let aborter;
-
 const settings = useSettings();
 const indicatorPosition = computed(
   () => settings.value?.indicatorPosition ?? 'top-left'
@@ -57,11 +54,14 @@ watch(indicatorPosition, () => {
   updatePosition(imgRect, offsetRect);
 });
 
-useResizeObserver([image, image.offsetParent], async () => {
-  aborter?.abort();
-  aborter = new AbortController();
+/** @type {AbortController} */
+let resizeAbort;
 
-  const signal = aborter.signal;
+useResizeObserver([image, image.offsetParent], async () => {
+  resizeAbort?.abort();
+  resizeAbort = new AbortController();
+
+  const signal = resizeAbort.signal;
   await waitForStablePosition(image);
   if (signal.aborted) return;
 
@@ -116,6 +116,8 @@ const menuOpen = ref(false);
 
 // Wait for the size to become medium or large
 let pending = false;
+const apiAbort = new AbortController();
+
 watch(
   [size, storedAuth, analysis],
   async ([newSize, newAuth, newAnalysis], [, , oldAnalysis]) => {
@@ -132,7 +134,9 @@ watch(
     ) {
       try {
         pending = true;
-        analysis.value = await checkImage(imageSrc);
+        analysis.value = await checkImage(imageSrc, {
+          signal: apiAbort.signal,
+        });
         pending = false;
       } catch (error) {
         debugError(error);
@@ -141,6 +145,11 @@ watch(
   },
   { immediate: true }
 );
+
+// Abort any pending API requests
+onUnmounted(() => {
+  apiAbort.abort();
+})
 
 const iconColor = computed(() => {
   const auth = storedAuth.value;

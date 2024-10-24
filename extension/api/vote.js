@@ -5,16 +5,22 @@ const ImageVoteEndpoint = '/imageVote';
 /**
  * @param {string} url
  * @param {LabelType} voteLabel
+ * @param {{skipUpload?: boolean, signal?: AbortSignal}}
  * @returns {Promise<ImageVote>}
  */
-export function voteImageLabel(url, voteLabel, skipUpload = false) {
-  return post(ImageVoteEndpoint, { url, voteLabel, skipUpload });
+export function voteImageLabel(
+  url,
+  voteLabel,
+  { skipUpload = false, signal } = {}
+) {
+  return post(ImageVoteEndpoint, { url, voteLabel, skipUpload }, signal);
 }
 
 /**
  * @param {string} voteId
+ * @param {{signal?: AbortSignal}}
  * @returns {Promise<void>}
  */
-export function deleteImageVote(voteId) {
-  return del(`${ImageVoteEndpoint}/${voteId}`);
+export function deleteImageVote(voteId, { signal } = {}) {
+  return del(`${ImageVoteEndpoint}/${voteId}`, signal);
 }

@@ -29,9 +29,7 @@ export default defineBackground(() => {
       } catch (error) {
         sendResponse({ error: convertError(error) });
       }
-    }
-
-    throw new Error(`Missing action handler for ${name}`);
+    } else throw new Error(`Missing action handler for ${name}`);
   });
 });
 

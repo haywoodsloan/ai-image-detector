@@ -1,7 +1,10 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { NonRetryableError, withRetry } from 'common/utilities/retry.js';
 
-import { ApiAction } from '@/entrypoints/background/actions/api.js';
+import {
+  AbortApiAction,
+  ApiAction,
+} from '@/entrypoints/background/actions/api.js';
 import { invokeBackgroundTask } from '@/utilities/background.js';
 import { debugWarn } from '@/utilities/log.js';
 import { userAuth } from '@/utilities/storage.js';
@@ -29,24 +32,31 @@ export class ApiError extends Error {
 
 /**
  * @param {string} endpoint
+ * @param {AbortSignal} [signal]
  */
-export function get(endpoint) {
-  return request(endpoint);
+export function get(endpoint, signal) {
+  return request(endpoint, { signal });
 }
 
 /**
  * @param {string} endpoint
  * @param {any} body
+ * @param {AbortSignal} [signal]
  */
-export function post(endpoint, body) {
-  return request(endpoint, { method: 'POST', body: JSON.stringify(body) });
+export function post(endpoint, body, signal) {
+  return request(endpoint, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    signal,
+  });
 }
 
 /**
  * @param {string} endpoint
+ * @param {AbortSignal} [signal]
  */
-export function del(endpoint) {
-  return request(endpoint, { method: 'DELETE' });
+export function del(endpoint, signal) {
+  return request(endpoint, { method: 'DELETE', signal });
 }
 
 /**
@@ -56,16 +66,32 @@ export function del(endpoint) {
  */
 export function request(endpoint, init = {}) {
   // Use the background script if not already in it
-  if (import.meta.env.ENTRYPOINT === 'content')
-    return invokeBackgroundTask(ApiAction, { endpoint, init });
+  if (import.meta.env.ENTRYPOINT === 'content') {
+    if (!init.signal)
+      return invokeBackgroundTask(ApiAction, { endpoint, init });
+
+    const id = crypto.randomUUID();
+    init.signal.addEventListener('abort', () =>
+      invokeBackgroundTask(AbortApiAction, { id })
+    );
+
+    return invokeBackgroundTask(ApiAction, { endpoint, init, id });
+  }
 
   return retry(
     async () => {
       const headers = await buildHeaders();
-      const response = await fetch(new URL(endpoint, BaseUrl), {
-        ...init,
-        headers: { ...init.headers, ...headers },
-      });
+
+      let response;
+      try {
+        response = await fetch(new URL(endpoint, BaseUrl), {
+          ...init,
+          headers: { ...init.headers, ...headers },
+        });
+      } catch (error) {
+        if (error?.name === 'AbortError') throw new NonRetryableError(error);
+        throw error;
+      }
 
       if (!response.ok) {
         const contentType = response.headers.get('Content-Type');
