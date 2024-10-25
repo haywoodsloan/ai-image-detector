@@ -75,6 +75,7 @@ export async function request(endpoint, init = {}) {
       await invokeBackgroundTask(AbortApiAction, { id })
     );
 
+    delete init.signal;
     return await invokeBackgroundTask(ApiAction, { endpoint, init, id });
   }
 
