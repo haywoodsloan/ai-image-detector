@@ -1,4 +1,5 @@
 import prefixer from 'postcss-prefix-selector';
+import remToPx from 'postcss-rem-to-pixel';
 import vuetify from 'vite-plugin-vuetify';
 import svgLoader from 'vite-svg-loader';
 import { defineConfig } from 'wxt';
@@ -40,6 +41,11 @@ export default defineConfig({
 
             transform: (prefix, orig, prefixed) =>
               isOverlay(orig) ? `${prefix}${orig}` : prefixed,
+          }),
+          remToPx({
+            rootValue: 16,
+            propList: ['*'],
+            mediaQuery: true,
           }),
         ],
       },

@@ -43,6 +43,7 @@
     "globals": "^15.9.0",
     "icon-gen": "^5.0.0",
     "postcss-prefix-selector": "^1.16.1",
+    "postcss-rem-to-pixel": "^4.1.2",
     "prettier": "^3.3.3",
     "typescript": "^5.6.2",
     "vue-tsc": "^2.1.6",
