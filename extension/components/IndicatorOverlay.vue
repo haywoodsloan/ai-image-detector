@@ -240,7 +240,7 @@ function locationStrategy(data, _, styles) {
     <v-menu
       v-model="menuOpen"
       z-index="2147483647"
-      open-on-click
+      open-on-hover
       :close-on-content-click="false"
       :location-strategy="locationStrategy"
       @click.stop
