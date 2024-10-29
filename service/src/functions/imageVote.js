@@ -13,7 +13,7 @@ import {
   queryVotesByUser,
   upsertVotedLabel,
 } from '../services/db/voteColl.js';
-import { assertValidAuth } from '../utilities/auth.js';
+import { InvalidAuthError, assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { UploadImageEntity } from './uploadImage.js';
 
@@ -27,6 +27,7 @@ app.http('imageVote', {
     try {
       userId = await assertValidAuth(request);
     } catch (error) {
+      if (!(error instanceof InvalidAuthError)) throw error;
       console.error(error);
       return createErrorResponse(401, error);
     }

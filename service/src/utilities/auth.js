@@ -1,6 +1,7 @@
 import { queryValidAuth } from '../services/db/authColl.js';
 import { updateUserActivity } from '../services/db/userColl.js';
 
+export class InvalidAuthError extends Error {}
 export const AuthType = 'Bearer';
 const AuthTypeRegEx = new RegExp(`^${AuthType} (?<accessToken>\\S*)`, 'i');
 
@@ -11,7 +12,7 @@ export async function assertValidAuth(request) {
   const accessToken = assertAccessToken(request);
 
   const auth = await queryValidAuth(accessToken);
-  if (!auth) throw new Error('Invalid access token');
+  if (!auth) throw new InvalidAuthError('Invalid access token');
 
   await updateUserActivity(auth.userId);
   return auth.userId;

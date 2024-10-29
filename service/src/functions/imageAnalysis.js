@@ -7,7 +7,7 @@ import { isDataUrl, isHttpUrl, shortenUrl } from 'common/utilities/url.js';
 
 import { queryVoteByImage, queryVotedLabel } from '../services/db/voteColl.js';
 import { classifyIfAi } from '../services/detector.js';
-import { assertValidAuth } from '../utilities/auth.js';
+import { InvalidAuthError, assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 
 const DetectorScoreType = 'detector';
@@ -26,6 +26,7 @@ app.http('imageAnalysis', {
       userId = await assertValidAuth(request);
       console.log(l`Checking image ${{ url: shortenUrl(url), userId }}`);
     } catch (error) {
+      if (!(error instanceof InvalidAuthError)) throw error;
       console.error(error);
       return createErrorResponse(401, error);
     }
