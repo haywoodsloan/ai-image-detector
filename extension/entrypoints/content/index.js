@@ -9,8 +9,8 @@ import {
   isElementCovered,
   isImageElement,
   isStyleHidden,
-  waitForAnimations,
 } from '@/utilities/element.js';
+import { waitForStablePosition } from '@/utilities/element.js';
 import { userSettings } from '@/utilities/storage.js';
 import { createAppEx } from '@/utilities/vue.js';
 
@@ -27,7 +27,6 @@ const AddObsOpts = {
 
 const StyleObsOpts = {
   attributes: true,
-  attributeFilter: ['style', 'class'],
 };
 
 export default defineContentScript({
@@ -47,6 +46,9 @@ export default defineContentScript({
     /** @type {Map<Element, ShadowRootContentScriptUi>} */
     const uiMap = new Map();
 
+    /** @type {Map<Element, Set<Element>} */
+    const coveringMap = new Map();
+
     /** @type {Map<Element, AbortController>} */
     const aborters = new Map();
 
@@ -58,19 +60,11 @@ export default defineContentScript({
           const aborter = new AbortController();
           aborters.set(target, aborter);
 
-          const signal = aborter.signal;
           if (intersectionRatio < MinVis && uiMap.has(target)) {
             uiMap.get(target).remove();
             uiMap.delete(target);
           } else if (intersectionRatio >= MinVis && !uiMap.has(target)) {
-            await waitForAnimations(target);
-            if (signal.aborted) continue;
-
-            if (isElementCovered(target)) continue;
-            const ui = createIndicatorUi(target, signal);
-
-            if (!signal.aborted) uiMap.set(target, ui);
-            else ui?.remove();
+            await attachIndicator(target, aborter.signal);
           }
 
           // Remove the aborter when the operation is done
@@ -96,13 +90,20 @@ export default defineContentScript({
         if (isHidden) hiddenEls.add(target);
         else hiddenEls.delete(target);
 
-        const justHidden = isHidden
-          ? [...getChildrenDeep(target), target]
-          : [...getCoveredElements(target)];
+        const descendants = [...getChildrenDeep(target), target];
+        const justHidden = !isHidden
+          ? descendants.flatMap((ele) => [...getCoveredElements(ele)])
+          : descendants;
 
         const justRevealed = isHidden
-          ? [...getCoveredElements(target)]
-          : [...getChildrenDeep(target), target];
+          ? descendants.flatMap((ele) => [...(coveringMap.get(ele) ?? [])])
+          : descendants;
+
+        if (isHidden) {
+          for (const ele of descendants) {
+            coveringMap.delete(ele);
+          }
+        }
 
         for (const ele of justHidden) {
           if (targetSignal.aborted) break;
@@ -114,22 +115,18 @@ export default defineContentScript({
 
         for (const ele of justRevealed) {
           if (targetSignal.aborted) break;
-          if (isImageElement(ele) && !uiMap.has(ele)) {
-            aborters.get(ele)?.abort();
+          if (ele.isConnected && isImageElement(ele) && !uiMap.has(ele)) {
+            if (ele === target) {
+              await attachIndicator(ele, targetSignal);
+              continue;
+            }
 
+            aborters.get(ele)?.abort();
             const imgAborter = new AbortController();
             aborters.set(ele, imgAborter);
 
             const mergeSignal = mergeSignals(imgAborter.signal, targetSignal);
-            await waitForAnimations(ele);
-            if (mergeSignal.aborted) continue;
-
-            if (isElementCovered(ele)) continue;
-            const ui = createIndicatorUi(ele, mergeSignal);
-
-            if (!mergeSignal.aborted) uiMap.set(ele, ui);
-            else ui?.remove();
-
+            await attachIndicator(ele, mergeSignal);
             if (aborters.get(ele) === imgAborter) aborters.delete(ele);
           }
         }
@@ -148,6 +145,22 @@ export default defineContentScript({
           if (uiMap.has(node)) {
             uiMap.get(node).remove();
             uiMap.delete(node);
+          }
+
+          if (coveringMap.has(node)) {
+            const coveredEles = coveringMap.get(node);
+            coveringMap.delete(node);
+
+            for (const coveredEle of coveredEles) {
+              if (coveredEle.isConnected) {
+                aborters.get(coveredEle)?.abort();
+
+                const aborter = new AbortController();
+                aborters.set(coveredEle, aborter);
+
+                await attachIndicator(coveredEle, aborter.signal);
+              }
+            }
           }
         }
 
@@ -176,11 +189,61 @@ export default defineContentScript({
       if (isImageElement(ele)) {
         intersectionObs.observe(ele);
 
-        for (const linked of [...getParentChain(ele), ele]) {
+        for (const linked of [ele, ...getParentChain(ele)]) {
           if (isStyleHidden(linked)) hiddenEls.add(linked);
+          else hiddenEls.delete(linked);
           styleObs.observe(linked, StyleObsOpts);
         }
+
+        if (!isStyleHidden(ele)) {
+          const coveringEles = isElementCovered(ele);
+          if (coveringEles) addCoveringElements(ele, coveringEles);
+        }
       }
+    }
+
+    /**
+     * @param {Element} ele
+     * @param {Element[]} coveringEles
+     */
+    function addCoveringElements(ele, coveringEles) {
+      for (const coveringEle of coveringEles) {
+        if (!coveringMap.has(coveringEle))
+          coveringMap.set(coveringEle, new Set());
+        coveringMap.get(coveringEle).add(ele);
+
+        for (const ancestor of [coveringEle, ...getParentChain(coveringEle)]) {
+          if (isStyleHidden(ancestor)) hiddenEls.add(ancestor);
+          else hiddenEls.delete(ancestor);
+          styleObs.observe(ancestor, StyleObsOpts);
+        }
+      }
+    }
+
+    /**
+     * @param {HTMLElement} image
+     * @param {AbortSignal} signal
+     */
+    async function attachIndicator(image, signal) {
+      await waitForStablePosition(image, signal);
+      if (signal.aborted) return;
+
+      for (const ele of [image, ...getParentChain(image)]) {
+        if (isStyleHidden(ele)) {
+          hiddenEls.add(ele);
+          return;
+        } else hiddenEls.delete(ele);
+      }
+
+      const coveringEles = isElementCovered(image);
+      if (coveringEles) {
+        addCoveringElements(image, coveringEles);
+        return;
+      }
+
+      const ui = createIndicatorUi(image, signal);
+      if (!signal.aborted) uiMap.set(image, ui);
+      else ui?.remove();
     }
 
     /**

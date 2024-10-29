@@ -5,17 +5,25 @@ const GridInset = 1;
  * @param {HTMLElement} ele
  */
 export function isElementCovered(ele) {
-  // If hidden skip immediately
-  if (isStyleHidden(ele)) return true;
+  /** @type {Set<HTMLElement>} */
+  const covering = new Set();
 
   for (const { x, y } of getElementGrid(ele)) {
     for (const topEle of elementsFromPoint(x, y)) {
-      if (topEle === ele) return false;
-      else if (!isStyleHidden(topEle)) break;
+      if (topEle === ele) return null;
+
+      const isHidden = [topEle, ...getParentChain(topEle)].every((ancestor) =>
+        isStyleHidden(ancestor)
+      );
+
+      if (!isHidden) {
+        covering.add(topEle);
+        break;
+      }
     }
   }
 
-  return true;
+  return [...covering];
 }
 
 /**
@@ -24,7 +32,13 @@ export function isElementCovered(ele) {
 export function* getCoveredElements(ele) {
   for (const { x, y } of getElementGrid(ele)) {
     for (const topEle of elementsFromPoint(x, y)) {
-      if (topEle !== ele && !isStyleHidden(topEle)) {
+      if (topEle === ele) continue;
+
+      const isHidden = [topEle, ...getParentChain(topEle)].every((ancestor) =>
+        isStyleHidden(ancestor)
+      );
+
+      if (!isHidden) {
         yield topEle;
         break;
       }
@@ -34,21 +48,15 @@ export function* getCoveredElements(ele) {
 
 /**
  * @param {HTMLElement} ele
+ * @param {AbortSignal} [signal]
  */
-export async function waitForAnimations(ele) {
-  await Promise.all(
-    ele.getAnimations({ subtree: true }).map(({ finished }) => finished)
-  );
-}
-
-/**
- * @param {HTMLElement} ele
- */
-export async function waitForStablePosition(ele) {
+export async function waitForStablePosition(ele, signal) {
   return new Promise((res) => {
     let rect = ele.getBoundingClientRect();
     requestAnimationFrame(function check() {
+      if (signal?.aborted) res();
       const newRect = ele.getBoundingClientRect();
+
       if (!compareRects(rect, newRect)) {
         rect = newRect;
         requestAnimationFrame(check);
@@ -95,7 +103,7 @@ export function* getChildrenDeep(ele) {
  * @param {HTMLElement} ele
  */
 export function* getParentChain(ele) {
-  let parent = ele.parentNode;
+  let parent = ele.parentNode || ele.host;
   while (parent) {
     if (parent instanceof HTMLElement) yield parent;
     parent = parent.parentNode || parent.host;
