@@ -1,6 +1,5 @@
 import AnalysisDialog from '@/components/AnalysisDialog.vue';
 import IndicatorOverlay from '@/components/IndicatorOverlay.vue';
-import { mergeSignals } from '@/utilities/abort.js';
 import { invokeBackgroundTask } from '@/utilities/background.js';
 import {
   getChildrenDeep,
@@ -9,8 +8,8 @@ import {
   isElementCovered,
   isImageElement,
   isStyleHidden,
+  waitForStablePosition
 } from '@/utilities/element.js';
-import { waitForStablePosition } from '@/utilities/element.js';
 import { userSettings } from '@/utilities/storage.js';
 import { createAppEx } from '@/utilities/vue.js';
 
@@ -82,12 +81,15 @@ export default defineContentScript({
 
         const targetAborter = new AbortController();
         aborters.set(target, targetAborter);
-        
+
+        const wasHidden = hiddenEls.has(target);
         const targetSignal = targetAborter.signal;
+
         await waitForStablePosition(target, targetSignal);
+        if (targetSignal.aborted) continue;
 
         const isHidden = isStyleHidden(target);
-        if (isHidden === hiddenEls.has(target)) continue;
+        if (isHidden === wasHidden) continue;
 
         if (isHidden) hiddenEls.add(target);
         else hiddenEls.delete(target);
@@ -110,6 +112,9 @@ export default defineContentScript({
         for (const ele of justHidden) {
           if (targetSignal.aborted) break;
           if (isImageElement(ele) && uiMap.has(ele)) {
+            aborters.get(ele)?.abort();
+            aborters.delete(ele);
+
             uiMap.get(ele).remove();
             uiMap.delete(ele);
           }
@@ -145,6 +150,9 @@ export default defineContentScript({
 
         for (const node of removedNodes) {
           if (uiMap.has(node)) {
+            aborters.get(node)?.abort();
+            aborters.delete(node);
+
             uiMap.get(node).remove();
             uiMap.delete(node);
           }
@@ -228,7 +236,7 @@ export default defineContentScript({
      * @param {AbortSignal} signal
      */
     async function attachIndicator(image, signal) {
-      await waitForStablePosition(image, signal);
+      await new Promise((res) => requestAnimationFrame(res));
       if (signal.aborted) return;
 
       for (const ele of [image, ...getParentChain(image)]) {
