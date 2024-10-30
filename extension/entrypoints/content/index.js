@@ -260,7 +260,6 @@ export default defineContentScript({
           hiddenEls.add(ele);
           return;
         } else hiddenEls.delete(ele);
-        styleObs.observe(ele, StyleObsOpts);
       }
 
       const coveringEles = isElementCovered(image);
