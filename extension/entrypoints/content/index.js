@@ -82,7 +82,7 @@ export default defineContentScript({
 
         const targetAborter = new AbortController();
         aborters.set(target, targetAborter);
-
+        
         const targetSignal = targetAborter.signal;
         await waitForStablePosition(target, targetSignal);
 
@@ -127,8 +127,8 @@ export default defineContentScript({
             const imgAborter = new AbortController();
             aborters.set(ele, imgAborter);
 
-            const mergeSignal = mergeSignals(imgAborter.signal, targetSignal);
-            await attachIndicator(ele, mergeSignal);
+            const signal = imgAborter.signal;
+            await attachIndicator(ele, signal);
             if (aborters.get(ele) === imgAborter) aborters.delete(ele);
           }
         }
@@ -153,14 +153,15 @@ export default defineContentScript({
             const coveredEles = coveringMap.get(node);
             coveringMap.delete(node);
 
-            for (const coveredEle of coveredEles) {
-              if (coveredEle.isConnected) {
-                aborters.get(coveredEle)?.abort();
+            for (const ele of coveredEles) {
+              if (ele.isConnected) {
+                aborters.get(ele)?.abort();
 
                 const aborter = new AbortController();
-                aborters.set(coveredEle, aborter);
+                aborters.set(ele, aborter);
 
-                await attachIndicator(coveredEle, aborter.signal);
+                await attachIndicator(ele, aborter.signal);
+                if (aborters.get(ele) === aborter) aborters.delete(ele);
               }
             }
           }
