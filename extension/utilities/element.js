@@ -79,8 +79,9 @@ export function isStyleHidden(ele) {
   const styles = getComputedStyle(ele);
   return (
     styles.visibility === 'hidden' ||
-    Number(styles.opacity) === 0 ||
-    styles.display === 'none'
+    parseFloat(styles.opacity) === 0 ||
+    styles.display === 'none' ||
+    (parseFloat(styles.width) <= 1 && parseFloat(styles.height) <= 1)
   );
 }
 

@@ -6,7 +6,7 @@
   "type": "module",
   "types": "./src/types.d.ts",
   "scripts": {
-    "start-azurite": "npx -y azurite --silent",
+    "start-azurite": "npx -y azurite --silent --inMemoryPersistence",
     "start-azure-function": "func start",
     "start": "run-p -r start-azurite start-azure-function",
     "test": "echo \"Error: no test specified\" && exit 1",

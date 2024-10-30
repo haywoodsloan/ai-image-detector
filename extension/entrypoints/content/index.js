@@ -84,9 +84,11 @@ export default defineContentScript({
         aborters.set(target, targetAborter);
 
         const targetSignal = targetAborter.signal;
-        const isHidden = isStyleHidden(target);
+        await waitForStablePosition(target, targetSignal);
 
+        const isHidden = isStyleHidden(target);
         if (isHidden === hiddenEls.has(target)) continue;
+
         if (isHidden) hiddenEls.add(target);
         else hiddenEls.delete(target);
 
@@ -233,6 +235,7 @@ export default defineContentScript({
           hiddenEls.add(ele);
           return;
         } else hiddenEls.delete(ele);
+        styleObs.observe(ele, StyleObsOpts);
       }
 
       const coveringEles = isElementCovered(image);
