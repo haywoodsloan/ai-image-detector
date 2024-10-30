@@ -45,7 +45,7 @@ export default defineContentScript({
     /** @type {Map<Element, ShadowRootContentScriptUi>} */
     const uiMap = new Map();
 
-    /** @type {Map<Element, Set<Element>} */
+    /** @type {Map<Element, Set<HTMLElement>} */
     const coveringMap = new Map();
 
     /** @type {Map<Element, AbortController>} */
@@ -89,25 +89,27 @@ export default defineContentScript({
         if (targetSignal.aborted) continue;
 
         const isHidden = isStyleHidden(target);
-        if (isHidden === wasHidden) continue;
-
         if (isHidden) hiddenEls.add(target);
         else hiddenEls.delete(target);
 
+        if (isHidden === wasHidden) continue;
         const descendants = [...getChildrenDeep(target), target];
+
         const justHidden = !isHidden
-          ? descendants.flatMap((ele) => [...getCoveredElements(ele)])
+          ? descendants.flatMap((ele) => {
+              const coveredEles = [...getCoveredElements(ele)];
+              addCoveredElements(ele, coveredEles);
+              return coveredEles;
+            })
           : descendants;
 
         const justRevealed = isHidden
-          ? descendants.flatMap((ele) => [...(coveringMap.get(ele) ?? [])])
+          ? descendants.flatMap((ele) => {
+              const coveredEles = coveringMap.get(ele);
+              coveringMap.delete(ele);
+              return coveredEles ? [...coveredEles] : [];
+            })
           : descendants;
-
-        if (isHidden) {
-          for (const ele of descendants) {
-            coveringMap.delete(ele);
-          }
-        }
 
         for (const ele of justHidden) {
           if (targetSignal.aborted) break;
@@ -162,7 +164,7 @@ export default defineContentScript({
             coveringMap.delete(node);
 
             for (const ele of coveredEles) {
-              if (ele.isConnected) {
+              if (ele.isConnected && !uiMap.has(ele)) {
                 aborters.get(ele)?.abort();
 
                 const aborter = new AbortController();
@@ -214,10 +216,11 @@ export default defineContentScript({
     }
 
     /**
-     * @param {Element} ele
+     * @param {HTMLElement} ele
      * @param {Element[]} coveringEles
      */
     function addCoveringElements(ele, coveringEles) {
+      if (!isImageElement(ele)) return;
       for (const coveringEle of coveringEles) {
         if (!coveringMap.has(coveringEle))
           coveringMap.set(coveringEle, new Set());
@@ -228,6 +231,19 @@ export default defineContentScript({
           else hiddenEls.delete(ancestor);
           styleObs.observe(ancestor, StyleObsOpts);
         }
+      }
+    }
+
+    /**
+     * @param {Element} ele
+     * @param {HTMLElement[]} coveredEles
+     */
+    function addCoveredElements(ele, coveredEles) {
+      if (!coveringMap.has(ele)) coveringMap.set(ele, new Set());
+      const map = coveringMap.get(ele);
+
+      for (const coveredEle of coveredEles) {
+        if (isImageElement(coveredEle)) map.add(coveredEle);
       }
     }
 

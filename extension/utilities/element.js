@@ -12,9 +12,8 @@ export function isElementCovered(ele) {
     for (const topEle of elementsFromPoint(x, y)) {
       if (topEle === ele) return null;
 
-      const isHidden = [topEle, ...getParentChain(topEle)].every((ancestor) =>
-        isStyleHidden(ancestor)
-      );
+      const chain = [topEle, ...getParentChain(topEle)];
+      const isHidden = chain.some((ancestor) => isStyleHidden(ancestor));
 
       if (!isHidden) {
         covering.add(topEle);
@@ -30,13 +29,13 @@ export function isElementCovered(ele) {
  * @param {HTMLElement} ele
  */
 export function* getCoveredElements(ele) {
+  if (isStyleHidden(ele)) return;
   for (const { x, y } of getElementGrid(ele)) {
     for (const topEle of elementsFromPoint(x, y)) {
       if (topEle === ele) continue;
 
-      const isHidden = [topEle, ...getParentChain(topEle)].every((ancestor) =>
-        isStyleHidden(ancestor)
-      );
+      const chain = [topEle, ...getParentChain(topEle)];
+      const isHidden = chain.some((ancestor) => isStyleHidden(ancestor));
 
       if (!isHidden) {
         yield topEle;
