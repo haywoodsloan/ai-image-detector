@@ -8,7 +8,7 @@ import {
   isElementCovered,
   isImageElement,
   isStyleHidden,
-  waitForStablePosition
+  waitForStablePosition,
 } from '@/utilities/element.js';
 import { userSettings } from '@/utilities/storage.js';
 import { createAppEx } from '@/utilities/vue.js';
