@@ -1,7 +1,7 @@
 {
   "name": "ai-image-detector-extension",
   "description": "Checks for AI generated images and incorporates community feedback",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "types": "./types.d.ts",
   "type": "module",
   "scripts": {
