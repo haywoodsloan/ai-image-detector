@@ -1,3 +1,6 @@
+import TimeSpan from 'common/utilities/TimeSpan.js';
+import { createThrottle } from 'common/utilities/throttle.js';
+
 import AnalysisDialog from '@/components/AnalysisDialog.vue';
 import IndicatorOverlay from '@/components/IndicatorOverlay.vue';
 import { invokeBackgroundTask } from '@/utilities/background.js';
@@ -9,6 +12,7 @@ import {
   isImageElement,
   isStyleHidden,
   waitForStablePosition,
+  waitUntilStable,
 } from '@/utilities/element.js';
 import { userSettings } from '@/utilities/storage.js';
 import { createAppEx } from '@/utilities/vue.js';
@@ -34,7 +38,10 @@ export default defineContentScript({
     // Make sure the extension has been initialized
     await invokeBackgroundTask(InitAction);
     browser.runtime.onMessage.addListener(({ name, data }) => {
-      if (name === AnalyzeImageId) createDialogUi(data);
+      if (name === AnalyzeImageId) {
+        const ui = createDialogUi(data);
+        ui.mount();
+      }
     });
 
     // Check if we should do the auto check observing
@@ -50,24 +57,31 @@ export default defineContentScript({
 
     /** @type {Map<Element, AbortController>} */
     const aborters = new Map();
+    const throttleLimit = TimeSpan.fromMilliseconds(5);
 
+    const intersectionThrottle = createThrottle(throttleLimit);
     const intersectionObs = new IntersectionObserver(
       async (entries) => {
         for (const { intersectionRatio, target } of entries) {
-          aborters.get(target)?.abort();
+          intersectionThrottle(
+            async () => {
+              aborters.get(target)?.abort();
 
-          const aborter = new AbortController();
-          aborters.set(target, aborter);
+              const aborter = new AbortController();
+              aborters.set(target, aborter);
 
-          if (intersectionRatio < MinVis && uiMap.has(target)) {
-            uiMap.get(target).remove();
-            uiMap.delete(target);
-          } else if (intersectionRatio >= MinVis && !uiMap.has(target)) {
-            await attachIndicator(target, aborter.signal);
-          }
+              if (intersectionRatio < MinVis && uiMap.has(target)) {
+                uiMap.get(target).remove();
+                uiMap.delete(target);
+              } else if (intersectionRatio >= MinVis && !uiMap.has(target)) {
+                await attachIndicator(target, aborter.signal);
+              }
 
-          // Remove the aborter when the operation is done
-          if (aborters.get(target) === aborter) aborters.delete(target);
+              // Remove the aborter when the operation is done
+              if (aborters.get(target) === aborter) aborters.delete(target);
+            },
+            { debounceKey: target }
+          );
         }
       },
       { threshold: VisThreshes }
@@ -75,72 +89,78 @@ export default defineContentScript({
 
     /** @type {Set<Element>} */
     const hiddenEls = new Set();
+
+    const styleThrottle = createThrottle(throttleLimit);
     const styleObs = new MutationObserver(async (mutations) => {
       for (const { target } of mutations) {
-        aborters.get(target)?.abort();
+        styleThrottle(
+          async () => {
+            aborters.get(target)?.abort();
 
-        const targetAborter = new AbortController();
-        aborters.set(target, targetAborter);
+            const targetAborter = new AbortController();
+            aborters.set(target, targetAborter);
 
-        const wasHidden = hiddenEls.has(target);
-        const targetSignal = targetAborter.signal;
+            const wasHidden = hiddenEls.has(target);
+            const targetSignal = targetAborter.signal;
 
-        await waitForStablePosition(target, targetSignal);
-        if (targetSignal.aborted) continue;
+            await waitForStablePosition(target, targetSignal);
+            const isHidden = isStyleHidden(target);
 
-        const isHidden = isStyleHidden(target);
-        if (isHidden) hiddenEls.add(target);
-        else hiddenEls.delete(target);
+            if (isHidden) hiddenEls.add(target);
+            else hiddenEls.delete(target);
 
-        if (isHidden === wasHidden) continue;
-        const descendants = [...getChildrenDeep(target), target];
+            if (targetSignal.aborted || isHidden === wasHidden) return;
+            const descendants = [...getChildrenDeep(target), target];
 
-        const justHidden = !isHidden
-          ? descendants.flatMap((ele) => {
-              const coveredEles = [...getCoveredElements(ele)];
-              addCoveredElements(ele, coveredEles);
-              return coveredEles;
-            })
-          : descendants;
+            const justHidden = !isHidden
+              ? descendants.flatMap((ele) => {
+                  const coveredEles = [...getCoveredElements(ele)];
+                  addCoveredElements(ele, coveredEles);
+                  return coveredEles;
+                })
+              : descendants;
 
-        const justRevealed = isHidden
-          ? descendants.flatMap((ele) => {
-              const coveredEles = coveringMap.get(ele);
-              coveringMap.delete(ele);
-              return coveredEles ? [...coveredEles] : [];
-            })
-          : descendants;
+            const justRevealed = isHidden
+              ? descendants.flatMap((ele) => {
+                  const coveredEles = coveringMap.get(ele);
+                  coveringMap.delete(ele);
+                  return coveredEles ? [...coveredEles] : [];
+                })
+              : descendants;
 
-        for (const ele of justHidden) {
-          if (targetSignal.aborted) break;
-          if (isImageElement(ele) && uiMap.has(ele)) {
-            aborters.get(ele)?.abort();
-            aborters.delete(ele);
+            for (const ele of justHidden) {
+              if (targetSignal.aborted) break;
+              if (isImageElement(ele) && uiMap.has(ele)) {
+                aborters.get(ele)?.abort();
+                aborters.delete(ele);
 
-            uiMap.get(ele).remove();
-            uiMap.delete(ele);
-          }
-        }
-
-        for (const ele of justRevealed) {
-          if (targetSignal.aborted) break;
-          if (ele.isConnected && isImageElement(ele) && !uiMap.has(ele)) {
-            if (ele === target) {
-              await attachIndicator(ele, targetSignal);
-              continue;
+                uiMap.get(ele).remove();
+                uiMap.delete(ele);
+              }
             }
 
-            aborters.get(ele)?.abort();
-            const imgAborter = new AbortController();
-            aborters.set(ele, imgAborter);
+            for (const ele of justRevealed) {
+              if (targetSignal.aborted) break;
+              if (ele.isConnected && isImageElement(ele) && !uiMap.has(ele)) {
+                if (ele === target) {
+                  await attachIndicator(ele, targetSignal);
+                  continue;
+                }
 
-            const signal = imgAborter.signal;
-            await attachIndicator(ele, signal);
-            if (aborters.get(ele) === imgAborter) aborters.delete(ele);
-          }
-        }
+                aborters.get(ele)?.abort();
+                const imgAborter = new AbortController();
+                aborters.set(ele, imgAborter);
 
-        if (aborters.get(target) === targetAborter) aborters.delete(target);
+                const signal = imgAborter.signal;
+                await attachIndicator(ele, signal);
+                if (aborters.get(ele) === imgAborter) aborters.delete(ele);
+              }
+            }
+
+            if (aborters.get(target) === targetAborter) aborters.delete(target);
+          },
+          { debounceKey: target }
+        );
       }
     });
 
@@ -187,12 +207,11 @@ export default defineContentScript({
       }
     });
 
-    requestAnimationFrame(() => {
-      addObs.observe(document.body, AddObsOpts);
-      for (const ele of getChildrenDeep(document.body)) {
-        watchElement(ele);
-      }
-    });
+    await waitUntilStable(document.body, { timeout: TimeSpan.fromSeconds(5) });
+    addObs.observe(document.body, AddObsOpts);
+    for (const ele of getChildrenDeep(document.body)) {
+      watchElement(ele);
+    }
 
     /**
      * @param {Element} ele
@@ -268,23 +287,23 @@ export default defineContentScript({
         return;
       }
 
-      const ui = createIndicatorUi(image, signal);
-      if (!signal.aborted) uiMap.set(image, ui);
-      else ui?.remove();
+      const ui = createIndicatorUi(image);
+      if (!signal.aborted) {
+        uiMap.set(image, ui);
+        ui.mount();
+      }
     }
 
     /**
      * @param {HTMLElement} image
-     * @param {AbortSignal} signal
      */
-    function createIndicatorUi(image, signal) {
+    function createIndicatorUi(image) {
       const ui = createIntegratedUi(ctx, {
         position: 'overlay',
         anchor: image,
         append: 'after',
 
         onMount(host) {
-          if (signal.aborted) return;
           const app = createAppEx(IndicatorOverlay, { image, host });
           app.mount(host);
           return app;
@@ -294,9 +313,6 @@ export default defineContentScript({
           app?.unmount();
         },
       });
-
-      if (signal.aborted) return;
-      ui.mount();
 
       return ui;
     }
@@ -324,7 +340,6 @@ export default defineContentScript({
         },
       });
 
-      ui.mount();
       return ui;
     }
   },

@@ -1,3 +1,5 @@
+import TimeSpan from 'common/utilities/TimeSpan.js';
+
 const GridSize = 2;
 const GridInset = 1;
 
@@ -108,6 +110,42 @@ export function* getParentChain(ele) {
     if (parent instanceof HTMLElement) yield parent;
     parent = parent.parentNode || parent.host;
   }
+}
+
+/**
+ *
+ * @param {HTMLElement} ele
+ * @param {{
+ *    timeout?: number | TimeSpan,
+ *    debounce?: number | TimeSpan
+ * }}
+ */
+export async function waitUntilStable(
+  ele,
+  { debounce = TimeSpan.fromMilliseconds(100), timeout = Infinity } = {}
+) {
+  await new Promise((res) => {
+    let timeoutId, debounceId;
+
+    timeoutId = setTimeout(() => {
+      clearTimeout(debounceId);
+      observer?.disconnect();
+      res();
+    }, timeout);
+
+    const onMutate = () => {
+      clearTimeout(debounceId);
+      debounceId = setTimeout(() => {
+        clearTimeout(timeoutId);
+        observer?.disconnect();
+        res();
+      }, debounce);
+    };
+
+    const observer = new MutationObserver(onMutate);
+    observer.observe(ele, { attributes: true, childList: true, subtree: true });
+    onMutate();
+  });
 }
 
 /**
