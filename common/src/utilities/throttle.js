@@ -4,27 +4,35 @@ import { wait } from './sleep.js';
  * @param {TimeSpan | number} limit
  */
 export function createThrottle(limit) {
-  /** @type {Array<{debounceKey?: any, func: () => void}>} */
+  /**
+   * @type {{
+   *   debounceKey?: any,
+   *   async?: boolean
+   *   func: () => void | Promise<void>
+   * }[]}
+   */
   let queue = null;
 
   /**
-   * @param {() => void} func
-   * @param {{debounceKey?: any}}
+   * @param {() => void | Promise<void>} func
+   * @param {{debounceKey?: any, async?: boolean}}
    */
-  return (func, { debounceKey } = {}) => {
+  return (func, { debounceKey, async = false } = {}) => {
     if (queue !== null) {
       if (debounceKey != null) {
         queue = queue.filter(({ debounceKey: key }) => key !== debounceKey);
       }
 
-      queue.push({ debounceKey, func });
+      queue.push({ debounceKey, func, async });
       return;
     }
 
-    queue = [{ debounceKey, func }];
+    queue = [{ debounceKey, func, async }];
     (async () => {
       while (queue.length) {
-        safeInvoke(queue.pop().func);
+        const next = queue.pop();
+        if (next.async) await safeInvoke(next.func);
+        else safeInvoke(next.func);
         await wait(limit);
       }
       queue = null;
@@ -33,11 +41,11 @@ export function createThrottle(limit) {
 }
 
 /**
- * @param {() => void} func
+ * @param {() => any | Promise} func
  */
-function safeInvoke(func) {
+async function safeInvoke(func) {
   try {
-    return func();
+    return await func();
   } catch {
     // ignore
   }

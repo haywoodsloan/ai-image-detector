@@ -30,6 +30,7 @@ const AddObsOpts = {
 
 const StyleObsOpts = {
   attributes: true,
+  attributeFilter: ['style', 'class'],
 };
 
 export default defineContentScript({
