@@ -1,18 +1,16 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
-import { createThrottle } from 'common/utilities/throttle.js';
 
 import AnalysisDialog from '@/components/AnalysisDialog.vue';
 import IndicatorOverlay from '@/components/IndicatorOverlay.vue';
 import { invokeBackgroundTask } from '@/utilities/background.js';
 import {
   getChildrenDeep,
-  getCoveredElements,
   getParentChain,
   isElementCovered,
   isImageElement,
   isStyleHidden,
-  waitForStablePosition,
-  waitUntilStable,
+  waitForStableView,
+  watchForViewUpdate,
 } from '@/utilities/element.js';
 import { userSettings } from '@/utilities/storage.js';
 import { createAppEx } from '@/utilities/vue.js';
@@ -20,22 +18,15 @@ import { createAppEx } from '@/utilities/vue.js';
 import { InitAction } from '../background/actions/init.js';
 import { AnalyzeImageId } from '../background/index.js';
 
-const MinVis = 0.2;
-const VisThreshes = [0.2, 0.6, 1];
-
-const AddObsOpts = {
-  subtree: true,
-  childList: true,
-};
-
-const StyleObsOpts = {
-  attributes: true,
-  attributeFilter: ['style', 'class'],
-};
-
 export default defineContentScript({
   matches: ['<all_urls>'],
   async main(ctx) {
+    const MinVis = 0.2;
+
+    const UpdateDebounce = TimeSpan.fromMilliseconds(100);
+    const UpdateTimeout = TimeSpan.fromMilliseconds(100);
+    const InitTimeout = TimeSpan.fromSeconds(5);
+
     // Make sure the extension has been initialized
     await invokeBackgroundTask(InitAction);
     browser.runtime.onMessage.addListener(({ name, data }) => {
@@ -52,218 +43,48 @@ export default defineContentScript({
 
     /** @type {Map<Element, ShadowRootContentScriptUi>} */
     const uiMap = new Map();
-
-    /** @type {Map<Element, Set<HTMLElement>} */
-    const coveringMap = new Map();
-
-    /** @type {Map<Element, AbortController>} */
-    const aborters = new Map();
-    const throttleLimit = TimeSpan.fromMilliseconds(5);
-
-    const intersectionThrottle = createThrottle(throttleLimit);
-    const intersectionObs = new IntersectionObserver(
-      async (entries) => {
-        for (const { intersectionRatio, target } of entries) {
-          intersectionThrottle(
-            async () => {
-              aborters.get(target)?.abort();
-
-              const aborter = new AbortController();
-              aborters.set(target, aborter);
-
-              if (intersectionRatio < MinVis && uiMap.has(target)) {
-                uiMap.get(target).remove();
-                uiMap.delete(target);
-              } else if (intersectionRatio >= MinVis && !uiMap.has(target)) {
-                await attachIndicator(target, aborter.signal);
-              }
-
-              // Remove the aborter when the operation is done
-              if (aborters.get(target) === aborter) aborters.delete(target);
-            },
-            { debounceKey: target }
-          );
-        }
-      },
-      { threshold: VisThreshes }
-    );
-
-    /** @type {Set<Element>} */
-    const hiddenEls = new Set();
-
-    const styleThrottle = createThrottle(throttleLimit);
-    const styleObs = new MutationObserver(async (mutations) => {
-      for (const { target } of mutations) {
-        styleThrottle(
-          async () => {
-            aborters.get(target)?.abort();
-
-            const targetAborter = new AbortController();
-            aborters.set(target, targetAborter);
-
-            const wasHidden = hiddenEls.has(target);
-            const targetSignal = targetAborter.signal;
-
-            await waitForStablePosition(target, targetSignal);
-            const isHidden = isStyleHidden(target);
-
-            if (isHidden) hiddenEls.add(target);
-            else hiddenEls.delete(target);
-
-            if (targetSignal.aborted || isHidden === wasHidden) return;
-            const descendants = [...getChildrenDeep(target), target];
-
-            const justHidden = !isHidden
-              ? descendants.flatMap((ele) => {
-                  const coveredEles = [...getCoveredElements(ele)];
-                  addCoveredElements(ele, coveredEles);
-                  return coveredEles;
-                })
-              : descendants;
-
-            const justRevealed = isHidden
-              ? descendants.flatMap((ele) => {
-                  const coveredEles = coveringMap.get(ele);
-                  coveringMap.delete(ele);
-                  return coveredEles ? [...coveredEles] : [];
-                })
-              : descendants;
-
-            for (const ele of justHidden) {
-              if (targetSignal.aborted) break;
-              if (isImageElement(ele) && uiMap.has(ele)) {
-                aborters.get(ele)?.abort();
-                aborters.delete(ele);
-
-                uiMap.get(ele).remove();
-                uiMap.delete(ele);
-              }
-            }
-
-            for (const ele of justRevealed) {
-              if (targetSignal.aborted) break;
-              if (ele.isConnected && isImageElement(ele) && !uiMap.has(ele)) {
-                if (ele === target) {
-                  await attachIndicator(ele, targetSignal);
-                  continue;
-                }
-
-                aborters.get(ele)?.abort();
-                const imgAborter = new AbortController();
-                aborters.set(ele, imgAborter);
-
-                const signal = imgAborter.signal;
-                await attachIndicator(ele, signal);
-                if (aborters.get(ele) === imgAborter) aborters.delete(ele);
-              }
-            }
-
-            if (aborters.get(target) === targetAborter) aborters.delete(target);
-          },
-          { debounceKey: target }
-        );
-      }
+    await waitForStableView(document.body, {
+      timeout: InitTimeout,
+      debounce: UpdateDebounce,
     });
 
-    const addObs = new MutationObserver(async (mutations) => {
-      for (const mutation of mutations) {
-        const removedNodes = [...mutation.removedNodes]
-          .filter((node) => node instanceof Element)
-          .flatMap((node) => [...getChildrenDeep(node), node]);
-
-        for (const node of removedNodes) {
-          if (uiMap.has(node)) {
-            aborters.get(node)?.abort();
-            aborters.delete(node);
-
-            uiMap.get(node).remove();
-            uiMap.delete(node);
-          }
-
-          if (coveringMap.has(node)) {
-            const coveredEles = coveringMap.get(node);
-            coveringMap.delete(node);
-
-            for (const ele of coveredEles) {
-              if (ele.isConnected && !uiMap.has(ele)) {
-                aborters.get(ele)?.abort();
-
-                const aborter = new AbortController();
-                aborters.set(ele, aborter);
-
-                await attachIndicator(ele, aborter.signal);
-                if (aborters.get(ele) === aborter) aborters.delete(ele);
-              }
-            }
-          }
-        }
-
-        const addedNodes = [...mutation.addedNodes]
-          .filter((node) => node instanceof Element)
-          .flatMap((node) => [...getChildrenDeep(node), node]);
-
-        for (const node of addedNodes) {
-          watchElement(node);
-        }
-      }
+    let aborter = new AbortController();
+    watchForViewUpdate(document.body, onViewUpdate, {
+      timeout: UpdateTimeout,
+      debounce: UpdateDebounce,
+      immediate: true,
     });
 
-    await waitUntilStable(document.body, { timeout: TimeSpan.fromSeconds(5) });
-    addObs.observe(document.body, AddObsOpts);
-    for (const ele of getChildrenDeep(document.body)) {
-      watchElement(ele);
-    }
+    async function onViewUpdate() {
+      aborter.abort();
+      aborter = new AbortController();
 
-    /**
-     * @param {Element} ele
-     */
-    function watchElement(ele) {
-      if (ele.shadowRoot) addObs.observe(ele.shadowRoot, AddObsOpts);
-      if (isImageElement(ele)) {
-        intersectionObs.observe(ele);
+      /** @type {Map<HTMLElement, boolean>} */
+      const hiddenCache = new Map();
+      const signal = aborter.signal;
 
-        for (const linked of [ele, ...getParentChain(ele)]) {
-          if (isStyleHidden(linked)) hiddenEls.add(linked);
-          else hiddenEls.delete(linked);
-          styleObs.observe(linked, StyleObsOpts);
+      for (const ele of getChildrenDeep(document.body)) {
+        if (signal.aborted) return;
+        if (!isImageElement(ele)) continue;
+
+        const isHidden = [ele, ...getParentChain(ele)].some((link) => {
+          const cached = hiddenCache.get(link);
+          if (cached != null) return cached;
+
+          const hidden = isStyleHidden(link);
+          hiddenCache.set(link, hidden);
+
+          return hidden;
+        });
+
+        if (isHidden || isElementCovered(ele, MinVis)) {
+          if (uiMap.has(ele)) detachIndicator(ele, signal);
+          continue;
         }
 
-        if (!isStyleHidden(ele)) {
-          const coveringEles = isElementCovered(ele);
-          if (coveringEles) addCoveringElements(ele, coveringEles);
+        if (!uiMap.has(ele)) {
+          attachIndicator(ele, signal);
         }
-      }
-    }
-
-    /**
-     * @param {HTMLElement} ele
-     * @param {Element[]} coveringEles
-     */
-    function addCoveringElements(ele, coveringEles) {
-      if (!isImageElement(ele)) return;
-      for (const coveringEle of coveringEles) {
-        if (!coveringMap.has(coveringEle))
-          coveringMap.set(coveringEle, new Set());
-        coveringMap.get(coveringEle).add(ele);
-
-        for (const ancestor of [coveringEle, ...getParentChain(coveringEle)]) {
-          if (isStyleHidden(ancestor)) hiddenEls.add(ancestor);
-          else hiddenEls.delete(ancestor);
-          styleObs.observe(ancestor, StyleObsOpts);
-        }
-      }
-    }
-
-    /**
-     * @param {Element} ele
-     * @param {HTMLElement[]} coveredEles
-     */
-    function addCoveredElements(ele, coveredEles) {
-      if (!coveringMap.has(ele)) coveringMap.set(ele, new Set());
-      const map = coveringMap.get(ele);
-
-      for (const coveredEle of coveredEles) {
-        if (isImageElement(coveredEle)) map.add(coveredEle);
       }
     }
 
@@ -275,23 +96,25 @@ export default defineContentScript({
       await new Promise((res) => requestAnimationFrame(res));
       if (signal.aborted) return;
 
-      for (const ele of [image, ...getParentChain(image)]) {
-        if (isStyleHidden(ele)) {
-          hiddenEls.add(ele);
-          return;
-        } else hiddenEls.delete(ele);
-      }
-
-      const coveringEles = isElementCovered(image);
-      if (coveringEles) {
-        addCoveringElements(image, coveringEles);
-        return;
-      }
-
       const ui = createIndicatorUi(image);
       if (!signal.aborted) {
         uiMap.set(image, ui);
         ui.mount();
+      }
+    }
+
+    /**
+     * @param {HTMLElement} image
+     * @param {AbortSignal} signal
+     */
+    async function detachIndicator(image, signal) {
+      await new Promise((res) => requestAnimationFrame(res));
+      if (signal.aborted) return;
+
+      const ui = uiMap.get(image);
+      if (!signal.aborted) {
+        uiMap.delete(image);
+        ui.remove();
       }
     }
 

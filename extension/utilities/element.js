@@ -1,16 +1,17 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
 
 const GridSize = 2;
-const GridInset = 1;
+const IntersectThresholds = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1];
+const MutationOptions = { attributes: true, childList: true, subtree: true };
 
 /**
  * @param {HTMLElement} ele
  */
-export function isElementCovered(ele) {
+export function isElementCovered(ele, inset = 0) {
   /** @type {Set<HTMLElement>} */
   const covering = new Set();
 
-  for (const { x, y } of getElementGrid(ele)) {
+  for (const { x, y } of getElementGrid(ele, inset)) {
     for (const topEle of elementsFromPoint(x, y)) {
       if (topEle === ele) return null;
 
@@ -115,36 +116,165 @@ export function* getParentChain(ele) {
 /**
  *
  * @param {HTMLElement} ele
+ * @param {() => any} callback
+ * @param {{
+ *    timeout?: number | TimeSpan,
+ *    debounce?: number | TimeSpan,
+ *    immediate?: boolean
+ * }}
+ */
+export async function watchForViewUpdate(
+  ele,
+  callback,
+  {
+    debounce = TimeSpan.fromMilliseconds(100),
+    timeout = Infinity,
+    immediate = false,
+  } = {}
+) {
+  let timeoutId = null;
+  let debounceId = null;
+
+  const reset = () => {
+    if (!timeoutId) {
+      timeoutId = setTimeout(() => {
+        clearTimeout(debounceId);
+
+        timeoutId = null;
+        debounceId = null;
+
+        console.log('invoking view update watch by timeout');
+        callback();
+      }, timeout);
+    }
+
+    clearTimeout(debounceId);
+    debounceId = setTimeout(() => {
+      clearTimeout(timeoutId);
+
+      timeoutId = null;
+      debounceId = null;
+
+      console.log('invoking view update watch normally');
+      callback();
+    }, debounce);
+  };
+
+  const resizeObs = new ResizeObserver(reset);
+  const interObs = new IntersectionObserver(reset, {
+    threshold: IntersectThresholds,
+  });
+
+  const mutateObs = new MutationObserver((mutations) => {
+    reset();
+    for (const mutation of mutations) {
+      if (mutation.addedNodes?.length) {
+        for (const newEle of mutation.addedNodes) {
+          if (!(newEle instanceof Element)) continue;
+
+          resizeObs.observe(newEle);
+          interObs.observe(newEle);
+
+          if (newEle.shadowRoot) {
+            mutateObs.observe(newEle, MutationOptions);
+
+            for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
+              resizeObs.observe(shadowChild);
+              interObs.observe(shadowChild);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  mutateObs.observe(ele, MutationOptions);
+  for (const child of getChildrenDeep(ele)) {
+    if (child.shadowRoot) mutateObs.observe(child, MutationOptions);
+    resizeObs.observe(child);
+    interObs.observe(child);
+  }
+
+  if (immediate) callback();
+  return () => {
+    clearTimeout(timeoutId);
+    clearTimeout(debounceId);
+
+    mutateObs.disconnect();
+    interObs.disconnect();
+    resizeObs.disconnect();
+  };
+}
+
+/**
+ *
+ * @param {HTMLElement} ele
  * @param {{
  *    timeout?: number | TimeSpan,
  *    debounce?: number | TimeSpan
  * }}
  */
-export async function waitUntilStable(
+export async function waitForStableView(
   ele,
   { debounce = TimeSpan.fromMilliseconds(100), timeout = Infinity } = {}
 ) {
   await new Promise((res) => {
     let timeoutId, debounceId;
-
-    timeoutId = setTimeout(() => {
-      clearTimeout(debounceId);
-      observer?.disconnect();
-      res();
-    }, timeout);
-
-    const onMutate = () => {
+    const reset = () => {
       clearTimeout(debounceId);
       debounceId = setTimeout(() => {
         clearTimeout(timeoutId);
-        observer?.disconnect();
+        mutateObs.disconnect();
+        resizeObs.disconnect();
+        interObs.disconnect();
         res();
       }, debounce);
     };
 
-    const observer = new MutationObserver(onMutate);
-    observer.observe(ele, { attributes: true, childList: true, subtree: true });
-    onMutate();
+    timeoutId = setTimeout(() => {
+      clearTimeout(debounceId);
+      mutateObs.disconnect();
+      resizeObs.disconnect();
+      interObs.disconnect();
+      res();
+    }, timeout);
+
+    const resizeObs = new ResizeObserver(reset);
+    const interObs = new IntersectionObserver(reset, {
+      threshold: IntersectThresholds,
+    });
+
+    const mutateObs = new MutationObserver((mutations) => {
+      reset();
+      for (const mutation of mutations) {
+        if (mutation.addedNodes?.length) {
+          for (const newEle of mutation.addedNodes) {
+            if (!(newEle instanceof Element)) continue;
+
+            resizeObs.observe(newEle);
+            interObs.observe(newEle);
+
+            if (newEle.shadowRoot) {
+              mutateObs.observe(newEle, MutationOptions);
+
+              for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
+                resizeObs.observe(shadowChild);
+                interObs.observe(shadowChild);
+              }
+            }
+          }
+        }
+      }
+    });
+
+    mutateObs.observe(ele, MutationOptions);
+    for (const child of getChildrenDeep(ele)) {
+      if (child.shadowRoot) mutateObs.observe(child, MutationOptions);
+      resizeObs.observe(child);
+      interObs.observe(child);
+    }
+
+    reset();
   });
 }
 
@@ -185,15 +315,18 @@ function getVisibleRect(ele) {
 /**
  * @param {HTMLElement} ele
  */
-function* getElementGrid(ele) {
+function* getElementGrid(ele, inset = 0) {
   // Use just the visible rect of the image
   const visRect = getVisibleRect(ele);
   if (!visRect) return;
 
-  const left = visRect.left + GridInset;
-  const top = visRect.top + GridInset;
-  const right = visRect.right - GridInset;
-  const bottom = visRect.bottom - GridInset;
+  const xInset = Math.min((visRect.width * inset) / 2, 1);
+  const yInset = Math.min((visRect.height * inset) / 2, 1);
+
+  const left = visRect.left + xInset;
+  const top = visRect.top + yInset;
+  const right = visRect.right - xInset;
+  const bottom = visRect.bottom - yInset;
 
   // Check multiple points along a grid to estimate if the image is covered
   for (let i = 0; i <= GridSize; i++) {
