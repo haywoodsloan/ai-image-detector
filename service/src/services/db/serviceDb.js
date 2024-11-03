@@ -29,10 +29,19 @@ export const getServiceDb = memoize(async () => {
   const errors = [];
   for (const url of mongoUrls) {
     try {
-      const client = await MongoClient.connect(url);
+      const client = await MongoClient.connect(url, {
+        retryReads: true,
+      });
 
-      client.once('serverHeartbeatFailed', () => memoizeClear(getServiceDb));
-      client.once('connectionClosed', () => memoizeClear(getServiceDb));
+      client.once('serverHeartbeatFailed', (event) => {
+        console.error('MongoDB heartbeat failed', event);
+        memoizeClear(getServiceDb);
+      });
+
+      client.once('connectionClosed', (event) => {
+        console.error('MongoDB connection closed', event);
+        memoizeClear(getServiceDb);
+      });
 
       return client.db(DbName);
     } catch (error) {

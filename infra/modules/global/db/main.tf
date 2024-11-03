@@ -21,6 +21,7 @@ resource "azurerm_cosmosdb_account" "cosmos_account" {
   free_tier_enabled                = true
   offer_type                       = "Standard"
   kind                             = "MongoDB"
+  mongo_server_version             = "7.0"
   multiple_write_locations_enabled = true
 
   capabilities {
@@ -29,6 +30,10 @@ resource "azurerm_cosmosdb_account" "cosmos_account" {
 
   capabilities {
     name = "mongoEnableDocLevelTTL"
+  }
+
+  capabilities {
+    name = "DisableRateLimitingResponses"
   }
 
   consistency_policy {

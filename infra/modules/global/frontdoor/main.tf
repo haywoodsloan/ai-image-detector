@@ -9,14 +9,8 @@ resource "time_rotating" "dev_key_refresh" {
   rotation_months = 1
 }
 
-resource "time_offset" "secondary_rotation_offset" {
-  count       = var.env_name != "prod" ? 1 : 0
-  offset_days = 15
-}
-
 resource "time_rotating" "secondary_dev_key_refresh" {
   count           = var.env_name != "prod" ? 1 : 0
-  rfc3339         = time_offset.secondary_rotation_offset[0].rfc3339
   rotation_months = 1
 }
 
@@ -94,9 +88,9 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     }
 
     match_condition {
-      match_variable     = "RequestMethod"
-      match_values       = ["POST"]
-      operator           = "Equal"
+      match_variable = "RequestMethod"
+      match_values   = ["POST"]
+      operator       = "Equal"
     }
   }
 
@@ -116,9 +110,9 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     }
 
     match_condition {
-      match_variable     = "RequestMethod"
-      match_values       = ["POST"]
-      operator           = "Equal"
+      match_variable = "RequestMethod"
+      match_values   = ["POST"]
+      operator       = "Equal"
     }
   }
 

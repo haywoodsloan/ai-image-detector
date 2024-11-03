@@ -16,7 +16,7 @@ const getUserCollection = memoize(
  */
 export async function queryUserByEmail(emailHash) {
   const users = await getUserCollection();
-  return users.findOne({ emailHash });
+  return await users.findOne({ emailHash });
 }
 
 /**

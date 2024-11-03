@@ -17,6 +17,8 @@ terraform {
 }
 
 provider "azurerm" {
+  subscription_id = "fd507e5f-043c-4851-b882-8ac289a4c5a4"
+  
   features {
     resource_group {
       prevent_deletion_if_contains_resources = false

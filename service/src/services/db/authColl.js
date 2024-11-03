@@ -58,7 +58,7 @@ export async function insertNewAuth(userId, verified = false) {
  */
 export async function queryAuth(accessToken) {
   const auths = await getAuthCollection();
-  return auths.findOne({ accessToken });
+  return await auths.findOne({ accessToken });
 }
 
 /**
