@@ -65,10 +65,13 @@ export default defineContentScript({
 
         /** @type {Map<HTMLElement, boolean>} */
         const hiddenCache = new Map();
+        const oldUis = new Set(uiMap.keys());
+
         for (const ele of getChildrenDeep(document.body)) {
           if (signal.aborted) return;
           if (!isImageElement(ele)) continue;
 
+          oldUis.delete(ele);
           const isHidden = [ele, ...getParentChain(ele)].some((link) => {
             if (signal.aborted) return true;
             const cached = hiddenCache.get(link);
@@ -86,6 +89,10 @@ export default defineContentScript({
           } else if (!uiMap.has(ele)) {
             attachIndicator(ele, signal);
           }
+        }
+
+        for (const oldUi of oldUis) {
+          detachIndicator(oldUi, signal);
         }
       });
     }
@@ -112,7 +119,7 @@ export default defineContentScript({
       if (signal.aborted) return;
       const ui = uiMap.get(image);
 
-      if (!signal.aborted) {
+      if (ui && !signal.aborted) {
         uiMap.delete(image);
         ui.remove();
       }
