@@ -236,7 +236,7 @@ function locationStrategy(data, _, styles) {
 </script>
 
 <template>
-  <StyleProvider v-if="size !== 'small'">
+  <StyleProvider>
     <v-menu
       v-model="menuOpen"
       z-index="2147483647"
@@ -248,7 +248,7 @@ function locationStrategy(data, _, styles) {
       <template #activator="{ props: menu }">
         <v-fade-transition>
           <button
-            v-if="iconColor"
+            v-if="size !== 'small' && iconColor"
             class="button"
             :class="[size, { 'menu-open': menuOpen }]"
             v-bind="menu"

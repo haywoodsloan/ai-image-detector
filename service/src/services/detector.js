@@ -8,9 +8,9 @@ import { l } from 'common/utilities/string.js';
 
 // Use the detector version for db lookups
 export const DetectorVersion = '1';
-export const DetectorModels = Object.freeze([
-  'haywoodsloan/autotrain-ai-image-detect-20241022-0241',
-]);
+export const DetectorModels = [
+  'haywoodsloan/autotrain-ai-image-detect-20241101-0044',
+];
 
 const DetectorErrorDelay = TimeSpan.fromMilliseconds(100);
 const DetectorRetryLimit = 3;
