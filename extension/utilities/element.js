@@ -282,18 +282,31 @@ export async function waitForStableView(
 function getVisibleRect(ele) {
   if (!ele.offsetParent) return;
 
+  // Ignore elements beyond the viewport
+  const vw = Math.max(
+    document.documentElement.clientWidth || 0,
+    window.innerWidth || 0
+  );
+
+  const vh = Math.max(
+    document.documentElement.clientHeight || 0,
+    window.innerHeight || 0
+  );
+
   // Use the element rect and offset parent rect
   const eleRect = ele.getBoundingClientRect();
-  const offsetRect = ele.offsetParent.getBoundingClientRect();
+  if (eleRect.top > vh || eleRect.left > vw) return;
 
   // Use styles to determine if overflow is visible
   const offsetStyles = getComputedStyle(ele.offsetParent);
+  const offsetRect = ele.offsetParent.getBoundingClientRect();
 
   let left, right;
   if (offsetStyles.overflowX === 'visible') {
     left = eleRect.left;
     right = eleRect.right;
   } else {
+    if (offsetRect.left > vw) return;
     left = Math.max(eleRect.left, offsetRect.left);
     right = Math.min(eleRect.right, offsetRect.right);
   }
@@ -303,6 +316,7 @@ function getVisibleRect(ele) {
     top = eleRect.top;
     bottom = eleRect.bottom;
   } else {
+    if (offsetRect.top > vh) return;
     top = Math.max(eleRect.top, offsetRect.top);
     bottom = Math.min(eleRect.bottom, offsetRect.bottom);
   }

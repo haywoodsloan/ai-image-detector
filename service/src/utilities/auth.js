@@ -25,6 +25,6 @@ export function assertAccessToken(request) {
   const authHeader = request.headers.get('Authorization');
   const accessToken = AuthTypeRegEx.exec(authHeader)?.groups?.accessToken;
 
-  if (!accessToken) throw new Error('No access token specified');
+  if (!accessToken) throw new InvalidAuthError('No access token specified');
   return accessToken;
 }

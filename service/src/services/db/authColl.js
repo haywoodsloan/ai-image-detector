@@ -71,8 +71,7 @@ export async function queryValidAuth(accessToken) {
       accessToken,
       verifyStatus: VerificationComplete,
     },
-    { $set: { refreshedAt: new Date() } },
-    { returnDocument: 'after' }
+    { $set: { refreshedAt: new Date() } }
   );
 }
 

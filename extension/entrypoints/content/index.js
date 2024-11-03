@@ -23,8 +23,8 @@ export default defineContentScript({
   async main(ctx) {
     const MinVis = 0.2;
 
-    const UpdateDebounce = TimeSpan.fromMilliseconds(75);
-    const UpdateTimeout = TimeSpan.fromMilliseconds(250);
+    const UpdateDebounce = TimeSpan.fromMilliseconds(100);
+    const UpdateTimeout = TimeSpan.fromSeconds(1000);
     const InitTimeout = TimeSpan.fromSeconds(5);
 
     // Make sure the extension has been initialized
@@ -59,44 +59,45 @@ export default defineContentScript({
       aborter.abort();
       aborter = new AbortController();
 
-      /** @type {Map<HTMLElement, boolean>} */
-      const hiddenCache = new Map();
       const signal = aborter.signal;
-
-      for (const ele of getChildrenDeep(document.body)) {
+      requestAnimationFrame(() => {
         if (signal.aborted) return;
-        if (!isImageElement(ele)) continue;
 
-        const isHidden = [ele, ...getParentChain(ele)].some((link) => {
-          const cached = hiddenCache.get(link);
-          if (cached != null) return cached;
+        /** @type {Map<HTMLElement, boolean>} */
+        const hiddenCache = new Map();
+        for (const ele of getChildrenDeep(document.body)) {
+          if (signal.aborted) return;
+          if (!isImageElement(ele)) continue;
 
-          const hidden = isStyleHidden(link);
-          hiddenCache.set(link, hidden);
+          const isHidden = [ele, ...getParentChain(ele)].some((link) => {
+            if (signal.aborted) return true;
+            const cached = hiddenCache.get(link);
+            if (cached != null) return cached;
 
-          return hidden;
-        });
+            const hidden = isStyleHidden(link);
+            hiddenCache.set(link, hidden);
 
-        if (isHidden || isElementCovered(ele, MinVis)) {
-          if (uiMap.has(ele)) detachIndicator(ele, signal);
-          continue;
+            return hidden;
+          });
+
+          if (signal.aborted) return;
+          if (isHidden || isElementCovered(ele, MinVis)) {
+            if (uiMap.has(ele)) detachIndicator(ele, signal);
+          } else if (!uiMap.has(ele)) {
+            attachIndicator(ele, signal);
+          }
         }
-
-        if (!uiMap.has(ele)) {
-          attachIndicator(ele, signal);
-        }
-      }
+      });
     }
 
     /**
      * @param {HTMLElement} image
      * @param {AbortSignal} signal
      */
-    async function attachIndicator(image, signal) {
-      await new Promise((res) => requestAnimationFrame(res));
+    function attachIndicator(image, signal) {
       if (signal.aborted) return;
-
       const ui = createIndicatorUi(image);
+
       if (!signal.aborted) {
         uiMap.set(image, ui);
         ui.mount();
@@ -108,10 +109,9 @@ export default defineContentScript({
      * @param {AbortSignal} signal
      */
     async function detachIndicator(image, signal) {
-      await new Promise((res) => requestAnimationFrame(res));
       if (signal.aborted) return;
-
       const ui = uiMap.get(image);
+
       if (!signal.aborted) {
         uiMap.delete(image);
         ui.remove();
