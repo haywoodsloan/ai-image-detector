@@ -143,7 +143,6 @@ export async function watchForViewUpdate(
         timeoutId = null;
         debounceId = null;
 
-        console.log('invoking view update watch by timeout');
         callback();
       }, timeout);
     }
@@ -155,7 +154,6 @@ export async function watchForViewUpdate(
       timeoutId = null;
       debounceId = null;
 
-      console.log('invoking view update watch normally');
       callback();
     }, debounce);
   };
