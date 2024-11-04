@@ -1,7 +1,7 @@
 import { isProd } from 'common/utilities/environment.js';
 import { AllLabels } from 'common/utilities/huggingface.js';
 import { l } from 'common/utilities/string.js';
-import memoize from 'memoize';
+import memoize, { memoizeClear } from 'memoize';
 import { ObjectId } from 'mongodb';
 
 import { getServiceDb } from './serviceDb.js';
@@ -13,7 +13,16 @@ const MinVoteCount = isProd ? 10 : 1;
 
 const getVoteCollection = memoize(
   /** @returns {Promise<Collection<VoteDocument>>} */
-  async () => (await getServiceDb()).collection(VoteCollName),
+  async () => {
+    try {
+      const db = await getServiceDb();
+      return db.collection(VoteCollName);
+    } catch (error) {
+      console.error('Getting vote collection failed', error);
+      memoizeClear(getVoteCollection);
+      throw error;
+    }
+  },
   { cacheKey: () => getServiceDb() }
 );
 

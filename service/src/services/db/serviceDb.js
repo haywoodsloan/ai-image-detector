@@ -51,5 +51,6 @@ export const getServiceDb = memoize(async () => {
   }
 
   // Throw the errors if all URLs were used
+  memoizeClear(getServiceDb);
   throw errors.length === 1 ? errors[0] : AggregateError(errors);
 });

@@ -1,8 +1,9 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { cryptoString } from 'common/utilities/string.js';
-import memoize from 'memoize';
+import memoize, { memoizeClear } from 'memoize';
 import { ObjectId } from 'mongodb';
 
+import { clearCachedAuth } from '../../utilities/auth.js';
 import { getValidationSocketUrl } from '../pubsub.js';
 import { getServiceDb } from './serviceDb.js';
 
@@ -15,7 +16,16 @@ export const ValidAuthTimeout = TimeSpan.fromDays(30);
 
 const getAuthCollection = memoize(
   /** @returns {Promise<Collection<AuthDocument>>} */
-  async () => (await getServiceDb()).collection(AuthCollName),
+  async () => {
+    try {
+      const db = await getServiceDb();
+      return db.collection(AuthCollName);
+    } catch (error) {
+      console.error('Getting auth collection failed', error);
+      memoizeClear(getAuthCollection);
+      throw error;
+    }
+  },
   { cacheKey: () => getServiceDb() }
 );
 
@@ -50,6 +60,7 @@ export async function insertNewAuth(userId, verified = false) {
     verifyStatus: PendingVerification,
   });
 
+  clearCachedAuth(newAuth.accessToken);
   return newAuth;
 }
 
@@ -80,7 +91,7 @@ export async function queryValidAuth(accessToken) {
  */
 export async function verifyAuth(code) {
   const auths = await getAuthCollection();
-  return await auths.findOneAndUpdate(
+  const auth = await auths.findOneAndUpdate(
     {
       verifyCode: code,
       verifyStatus: PendingVerification,
@@ -95,4 +106,7 @@ export async function verifyAuth(code) {
     },
     { returnDocument: 'after' }
   );
+
+  clearCachedAuth(auth?.accessToken);
+  return auth;
 }

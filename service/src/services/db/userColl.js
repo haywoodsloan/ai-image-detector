@@ -1,4 +1,4 @@
-import memoize from 'memoize';
+import memoize, { memoizeClear } from 'memoize';
 import { ObjectId } from 'mongodb';
 
 import { getServiceDb } from './serviceDb.js';
@@ -7,7 +7,16 @@ export const UserCollName = 'users';
 
 const getUserCollection = memoize(
   /** @returns {Promise<Collection<UserDocument>>} */
-  async () => (await getServiceDb()).collection(UserCollName),
+  async () => {
+    try {
+      const db = await getServiceDb();
+      return db.collection(UserCollName);
+    } catch (error) {
+      console.error('Getting user collection failed', error);
+      memoizeClear(getUserCollection);
+      throw error;
+    }
+  },
   { cacheKey: () => getServiceDb() }
 );
 

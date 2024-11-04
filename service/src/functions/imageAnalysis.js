@@ -26,8 +26,8 @@ app.http('imageAnalysis', {
       userId = await assertValidAuth(request);
       console.log(l`Checking image ${{ url: shortenUrl(url), userId }}`);
     } catch (error) {
-      if (!(error instanceof InvalidAuthError)) throw error;
       console.error(error);
+      if (!(error instanceof InvalidAuthError)) throw error;
       return createErrorResponse(401, error);
     }
 
