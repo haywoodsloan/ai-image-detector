@@ -5,7 +5,6 @@ import IndicatorOverlay from '@/components/IndicatorOverlay.vue';
 import { invokeBackgroundTask } from '@/utilities/background.js';
 import {
   getChildrenDeep,
-  getParentChain,
   isElementCovered,
   isImageElement,
   isStyleHidden,
@@ -24,7 +23,6 @@ export default defineContentScript({
     const MinVis = 0.2;
 
     const UpdateDebounce = TimeSpan.fromMilliseconds(100);
-    const UpdateTimeout = TimeSpan.fromSeconds(1000);
     const InitTimeout = TimeSpan.fromSeconds(5);
 
     // Make sure the extension has been initialized
@@ -50,12 +48,11 @@ export default defineContentScript({
 
     let aborter = new AbortController();
     watchForViewUpdate(document.body, onViewUpdate, {
-      timeout: UpdateTimeout,
       debounce: UpdateDebounce,
       immediate: true,
     });
 
-    async function onViewUpdate() {
+    function onViewUpdate() {
       aborter.abort();
       aborter = new AbortController();
 
@@ -63,28 +60,14 @@ export default defineContentScript({
       requestAnimationFrame(() => {
         if (signal.aborted) return;
 
-        /** @type {Map<HTMLElement, boolean>} */
-        const hiddenCache = new Map();
         const oldUis = new Set(uiMap.keys());
-
         for (const ele of getChildrenDeep(document.body)) {
           if (signal.aborted) return;
+
           if (!isImageElement(ele)) continue;
-
           oldUis.delete(ele);
-          const isHidden = [ele, ...getParentChain(ele)].some((link) => {
-            if (signal.aborted) return true;
-            const cached = hiddenCache.get(link);
-            if (cached != null) return cached;
 
-            const hidden = isStyleHidden(link);
-            hiddenCache.set(link, hidden);
-
-            return hidden;
-          });
-
-          if (signal.aborted) return;
-          if (isHidden || isElementCovered(ele, MinVis)) {
+          if (isStyleHidden(ele) || isElementCovered(ele, MinVis)) {
             if (uiMap.has(ele)) detachIndicator(ele, signal);
           } else if (!uiMap.has(ele)) {
             attachIndicator(ele, signal);
@@ -92,6 +75,7 @@ export default defineContentScript({
         }
 
         for (const oldUi of oldUis) {
+          if (signal.aborted) return;
           detachIndicator(oldUi, signal);
         }
       });

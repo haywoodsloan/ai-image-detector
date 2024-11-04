@@ -1,7 +1,7 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
 
 const GridSize = 2;
-const IntersectThresholds = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1];
+const IntersectThresholds = 0.2;
 const MutationOptions = { attributes: true, childList: true, subtree: true };
 
 /**
@@ -14,11 +14,7 @@ export function isElementCovered(ele, inset = 0) {
   for (const { x, y } of getElementGrid(ele, inset)) {
     for (const topEle of elementsFromPoint(x, y)) {
       if (topEle === ele) return null;
-
-      const chain = [topEle, ...getParentChain(topEle)];
-      const isHidden = chain.some((ancestor) => isStyleHidden(ancestor));
-
-      if (!isHidden) {
+      if (!isStyleHidden(topEle)) {
         covering.add(topEle);
         break;
       }
@@ -37,10 +33,7 @@ export function* getCoveredElements(ele) {
     for (const topEle of elementsFromPoint(x, y)) {
       if (topEle === ele) continue;
 
-      const chain = [topEle, ...getParentChain(topEle)];
-      const isHidden = chain.some((ancestor) => isStyleHidden(ancestor));
-
-      if (!isHidden) {
+      if (!isStyleHidden(topEle)) {
         yield topEle;
         break;
       }
@@ -78,12 +71,14 @@ export function isImageElement(ele) {
  * @param {HTMLElement} ele
  */
 export function isStyleHidden(ele) {
-  const styles = getComputedStyle(ele);
   return (
-    styles.visibility === 'hidden' ||
-    parseFloat(styles.opacity) === 0 ||
-    styles.display === 'none' ||
-    (parseFloat(styles.width) <= 1 && parseFloat(styles.height) <= 1)
+    ele.offsetWidth <= 1 ||
+    ele.offsetHeight <= 1 ||
+    !ele.checkVisibility({
+      opacityProperty: true,
+      visibilityProperty: true,
+      contentVisibilityAuto: true,
+    })
   );
 }
 
@@ -126,17 +121,15 @@ export function* getParentChain(ele) {
 export async function watchForViewUpdate(
   ele,
   callback,
-  {
-    debounce = TimeSpan.fromMilliseconds(100),
-    timeout = Infinity,
-    immediate = false,
-  } = {}
+  { debounce = TimeSpan.fromMilliseconds(100), immediate = false, timeout } = {}
 ) {
   let timeoutId = null;
   let debounceId = null;
+  let nextDebounceTime;
 
   const reset = () => {
-    if (!timeoutId) {
+    nextDebounceTime = Date.now() + debounce.valueOf();
+    if (!timeoutId && timeout) {
       timeoutId = setTimeout(() => {
         clearTimeout(debounceId);
 
@@ -147,15 +140,22 @@ export async function watchForViewUpdate(
       }, timeout);
     }
 
-    clearTimeout(debounceId);
-    debounceId = setTimeout(() => {
-      clearTimeout(timeoutId);
+    if (!debounceId) {
+      let origTime = nextDebounceTime;
+      debounceId = setTimeout(function check() {
+        if (nextDebounceTime !== origTime) {
+          origTime = nextDebounceTime;
+          debounceId = setTimeout(check, origTime - Date.now());
+        } else {
+          clearTimeout(timeoutId);
 
-      timeoutId = null;
-      debounceId = null;
+          timeoutId = null;
+          debounceId = null;
 
-      callback();
-    }, debounce);
+          callback();
+        }
+      }, origTime - Date.now());
+    }
   };
 
   const resizeObs = new ResizeObserver(reset);
@@ -174,7 +174,7 @@ export async function watchForViewUpdate(
           interObs.observe(newEle);
 
           if (newEle.shadowRoot) {
-            mutateObs.observe(newEle, MutationOptions);
+            mutateObs.observe(newEle.shadowRoot, MutationOptions);
 
             for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
               resizeObs.observe(shadowChild);
@@ -183,12 +183,20 @@ export async function watchForViewUpdate(
           }
         }
       }
+
+      if (mutation.removedNodes?.length) {
+        for (const oldEle of mutation.removedNodes) {
+          if (!(oldEle instanceof Element)) continue;
+          resizeObs.unobserve(oldEle);
+          interObs.unobserve(oldEle);
+        }
+      }
     }
   });
 
   mutateObs.observe(ele, MutationOptions);
   for (const child of getChildrenDeep(ele)) {
-    if (child.shadowRoot) mutateObs.observe(child, MutationOptions);
+    if (child.shadowRoot) mutateObs.observe(child.shadowRoot, MutationOptions);
     resizeObs.observe(child);
     interObs.observe(child);
   }
@@ -214,28 +222,36 @@ export async function watchForViewUpdate(
  */
 export async function waitForStableView(
   ele,
-  { debounce = TimeSpan.fromMilliseconds(100), timeout = Infinity } = {}
+  { debounce = TimeSpan.fromMilliseconds(100), timeout } = {}
 ) {
   await new Promise((res) => {
+    let nextDebounceTime = Date.now() + debounce.valueOf();
+    const reset = () => (nextDebounceTime = Date.now() + debounce.valueOf());
+
     let timeoutId, debounceId;
-    const reset = () => {
-      clearTimeout(debounceId);
-      debounceId = setTimeout(() => {
+    if (timeout) {
+      timeoutId = setTimeout(() => {
+        clearTimeout(debounceId);
+        mutateObs.disconnect();
+        resizeObs.disconnect();
+        interObs.disconnect();
+        res();
+      }, timeout);
+    }
+
+    let origTime = nextDebounceTime;
+    debounceId = setTimeout(function check() {
+      if (origTime !== nextDebounceTime) {
+        origTime = nextDebounceTime;
+        debounceId = setTimeout(check, origTime - Date.now());
+      } else {
         clearTimeout(timeoutId);
         mutateObs.disconnect();
         resizeObs.disconnect();
         interObs.disconnect();
         res();
-      }, debounce);
-    };
-
-    timeoutId = setTimeout(() => {
-      clearTimeout(debounceId);
-      mutateObs.disconnect();
-      resizeObs.disconnect();
-      interObs.disconnect();
-      res();
-    }, timeout);
+      }
+    }, origTime - Date.now());
 
     const resizeObs = new ResizeObserver(reset);
     const interObs = new IntersectionObserver(reset, {
@@ -253,7 +269,7 @@ export async function waitForStableView(
             interObs.observe(newEle);
 
             if (newEle.shadowRoot) {
-              mutateObs.observe(newEle, MutationOptions);
+              mutateObs.observe(newEle.shadowRoot, MutationOptions);
 
               for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
                 resizeObs.observe(shadowChild);
@@ -262,17 +278,24 @@ export async function waitForStableView(
             }
           }
         }
+
+        if (mutation.removedNodes?.length) {
+          for (const oldEle of mutation.removedNodes) {
+            if (!(oldEle instanceof Element)) continue;
+            resizeObs.unobserve(oldEle);
+            interObs.unobserve(oldEle);
+          }
+        }
       }
     });
 
     mutateObs.observe(ele, MutationOptions);
     for (const child of getChildrenDeep(ele)) {
-      if (child.shadowRoot) mutateObs.observe(child, MutationOptions);
+      if (child.shadowRoot)
+        mutateObs.observe(child.shadowRoot, MutationOptions);
       resizeObs.observe(child);
       interObs.observe(child);
     }
-
-    reset();
   });
 }
 
@@ -295,7 +318,13 @@ function getVisibleRect(ele) {
 
   // Use the element rect and offset parent rect
   const eleRect = ele.getBoundingClientRect();
-  if (eleRect.top > vh || eleRect.left > vw) return;
+  if (
+    eleRect.bottom < 0 ||
+    eleRect.right < 0 ||
+    eleRect.top > vh ||
+    eleRect.left > vw
+  )
+    return;
 
   // Use styles to determine if overflow is visible
   const offsetStyles = getComputedStyle(ele.offsetParent);
@@ -306,7 +335,7 @@ function getVisibleRect(ele) {
     left = eleRect.left;
     right = eleRect.right;
   } else {
-    if (offsetRect.left > vw) return;
+    if (offsetRect.left > vw || offsetRect.right < 0) return;
     left = Math.max(eleRect.left, offsetRect.left);
     right = Math.min(eleRect.right, offsetRect.right);
   }
@@ -316,7 +345,7 @@ function getVisibleRect(ele) {
     top = eleRect.top;
     bottom = eleRect.bottom;
   } else {
-    if (offsetRect.top > vh) return;
+    if (offsetRect.top > vh || offsetRect.bottom < 0) return;
     top = Math.max(eleRect.top, offsetRect.top);
     bottom = Math.min(eleRect.bottom, offsetRect.bottom);
   }
@@ -340,11 +369,14 @@ function* getElementGrid(ele, inset = 0) {
   const right = visRect.right - xInset;
   const bottom = visRect.bottom - yInset;
 
+  const height = bottom - top;
+  const width = right - left;
+
   // Check multiple points along a grid to estimate if the image is covered
   for (let i = 0; i <= GridSize; i++) {
     for (let j = 0; j <= GridSize; j++) {
-      const x = (right - left) * (i / GridSize) + left;
-      const y = (bottom - top) * (j / GridSize) + top;
+      const x = width * (i / GridSize) + left;
+      const y = height * (j / GridSize) + top;
       yield { x, y };
     }
   }
