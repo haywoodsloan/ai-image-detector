@@ -2,7 +2,14 @@ import TimeSpan from 'common/utilities/TimeSpan.js';
 
 const GridSize = 2;
 const IntersectThresholds = 0.2;
-const MutationOptions = { attributes: true, childList: true, subtree: true };
+
+/** @type {MutationObserverInit} */
+const MutationOptions = {
+  subtree: true,
+  childList: true,
+  attributes: true,
+  attributeFilter: ['style', 'class'],
+};
 
 /**
  * @param {HTMLElement} ele
@@ -171,26 +178,23 @@ export async function watchForViewUpdate(
   const mutateObs = new MutationObserver((mutations) => {
     reset();
     for (const mutation of mutations) {
-      if (mutation.addedNodes?.length) {
-        for (const newEle of mutation.addedNodes) {
-          if (!(newEle instanceof Element)) continue;
+      if (mutation.type !== 'childList') continue;
+      
+      for (const newEle of mutation.addedNodes) {
+        if (!(newEle instanceof Element)) continue;
 
-          interObs.observe(newEle);
-          if (newEle.shadowRoot) {
-            mutateObs.observe(newEle.shadowRoot, MutationOptions);
-
-            for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
-              interObs.observe(shadowChild);
-            }
+        interObs.observe(newEle);
+        if (newEle.shadowRoot) {
+          mutateObs.observe(newEle.shadowRoot, MutationOptions);
+          for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
+            interObs.observe(shadowChild);
           }
         }
       }
 
-      if (mutation.removedNodes?.length) {
-        for (const oldEle of mutation.removedNodes) {
-          if (!(oldEle instanceof Element)) continue;
-          interObs.unobserve(oldEle);
-        }
+      for (const oldEle of mutation.removedNodes) {
+        if (!(oldEle instanceof Element)) continue;
+        interObs.unobserve(oldEle);
       }
     }
   });
@@ -257,26 +261,23 @@ export async function waitForStableView(
     const mutateObs = new MutationObserver((mutations) => {
       reset();
       for (const mutation of mutations) {
-        if (mutation.addedNodes?.length) {
-          for (const newEle of mutation.addedNodes) {
-            if (!(newEle instanceof Element)) continue;
-            interObs.observe(newEle);
+        if (mutation.type !== 'childList') continue;
 
-            if (newEle.shadowRoot) {
-              mutateObs.observe(newEle.shadowRoot, MutationOptions);
+        for (const newEle of mutation.addedNodes) {
+          if (!(newEle instanceof Element)) continue;
+          interObs.observe(newEle);
 
-              for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
-                interObs.observe(shadowChild);
-              }
+          if (newEle.shadowRoot) {
+            mutateObs.observe(newEle.shadowRoot, MutationOptions);
+            for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
+              interObs.observe(shadowChild);
             }
           }
         }
 
-        if (mutation.removedNodes?.length) {
-          for (const oldEle of mutation.removedNodes) {
-            if (!(oldEle instanceof Element)) continue;
-            interObs.unobserve(oldEle);
-          }
+        for (const oldEle of mutation.removedNodes) {
+          if (!(oldEle instanceof Element)) continue;
+          interObs.unobserve(oldEle);
         }
       }
     });
