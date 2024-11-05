@@ -164,8 +164,7 @@ export async function watchForViewUpdate(
     }
   };
 
-  const resizeObs = new ResizeObserver(reset);
-  const interObs = new IntersectionObserver(reset, {
+  const interObs = new IntersectionObserver(() => reset(), {
     threshold: IntersectThresholds,
   });
 
@@ -176,14 +175,11 @@ export async function watchForViewUpdate(
         for (const newEle of mutation.addedNodes) {
           if (!(newEle instanceof Element)) continue;
 
-          resizeObs.observe(newEle);
           interObs.observe(newEle);
-
           if (newEle.shadowRoot) {
             mutateObs.observe(newEle.shadowRoot, MutationOptions);
 
             for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
-              resizeObs.observe(shadowChild);
               interObs.observe(shadowChild);
             }
           }
@@ -193,7 +189,6 @@ export async function watchForViewUpdate(
       if (mutation.removedNodes?.length) {
         for (const oldEle of mutation.removedNodes) {
           if (!(oldEle instanceof Element)) continue;
-          resizeObs.unobserve(oldEle);
           interObs.unobserve(oldEle);
         }
       }
@@ -203,7 +198,6 @@ export async function watchForViewUpdate(
   mutateObs.observe(ele, MutationOptions);
   for (const child of getChildrenDeep(ele)) {
     if (child.shadowRoot) mutateObs.observe(child.shadowRoot, MutationOptions);
-    resizeObs.observe(child);
     interObs.observe(child);
   }
 
@@ -214,7 +208,6 @@ export async function watchForViewUpdate(
 
     mutateObs.disconnect();
     interObs.disconnect();
-    resizeObs.disconnect();
   };
 }
 
@@ -239,7 +232,6 @@ export async function waitForStableView(
       timeoutId = setTimeout(() => {
         clearTimeout(debounceId);
         mutateObs.disconnect();
-        resizeObs.disconnect();
         interObs.disconnect();
         res();
       }, timeout);
@@ -253,13 +245,11 @@ export async function waitForStableView(
       } else {
         clearTimeout(timeoutId);
         mutateObs.disconnect();
-        resizeObs.disconnect();
         interObs.disconnect();
         res();
       }
     }, origTime - Date.now());
 
-    const resizeObs = new ResizeObserver(reset);
     const interObs = new IntersectionObserver(reset, {
       threshold: IntersectThresholds,
     });
@@ -270,15 +260,12 @@ export async function waitForStableView(
         if (mutation.addedNodes?.length) {
           for (const newEle of mutation.addedNodes) {
             if (!(newEle instanceof Element)) continue;
-
-            resizeObs.observe(newEle);
             interObs.observe(newEle);
 
             if (newEle.shadowRoot) {
               mutateObs.observe(newEle.shadowRoot, MutationOptions);
 
               for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
-                resizeObs.observe(shadowChild);
                 interObs.observe(shadowChild);
               }
             }
@@ -288,7 +275,6 @@ export async function waitForStableView(
         if (mutation.removedNodes?.length) {
           for (const oldEle of mutation.removedNodes) {
             if (!(oldEle instanceof Element)) continue;
-            resizeObs.unobserve(oldEle);
             interObs.unobserve(oldEle);
           }
         }
@@ -299,7 +285,6 @@ export async function waitForStableView(
     for (const child of getChildrenDeep(ele)) {
       if (child.shadowRoot)
         mutateObs.observe(child.shadowRoot, MutationOptions);
-      resizeObs.observe(child);
       interObs.observe(child);
     }
   });
