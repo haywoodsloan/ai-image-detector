@@ -5,10 +5,11 @@ import { getImageData, normalizeImage } from 'common/utilities/image.js';
 import { l } from 'common/utilities/string.js';
 import { isDataUrl, isHttpUrl, shortenUrl } from 'common/utilities/url.js';
 
-import { queryVoteByImage, queryVotedLabel } from '../services/db/voteColl.js';
+import { queryVoteByImage } from '../services/db/voteColl.js';
 import { classifyIfAi } from '../services/detector.js';
 import { InvalidAuthError, assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
+import { getVotedLabel } from '../utilities/vote.js';
 
 const DetectorScoreType = 'detector';
 const UserScoreType = 'user';
@@ -63,7 +64,7 @@ app.http('imageAnalysis', {
 
     // Check for a voted class from the DB
     // If a voted class exists return it and the vote count
-    const votedLabel = await queryVotedLabel(hash);
+    const votedLabel = await getVotedLabel(hash);
     if (votedLabel) {
       console.log(l`Voted label ${votedLabel}`);
       const artificial = votedLabel.voteLabel === AiLabel ? 1 : 0;

@@ -8,7 +8,7 @@ export class InvalidAuthError extends Error {}
 export const AuthType = 'Bearer';
 
 /** @type {ExpiryMap<string, AuthDocument>} */
-const AuthCache = new ExpiryMap(TimeSpan.fromMinutes(5).valueOf());
+const AuthCache = new ExpiryMap(TimeSpan.fromMinutes(15).valueOf());
 const AuthTypeRegEx = new RegExp(`^${AuthType} (?<accessToken>\\S*)`, 'i');
 
 /**

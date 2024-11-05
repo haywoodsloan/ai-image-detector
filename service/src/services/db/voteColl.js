@@ -6,6 +6,7 @@ import { ObjectId } from 'mongodb';
 
 import { getServiceDb } from './serviceDb.js';
 import { UserCollName } from './userColl.js';
+import { clearCachedVote } from '../../utilities/vote.js';
 
 export const VoteCollName = 'votes';
 
@@ -89,7 +90,8 @@ export async function queryVoteByImage(userId, imageHash) {
  */
 export async function deleteVoteByImage(userId, imageHash) {
   const votes = await getVoteCollection();
-  return await votes.deleteOne({ userId: new ObjectId(userId), imageHash });
+  const result = await votes.deleteOne({ userId: new ObjectId(userId), imageHash });
+  if (result.deletedCount) clearCachedVote(imageHash);
 }
 
 /**
@@ -97,7 +99,8 @@ export async function deleteVoteByImage(userId, imageHash) {
  */
 export async function deleteVote(voteId) {
   const votes = await getVoteCollection();
-  return await votes.deleteOne({ _id: new ObjectId(voteId) });
+  const result =  await votes.findOneAndDelete({ _id: new ObjectId(voteId) });
+  if (result?.imageHash) clearCachedVote(result.imageHash)
 }
 
 /**
@@ -117,5 +120,6 @@ export async function upsertVotedLabel(imageHash, userId, voteLabel) {
     { upsert: true, returnDocument: 'after' }
   );
 
+  clearCachedVote(imageHash);
   return vote;
 }

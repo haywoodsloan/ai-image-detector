@@ -9,13 +9,13 @@ import { EntityId, getClient, input } from 'durable-functions';
 import {
   deleteVote,
   queryVote,
-  queryVotedLabel,
   queryVotesByUser,
   upsertVotedLabel,
 } from '../services/db/voteColl.js';
 import { InvalidAuthError, assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { UploadImageEntity } from './uploadImage.js';
+import { getVotedLabel } from '../utilities/vote.js';
 
 app.http('imageVote', {
   route: 'imageVote/{voteId?}',
@@ -67,7 +67,7 @@ app.http('imageVote', {
 
         // Add the vote and check the new label
         const vote = await upsertVotedLabel(hash, userId, voteLabel);
-        const { voteLabel: newLabel } = (await queryVotedLabel(hash)) ?? {};
+        const { voteLabel: newLabel } = (await getVotedLabel(hash)) ?? {};
         console.log(l`New voted label ${{ hash, label: newLabel }}`);
 
         // Check if the voted label has changed and upload if so
