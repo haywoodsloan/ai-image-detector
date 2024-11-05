@@ -1,3 +1,5 @@
+import { isDataUrl } from 'common/utilities/url.js';
+
 import { analyzeImage } from '@/api/detector.js';
 import { deleteImageVote, voteImageLabel } from '@/api/vote.js';
 import { DataUrlAction } from '@/entrypoints/background/actions/dataUrl.js';
@@ -23,6 +25,7 @@ export function useImageAnalysis(url) {
  */
 export async function checkImage(src, { force = false, signal } = {}) {
   try {
+    if (isDataUrl(src)) await waitForUploadSlot();
     return await analyzeImage(src, { signal });
   } catch (error) {
     if (error.name === 'AbortError') throw error;
@@ -32,12 +35,9 @@ export async function checkImage(src, { force = false, signal } = {}) {
     const checkPrivate = force || (autoCheck && autoCheckPrivate);
     if (error?.status !== 404 || !checkPrivate) throw error;
 
-    while (fullUploadQueue.size >= fullUploadLimit) {
-      debugWarn('Full upload limit reached waiting for others to complete');
-      await Promise.race([...fullUploadQueue]).catch();
-    }
-
+    await waitForUploadSlot();
     signal.throwIfAborted();
+
     const hardCheck = (async () => {
       try {
         const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
@@ -61,6 +61,7 @@ export async function checkImage(src, { force = false, signal } = {}) {
 export async function reportImage(src, label, { signal } = {}) {
   const { uploadImages, uploadImagesPrivate } = await userSettings.getValue();
   try {
+    if (isDataUrl(src)) await waitForUploadSlot();
     return await voteImageLabel(src, label, {
       skipUpload: !uploadImages,
       signal,
@@ -72,10 +73,8 @@ export async function reportImage(src, label, { signal } = {}) {
     if (error?.status !== 404) throw error;
     const skipUpload = !(uploadImagesPrivate && uploadImages);
 
-    while (fullUploadQueue.size >= fullUploadLimit) {
-      debugWarn('Full upload limit reached waiting for others to complete');
-      await Promise.race([...fullUploadQueue]).catch();
-    }
+    await waitForUploadSlot();
+    signal.throwIfAborted();
 
     const hardReport = (async () => {
       try {
@@ -98,4 +97,11 @@ export async function reportImage(src, label, { signal } = {}) {
  */
 export async function deleteImageReport(id, { signal } = {}) {
   return await deleteImageVote(id, { signal });
+}
+
+export async function waitForUploadSlot() {
+  while (fullUploadQueue.size >= fullUploadLimit) {
+    debugWarn('Full upload limit reached waiting for others to complete');
+    await Promise.race([...fullUploadQueue]).catch();
+  }
 }
