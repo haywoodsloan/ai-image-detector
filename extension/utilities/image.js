@@ -99,7 +99,7 @@ export async function deleteImageReport(id, { signal } = {}) {
   return await deleteImageVote(id, { signal });
 }
 
-export async function waitForUploadSlot() {
+async function waitForUploadSlot() {
   while (fullUploadQueue.size >= fullUploadLimit) {
     debugWarn('Full upload limit reached waiting for others to complete');
     await Promise.race([...fullUploadQueue]).catch();
