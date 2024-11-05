@@ -1,4 +1,4 @@
-import { isDataUrl } from 'common/utilities/url.js';
+import { isHttpUrl } from 'common/utilities/url.js';
 
 import { analyzeImage } from '@/api/detector.js';
 import { deleteImageVote, voteImageLabel } from '@/api/vote.js';
@@ -25,8 +25,21 @@ export function useImageAnalysis(url) {
  */
 export async function checkImage(src, { force = false, signal } = {}) {
   try {
-    if (isDataUrl(src)) await waitForUploadSlot();
-    return await analyzeImage(src, { signal });
+    if (isHttpUrl(src)) return await analyzeImage(src, { signal });
+
+    await waitForUploadSlot();
+    signal.throwIfAborted();
+
+    const hardCheck = (async () => {
+      try {
+        return await analyzeImage(src, { signal });
+      } finally {
+        fullUploadQueue.delete(hardCheck);
+      }
+    })();
+
+    fullUploadQueue.add(hardCheck);
+    return await hardCheck;
   } catch (error) {
     if (error.name === 'AbortError') throw error;
     signal.throwIfAborted();
@@ -61,11 +74,29 @@ export async function checkImage(src, { force = false, signal } = {}) {
 export async function reportImage(src, label, { signal } = {}) {
   const { uploadImages, uploadImagesPrivate } = await userSettings.getValue();
   try {
-    if (isDataUrl(src)) await waitForUploadSlot();
-    return await voteImageLabel(src, label, {
-      skipUpload: !uploadImages,
-      signal,
-    });
+    if (isHttpUrl(src)) {
+      return await voteImageLabel(src, label, {
+        skipUpload: !uploadImages,
+        signal,
+      });
+    }
+
+    await waitForUploadSlot();
+    signal.throwIfAborted();
+
+    const hardCheck = (async () => {
+      try {
+        return await voteImageLabel(src, label, {
+          skipUpload: !uploadImages,
+          signal,
+        });
+      } finally {
+        fullUploadQueue.delete(hardCheck);
+      }
+    })();
+
+    fullUploadQueue.add(hardCheck);
+    return await hardCheck;
   } catch (error) {
     if (error.name === 'AbortError') throw error;
     signal.throwIfAborted();
