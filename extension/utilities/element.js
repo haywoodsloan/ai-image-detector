@@ -136,6 +136,9 @@ export async function watchForViewUpdate(
         timeoutId = null;
         debounceId = null;
 
+        mutateObs.takeRecords();
+        interObs.takeRecords();
+
         callback();
       }, timeout);
     }
@@ -151,6 +154,9 @@ export async function watchForViewUpdate(
 
           timeoutId = null;
           debounceId = null;
+
+          mutateObs.takeRecords();
+          interObs.takeRecords();
 
           callback();
         }
