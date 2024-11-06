@@ -67,7 +67,11 @@ export default defineContentScript({
           if (!isImageElement(ele)) continue;
           oldUis.delete(ele);
 
-          if (isStyleHidden(ele) || isElementCovered(ele, MinVis)) {
+          if (
+            !isElementMinSize(ele) ||
+            isStyleHidden(ele) ||
+            isElementCovered(ele, MinVis)
+          ) {
             if (uiMap.has(ele)) detachIndicator(ele, signal);
           } else if (!uiMap.has(ele)) {
             attachIndicator(ele, signal);
@@ -79,6 +83,13 @@ export default defineContentScript({
           detachIndicator(oldUi, signal);
         }
       });
+    }
+
+    /**
+     * @param {Element} ele
+     */
+    function isElementMinSize(ele) {
+      return ele.clientWidth > 100 && ele.clientHeight > 50;
     }
 
     /**

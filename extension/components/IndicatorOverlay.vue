@@ -4,7 +4,6 @@ import { useResizeObserver } from '@vueuse/core';
 import DetectorSvg from '@/assets/detector.svg';
 import { useAuth } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
-import { waitForStablePosition } from '@/utilities/element.js';
 import { checkImage, useImageAnalysis } from '@/utilities/image.js';
 import { debugError, debugWarn } from '@/utilities/log.js';
 import { useSettings } from '@/utilities/settings.js';
@@ -46,36 +45,43 @@ const indicatorPosition = computed(
 );
 
 watch(indicatorPosition, () => {
-  const imgRect = image?.getBoundingClientRect();
-  const offsetRect = image?.offsetParent?.getBoundingClientRect();
+  // Skip if the offset parent can't be found.
+  if (!image.offsetParent) return;
 
-  // Skip if one of the rects can't get found, this element is being removed.
-  if (!imgRect || !offsetRect) return;
+  const imgRect = new DOMRect(
+    image.offsetLeft,
+    image.offsetTop,
+    image.offsetWidth,
+    image.offsetHeight
+  );
+
+  const offsetRect = new DOMRect(
+    0,
+    0,
+    image.offsetParent.clientWidth,
+    image.offsetParent.clientHeight
+  );
+
   updatePosition(imgRect, offsetRect);
 });
 
-/** @type {AbortController} */
-let resizeAbort;
-
-useResizeObserver([image, image.offsetParent], async () => {
-  resizeAbort?.abort();
-  resizeAbort = new AbortController();
-
-  const signal = resizeAbort.signal;
-  await waitForStablePosition(image);
-  if (signal.aborted) return;
-
-  const imgRect = image?.getBoundingClientRect();
-  const offsetRect = image?.offsetParent?.getBoundingClientRect();
-
+useResizeObserver([image, image.offsetParent], async (entries) => {
   // Skip if one of the rects can't get found, this element is being removed.
-  if (!imgRect || !offsetRect) return;
-  updatePosition(imgRect, offsetRect);
+  if (entries.length < 2) return;
+  let [{ contentRect: imgRect }, { contentRect: offsetRect }] = entries;
 
+  imgRect = new DOMRect(
+    image.offsetLeft,
+    image.offsetTop,
+    imgRect.width,
+    imgRect.height
+  );
+
+  updatePosition(imgRect, offsetRect);
   const width = Math.min(imgRect.width, offsetRect.width);
   const height = Math.min(imgRect.height, offsetRect.height);
 
-  if (width > 300 && height > 150) {
+  if (width > 300 && height > 200) {
     size.value = 'large';
   } else if (width > 100 && height > 50) {
     size.value = 'medium';
@@ -147,7 +153,7 @@ watch(
       } finally {
         pending = false;
       }
-    }
+    } else if (newSize === 'small') apiAbort?.abort();
   },
   { immediate: true }
 );
@@ -155,7 +161,6 @@ watch(
 // Abort any pending API requests
 onUnmounted(() => {
   apiAbort?.abort();
-  resizeAbort?.abort();
 });
 
 const iconColor = computed(() => {

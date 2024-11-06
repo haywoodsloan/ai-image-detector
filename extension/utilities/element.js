@@ -21,10 +21,10 @@ const ChildObsOptions = {
 };
 
 /**
- * @param {HTMLElement} ele
+ * @param {Element} ele
  */
 export function isElementCovered(ele, inset = 0) {
-  /** @type {Set<HTMLElement>} */
+  /** @type {Set<Element>} */
   const covering = new Set();
 
   for (const { x, y } of getElementGrid(ele, inset)) {
@@ -41,24 +41,7 @@ export function isElementCovered(ele, inset = 0) {
 }
 
 /**
- * @param {HTMLElement} ele
- */
-export function* getCoveredElements(ele) {
-  if (isStyleHidden(ele)) return;
-  for (const { x, y } of getElementGrid(ele)) {
-    for (const topEle of elementsFromPoint(x, y)) {
-      if (topEle === ele) continue;
-
-      if (!isStyleHidden(topEle)) {
-        yield topEle;
-        break;
-      }
-    }
-  }
-}
-
-/**
- * @param {HTMLElement} ele
+ * @param {Element} ele
  * @param {AbortSignal} [signal]
  */
 export async function waitForStablePosition(ele, signal) {
@@ -77,17 +60,18 @@ export async function waitForStablePosition(ele, signal) {
 }
 
 /**
- * @param {HTMLElement} ele
+ * @param {Element} ele
  */
 export function isImageElement(ele) {
   return ele.nodeName === 'IMG';
 }
 
 /**
- * @param {HTMLElement} ele
+ * @param {Element} ele
  */
 export function isStyleHidden(ele) {
   return (
+    !ele.offsetParent ||
     ele.offsetWidth <= 1 ||
     ele.offsetHeight <= 1 ||
     !ele.checkVisibility({
@@ -99,34 +83,50 @@ export function isStyleHidden(ele) {
 }
 
 /**
- * @param {HTMLElement} ele
+ * @param {Element | ShadowRoot} ele
  */
-export function* getChildrenDeep(ele) {
-  const stack = [...ele.children];
-  while (stack.length) {
-    const ele = stack.pop();
+export function getChildrenDeep(ele) {
+  /** @type {Element[]} */
+  const elements = [];
+  const roots = [ele];
 
-    stack.push(...ele.children);
-    if (ele.shadowRoot) stack.push(...ele.shadowRoot.children);
+  /** @type {Element | ShadowRoot} */
+  let root;
 
-    yield ele;
+  while ((root = roots.pop())) {
+    const children =
+      root instanceof Element
+        ? [...root.getElementsByTagName('*')]
+        : [...root.querySelectorAll('*')];
+
+    elements.push(...children);
+    roots.push(
+      ...children.filter((e) => e.shadowRoot).map((e) => e.shadowRoot)
+    );
   }
+
+  return elements;
 }
 
 /**
- * @param {HTMLElement} ele
+ * @param {Element} ele
  */
-export function* getParentChain(ele) {
+export function getParentChain(ele) {
+  /** @type {Element[]} */
+  const chain = [];
   let parent = ele.parentNode || ele.host;
+
   while (parent) {
-    if (parent instanceof HTMLElement) yield parent;
+    if (parent instanceof Element) chain.push(parent);
     parent = parent.parentNode || parent.host;
   }
+
+  return chain;
 }
 
 /**
  *
- * @param {HTMLElement} ele
+ * @param {Element} ele
  * @param {() => any} callback
  * @param {{
  *    timeout?: number | TimeSpan,
@@ -143,8 +143,12 @@ export async function watchForViewUpdate(
   let debounceId = null;
   let nextDebounceTime;
 
+  const debounceMs = debounce.valueOf();
   const reset = () => {
-    nextDebounceTime = Date.now() + debounce.valueOf();
+    nextDebounceTime = Date.now() + debounceMs;
+    interObs.takeRecords();
+    styleObs.takeRecords();
+
     if (!timeoutId && timeout) {
       timeoutId = setTimeout(() => {
         clearTimeout(debounceId);
@@ -180,45 +184,36 @@ export async function watchForViewUpdate(
     }
   };
 
-  const interObs = new IntersectionObserver(() => {
-    interObs.takeRecords();
-    styleObs.takeRecords();
-    reset();
-  }, IntersectObsOptions);
-
-  const styleObs = new MutationObserver(() => {
-    interObs.takeRecords();
-    styleObs.takeRecords();
-    reset();
-  });
+  const interObs = new IntersectionObserver(reset, IntersectObsOptions);
+  const styleObs = new MutationObserver(reset);
 
   const childObs = new MutationObserver((mutations) => {
+    reset();
+
+    //requestAnimationFrame(() => {
     for (const mutation of mutations) {
       for (const newEle of mutation.addedNodes) {
         if (!(newEle instanceof Element)) continue;
+        if (!newEle.isConnected) continue;
 
         interObs.observe(newEle);
         if (newEle.shadowRoot) {
-          requestAnimationFrame(() => {
-            childObs.observe(newEle.shadowRoot, ChildObsOptions);
-            styleObs.observe(newEle.shadowRoot, StyleObsOptions);
+          childObs.observe(newEle.shadowRoot, ChildObsOptions);
+          styleObs.observe(newEle.shadowRoot, StyleObsOptions);
 
-            for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
-              interObs.observe(shadowChild);
-            }
-          });
+          for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
+            interObs.observe(shadowChild);
+          }
         }
       }
 
       for (const oldEle of mutation.removedNodes) {
         if (!(oldEle instanceof Element)) continue;
+        if (!oldEle.isConnected) continue;
         interObs.unobserve(oldEle);
       }
     }
-
-    interObs.takeRecords();
-    styleObs.takeRecords();
-    reset();
+    //});
   });
 
   childObs.observe(ele, ChildObsOptions);
@@ -246,7 +241,7 @@ export async function watchForViewUpdate(
 
 /**
  *
- * @param {HTMLElement} ele
+ * @param {Element} ele
  * @param {{
  *    timeout?: number | TimeSpan,
  *    debounce?: number | TimeSpan
@@ -258,7 +253,11 @@ export async function waitForStableView(
 ) {
   await new Promise((res) => {
     let nextDebounceTime = Date.now() + debounce.valueOf();
-    const reset = () => (nextDebounceTime = Date.now() + debounce.valueOf());
+    const reset = () => {
+      nextDebounceTime = Date.now() + debounce.valueOf();
+      styleObs.takeRecords();
+      interObs.takeRecords();
+    };
 
     let timeoutId, debounceId;
     if (timeout) {
@@ -285,45 +284,35 @@ export async function waitForStableView(
       }
     }, origTime - Date.now());
 
-    const interObs = new IntersectionObserver(() => {
-      styleObs.takeRecords();
-      interObs.takeRecords();
-      reset();
-    }, IntersectObsOptions);
-
-    const styleObs = new MutationObserver(() => {
-      styleObs.takeRecords();
-      interObs.takeRecords();
-      reset();
-    });
+    const interObs = new IntersectionObserver(reset, IntersectObsOptions);
+    const styleObs = new MutationObserver(reset);
 
     const childObs = new MutationObserver((mutations) => {
+      reset();
+      //requestAnimationFrame(() => {
       for (const mutation of mutations) {
         for (const newEle of mutation.addedNodes) {
           if (!(newEle instanceof Element)) continue;
+          if (!newEle.isConnected) continue;
           interObs.observe(newEle);
 
           if (newEle.shadowRoot) {
-            requestAnimationFrame(() => {
-              childObs.observe(newEle.shadowRoot, ChildObsOptions);
-              styleObs.observe(newEle.shadowRoot, StyleObsOptions);
+            childObs.observe(newEle.shadowRoot, ChildObsOptions);
+            styleObs.observe(newEle.shadowRoot, StyleObsOptions);
 
-              for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
-                interObs.observe(shadowChild);
-              }
-            });
+            for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
+              interObs.observe(shadowChild);
+            }
           }
         }
 
         for (const oldEle of mutation.removedNodes) {
           if (!(oldEle instanceof Element)) continue;
+          if (!oldEle.isConnected) continue;
           interObs.unobserve(oldEle);
         }
       }
-
-      styleObs.takeRecords();
-      interObs.takeRecords();
-      reset();
+      //});
     });
 
     childObs.observe(ele, ChildObsOptions);
@@ -341,7 +330,7 @@ export async function waitForStableView(
 }
 
 /**
- * @param {HTMLElement} ele
+ * @param {Element} ele
  */
 function getVisibleRect(ele) {
   if (!ele.offsetParent) return;
@@ -395,12 +384,12 @@ function getVisibleRect(ele) {
 }
 
 /**
- * @param {HTMLElement} ele
+ * @param {Element} ele
  */
-function* getElementGrid(ele, inset = 0) {
+function getElementGrid(ele, inset = 0) {
   // Use just the visible rect of the image
   const visRect = getVisibleRect(ele);
-  if (!visRect) return;
+  if (!visRect) return [];
 
   const xInset = Math.min((visRect.width * inset) / 2, 1);
   const yInset = Math.min((visRect.height * inset) / 2, 1);
@@ -413,14 +402,19 @@ function* getElementGrid(ele, inset = 0) {
   const height = bottom - top;
   const width = right - left;
 
+  /** @type {{x: number, y: number}[]} */
+  const coords = [];
+
   // Check multiple points along a grid to estimate if the image is covered
   for (let i = 0; i <= GridSize; i++) {
     for (let j = 0; j <= GridSize; j++) {
       const x = width * (i / GridSize) + left;
       const y = height * (j / GridSize) + top;
-      yield { x, y };
+      coords.push({ x, y });
     }
   }
+
+  return coords;
 }
 
 /**
