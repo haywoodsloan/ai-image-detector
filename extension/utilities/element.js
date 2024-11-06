@@ -190,7 +190,6 @@ export async function watchForViewUpdate(
   const childObs = new MutationObserver((mutations) => {
     reset();
 
-    //requestAnimationFrame(() => {
     for (const mutation of mutations) {
       for (const newEle of mutation.addedNodes) {
         if (!(newEle instanceof Element)) continue;
@@ -209,11 +208,10 @@ export async function watchForViewUpdate(
 
       for (const oldEle of mutation.removedNodes) {
         if (!(oldEle instanceof Element)) continue;
-        if (!oldEle.isConnected) continue;
+        if (oldEle.isConnected) continue;
         interObs.unobserve(oldEle);
       }
     }
-    //});
   });
 
   childObs.observe(ele, ChildObsOptions);

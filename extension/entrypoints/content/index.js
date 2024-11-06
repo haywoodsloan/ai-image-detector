@@ -22,7 +22,7 @@ export default defineContentScript({
   async main(ctx) {
     const MinVis = 0.2;
 
-    const UpdateDebounce = TimeSpan.fromMilliseconds(250);
+    const UpdateDebounce = TimeSpan.fromMilliseconds(100);
     const InitTimeout = TimeSpan.fromSeconds(5);
 
     // Make sure the extension has been initialized
@@ -55,34 +55,49 @@ export default defineContentScript({
     function onViewUpdate() {
       aborter.abort();
       aborter = new AbortController();
-
       const signal = aborter.signal;
-      requestAnimationFrame(() => {
+
+      const toRemove = new Set(uiMap.keys());
+      const toAdd = new Set();
+
+      const children = getChildrenDeep(document.body);
+      for (const ele of children) {
         if (signal.aborted) return;
+        if (!isImageElement(ele)) continue;
 
-        const oldUis = new Set(uiMap.keys());
-        for (const ele of getChildrenDeep(document.body)) {
-          if (signal.aborted) return;
-
-          if (!isImageElement(ele)) continue;
-          oldUis.delete(ele);
-
-          if (
-            !isElementMinSize(ele) ||
-            isStyleHidden(ele) ||
-            isElementCovered(ele, MinVis)
-          ) {
-            if (uiMap.has(ele)) detachIndicator(ele, signal);
-          } else if (!uiMap.has(ele)) {
-            attachIndicator(ele, signal);
-          }
+        if (
+          isElementMinSize(ele) &&
+          !isStyleHidden(ele) &&
+          !isElementCovered(ele, MinVis)
+        ) {
+          toRemove.delete(ele);
+          toAdd.add(ele);
         }
+      }
 
-        for (const oldUi of oldUis) {
+      const removeIt = toRemove.values();
+      let remove = removeIt.next();
+
+      if (!remove.done) {
+        requestAnimationFrame(function removeUis() {
           if (signal.aborted) return;
-          detachIndicator(oldUi, signal);
-        }
-      });
+          detachIndicator(remove.value, signal);
+          remove = removeIt.next();
+          if (!(remove = removeIt.next()).done)
+            requestAnimationFrame(removeUis);
+        });
+      }
+
+      const addIt = toAdd.values().filter((e) => !uiMap.has(e));
+      let add = addIt.next();
+
+      if (!add.done) {
+        requestAnimationFrame(function addUis() {
+          if (signal.aborted) return;
+          attachIndicator(add.value, signal);
+          if (!(add = addIt.next()).done) requestAnimationFrame(addUis);
+        });
+      }
     }
 
     /**
@@ -93,7 +108,7 @@ export default defineContentScript({
     }
 
     /**
-     * @param {HTMLElement} image
+     * @param {Element} image
      * @param {AbortSignal} signal
      */
     function attachIndicator(image, signal) {
@@ -107,7 +122,7 @@ export default defineContentScript({
     }
 
     /**
-     * @param {HTMLElement} image
+     * @param {Element} image
      * @param {AbortSignal} signal
      */
     async function detachIndicator(image, signal) {
@@ -121,7 +136,7 @@ export default defineContentScript({
     }
 
     /**
-     * @param {HTMLElement} image
+     * @param {Element} image
      */
     function createIndicatorUi(image) {
       const ui = createIntegratedUi(ctx, {

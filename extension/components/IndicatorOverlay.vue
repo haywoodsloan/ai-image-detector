@@ -65,16 +65,22 @@ watch(indicatorPosition, () => {
   updatePosition(imgRect, offsetRect);
 });
 
-useResizeObserver([image, image.offsetParent], async (entries) => {
+useResizeObserver([image, image.offsetParent], async () => {
   // Skip if one of the rects can't get found, this element is being removed.
-  if (entries.length < 2) return;
-  let [{ contentRect: imgRect }, { contentRect: offsetRect }] = entries;
+  if (!image.offsetParent) return;
 
-  imgRect = new DOMRect(
+  const imgRect = new DOMRect(
     image.offsetLeft,
     image.offsetTop,
-    imgRect.width,
-    imgRect.height
+    image.offsetWidth,
+    image.offsetHeight
+  );
+
+  const offsetRect = new DOMRect(
+    0,
+    0,
+    image.offsetParent.clientWidth,
+    image.offsetParent.clientHeight
   );
 
   updatePosition(imgRect, offsetRect);
