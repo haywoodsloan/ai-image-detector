@@ -1,14 +1,23 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
 
 const GridSize = 2;
-const IntersectThresholds = 0.2;
+
+/** @type {IntersectionObserverInit} */
+const IntersectObsOptions = {
+  threshold: 0.2,
+};
 
 /** @type {MutationObserverInit} */
-const MutationOptions = {
+const StyleObsOptions = {
   subtree: true,
-  childList: true,
   attributes: true,
   attributeFilter: ['style', 'class'],
+};
+
+/** @type {MutationObserverInit} */
+const ChildObsOptions = {
+  subtree: true,
+  childList: true,
 };
 
 /**
@@ -143,8 +152,8 @@ export async function watchForViewUpdate(
         timeoutId = null;
         debounceId = null;
 
-        mutateObs.takeRecords();
         interObs.takeRecords();
+        styleObs.takeRecords();
 
         callback();
       }, timeout);
@@ -162,8 +171,8 @@ export async function watchForViewUpdate(
           timeoutId = null;
           debounceId = null;
 
-          mutateObs.takeRecords();
           interObs.takeRecords();
+          styleObs.takeRecords();
 
           callback();
         }
@@ -171,24 +180,33 @@ export async function watchForViewUpdate(
     }
   };
 
-  const interObs = new IntersectionObserver(() => reset(), {
-    threshold: IntersectThresholds,
+  const interObs = new IntersectionObserver(() => {
+    interObs.takeRecords();
+    styleObs.takeRecords();
+    reset();
+  }, IntersectObsOptions);
+
+  const styleObs = new MutationObserver(() => {
+    interObs.takeRecords();
+    styleObs.takeRecords();
+    reset();
   });
 
-  const mutateObs = new MutationObserver((mutations) => {
-    reset();
+  const childObs = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
-      if (mutation.type !== 'childList') continue;
-      
       for (const newEle of mutation.addedNodes) {
         if (!(newEle instanceof Element)) continue;
 
         interObs.observe(newEle);
         if (newEle.shadowRoot) {
-          mutateObs.observe(newEle.shadowRoot, MutationOptions);
-          for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
-            interObs.observe(shadowChild);
-          }
+          requestAnimationFrame(() => {
+            childObs.observe(newEle.shadowRoot, ChildObsOptions);
+            styleObs.observe(newEle.shadowRoot, StyleObsOptions);
+
+            for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
+              interObs.observe(shadowChild);
+            }
+          });
         }
       }
 
@@ -197,12 +215,22 @@ export async function watchForViewUpdate(
         interObs.unobserve(oldEle);
       }
     }
+
+    interObs.takeRecords();
+    styleObs.takeRecords();
+    reset();
   });
 
-  mutateObs.observe(ele, MutationOptions);
+  childObs.observe(ele, ChildObsOptions);
+  styleObs.observe(ele, StyleObsOptions);
+
   for (const child of getChildrenDeep(ele)) {
-    if (child.shadowRoot) mutateObs.observe(child.shadowRoot, MutationOptions);
     interObs.observe(child);
+
+    if (child.shadowRoot) {
+      childObs.observe(child.shadowRoot, ChildObsOptions);
+      styleObs.observe(child.shadowRoot, StyleObsOptions);
+    }
   }
 
   if (immediate) callback();
@@ -210,7 +238,8 @@ export async function watchForViewUpdate(
     clearTimeout(timeoutId);
     clearTimeout(debounceId);
 
-    mutateObs.disconnect();
+    childObs.disconnect();
+    styleObs.disconnect();
     interObs.disconnect();
   };
 }
@@ -235,7 +264,8 @@ export async function waitForStableView(
     if (timeout) {
       timeoutId = setTimeout(() => {
         clearTimeout(debounceId);
-        mutateObs.disconnect();
+        childObs.disconnect();
+        styleObs.disconnect();
         interObs.disconnect();
         res();
       }, timeout);
@@ -248,30 +278,40 @@ export async function waitForStableView(
         debounceId = setTimeout(check, origTime - Date.now());
       } else {
         clearTimeout(timeoutId);
-        mutateObs.disconnect();
+        childObs.disconnect();
+        styleObs.disconnect();
         interObs.disconnect();
         res();
       }
     }, origTime - Date.now());
 
-    const interObs = new IntersectionObserver(reset, {
-      threshold: IntersectThresholds,
+    const interObs = new IntersectionObserver(() => {
+      styleObs.takeRecords();
+      interObs.takeRecords();
+      reset();
+    }, IntersectObsOptions);
+
+    const styleObs = new MutationObserver(() => {
+      styleObs.takeRecords();
+      interObs.takeRecords();
+      reset();
     });
 
-    const mutateObs = new MutationObserver((mutations) => {
-      reset();
+    const childObs = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
-        if (mutation.type !== 'childList') continue;
-
         for (const newEle of mutation.addedNodes) {
           if (!(newEle instanceof Element)) continue;
           interObs.observe(newEle);
 
           if (newEle.shadowRoot) {
-            mutateObs.observe(newEle.shadowRoot, MutationOptions);
-            for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
-              interObs.observe(shadowChild);
-            }
+            requestAnimationFrame(() => {
+              childObs.observe(newEle.shadowRoot, ChildObsOptions);
+              styleObs.observe(newEle.shadowRoot, StyleObsOptions);
+
+              for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
+                interObs.observe(shadowChild);
+              }
+            });
           }
         }
 
@@ -280,13 +320,22 @@ export async function waitForStableView(
           interObs.unobserve(oldEle);
         }
       }
+
+      styleObs.takeRecords();
+      interObs.takeRecords();
+      reset();
     });
 
-    mutateObs.observe(ele, MutationOptions);
+    childObs.observe(ele, ChildObsOptions);
+    styleObs.observe(ele, StyleObsOptions);
+
     for (const child of getChildrenDeep(ele)) {
-      if (child.shadowRoot)
-        mutateObs.observe(child.shadowRoot, MutationOptions);
       interObs.observe(child);
+
+      if (child.shadowRoot) {
+        childObs.observe(child.shadowRoot, ChildObsOptions);
+        styleObs.observe(child.shadowRoot, StyleObsOptions);
+      }
     }
   });
 }
