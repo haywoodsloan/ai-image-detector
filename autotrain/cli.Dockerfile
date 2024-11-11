@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-runtime
+FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-devel
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV HF_HUB_ENABLE_HF_TRANSFER=1
@@ -7,8 +7,9 @@ ENV PYTHONUNBUFFERED=1
 ENV HOME=/workspace
 
 RUN apt-get update
-RUN apt-get install -y build-essential cmake git git-lfs libgl1 libglib2.0-0 libaio-dev libjpeg-dev libpng-dev libgomp1
 RUN apt-get upgrade -y
+RUN apt-get install -y build-essential cmake curl ca-certificates gcc locales net-tools wget libpq-dev \
+  libsndfile1-dev unzip git git-lfs libgl1 libglib2.0-0 libaio-dev libjpeg-dev libpng-dev libgomp1
 RUN apt-get autoremove && apt-get autoclean && apt-get clean
 
 RUN git lfs install

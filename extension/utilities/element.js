@@ -389,8 +389,8 @@ function getElementGrid(ele, inset = 0) {
   const visRect = getVisibleRect(ele);
   if (!visRect) return [];
 
-  const xInset = Math.min((visRect.width * inset) / 2, 1);
-  const yInset = Math.min((visRect.height * inset) / 2, 1);
+  const xInset = Math.max((visRect.width * inset) / 2, 1);
+  const yInset = Math.max((visRect.height * inset) / 2, 1);
 
   const left = visRect.left + xInset;
   const top = visRect.top + yInset;

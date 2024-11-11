@@ -54,6 +54,8 @@ const RealSubReddits = [
   'https://www.reddit.com/r/pics/',
   'https://www.reddit.com/r/BookCovers/',
   'https://www.reddit.com/r/Illustration/',
+  'https://www.reddit.com/r/magazinecovers/',
+  'https://www.reddit.com/r/graphic_design/'
 ];
 
 const SubReddits = {
