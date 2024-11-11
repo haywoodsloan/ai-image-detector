@@ -75,17 +75,9 @@ export default defineContentScript({
         }
       }
 
-      const removeIt = toRemove.values();
-      let remove = removeIt.next();
-
-      if (!remove.done) {
-        requestAnimationFrame(function removeUis() {
-          if (signal.aborted) return;
-          detachIndicator(remove.value, signal);
-          remove = removeIt.next();
-          if (!(remove = removeIt.next()).done)
-            requestAnimationFrame(removeUis);
-        });
+      for (const remove of toRemove) {
+        if (signal.aborted) return;
+        detachIndicator(remove, signal);
       }
 
       const addIt = toAdd.values().filter((e) => !uiMap.has(e));
