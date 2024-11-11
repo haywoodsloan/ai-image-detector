@@ -22,7 +22,7 @@ export default defineContentScript({
   async main(ctx) {
     const MinVis = 0.2;
 
-    const UpdateDebounce = TimeSpan.fromMilliseconds(100);
+    const UpdateDebounce = TimeSpan.fromMilliseconds(250);
     const InitTimeout = TimeSpan.fromSeconds(5);
 
     // Make sure the extension has been initialized
