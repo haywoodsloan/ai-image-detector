@@ -136,3 +136,10 @@ async function waitForUploadSlot() {
     await Promise.race([...fullUploadQueue]).catch();
   }
 }
+
+/**
+ * @param {HTMLImageElement} img
+ */
+export function getImageSrc(img) {
+  return img.currentSrc || img.src;
+}

@@ -1,6 +1,9 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
 
+import { getImageSrc } from './image.js';
+
 const GridSize = 2;
+const ExcludeRegex = /\.(gif)$/i;
 
 /** @type {IntersectionObserverInit} */
 const IntersectObsOptions = {
@@ -63,7 +66,13 @@ export async function waitForStablePosition(ele, signal) {
  * @param {Element} ele
  */
 export function isImageElement(ele) {
-  return ele.nodeName === 'IMG';
+  if (ele.nodeName !== 'IMG') return false;
+
+  const src = getImageSrc(ele);
+  if (!src) return false;
+
+  const { pathname } = new URL(src);
+  return !ExcludeRegex.test(pathname);
 }
 
 /**
@@ -190,41 +199,52 @@ export async function watchForViewUpdate(
   const childObs = new MutationObserver((mutations) => {
     reset();
 
-    for (const mutation of mutations) {
-      for (const newEle of mutation.addedNodes) {
-        if (!(newEle instanceof Element)) continue;
-        if (!newEle.isConnected) continue;
+    requestIdleCallback(() => {
+      for (const mutation of mutations) {
+        for (const newEle of mutation.addedNodes) {
+          if (!(newEle instanceof Element)) continue;
+          if (!newEle.isConnected) continue;
 
-        interObs.observe(newEle);
-        if (newEle.shadowRoot) {
-          childObs.observe(newEle.shadowRoot, ChildObsOptions);
-          styleObs.observe(newEle.shadowRoot, StyleObsOptions);
+          interObs.observe(newEle);
+          interObs.takeRecords();
 
-          for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
-            interObs.observe(shadowChild);
+          if (newEle.shadowRoot) {
+            childObs.observe(newEle.shadowRoot, ChildObsOptions);
+            styleObs.observe(newEle.shadowRoot, StyleObsOptions);
+
+            for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
+              interObs.observe(shadowChild);
+              interObs.takeRecords();
+            }
           }
         }
-      }
 
-      for (const oldEle of mutation.removedNodes) {
-        if (!(oldEle instanceof Element)) continue;
-        if (oldEle.isConnected) continue;
-        interObs.unobserve(oldEle);
+        for (const oldEle of mutation.removedNodes) {
+          if (!(oldEle instanceof Element)) continue;
+          if (oldEle.isConnected) continue;
+          interObs.unobserve(oldEle);
+        }
       }
-    }
+    });
   });
 
   childObs.observe(ele, ChildObsOptions);
-  styleObs.observe(ele, StyleObsOptions);
+  requestIdleCallback(() => {
+    styleObs.observe(ele, StyleObsOptions);
 
-  for (const child of getChildrenDeep(ele)) {
-    interObs.observe(child);
+    interObs.observe(ele);
+    interObs.takeRecords();
 
-    if (child.shadowRoot) {
-      childObs.observe(child.shadowRoot, ChildObsOptions);
-      styleObs.observe(child.shadowRoot, StyleObsOptions);
+    for (const child of getChildrenDeep(ele)) {
+      interObs.observe(child);
+      interObs.takeRecords();
+
+      if (child.shadowRoot) {
+        childObs.observe(child.shadowRoot, ChildObsOptions);
+        styleObs.observe(child.shadowRoot, StyleObsOptions);
+      }
     }
-  }
+  });
 
   if (immediate) callback();
   return () => {
@@ -287,43 +307,53 @@ export async function waitForStableView(
 
     const childObs = new MutationObserver((mutations) => {
       reset();
-      //requestAnimationFrame(() => {
-      for (const mutation of mutations) {
-        for (const newEle of mutation.addedNodes) {
-          if (!(newEle instanceof Element)) continue;
-          if (!newEle.isConnected) continue;
-          interObs.observe(newEle);
 
-          if (newEle.shadowRoot) {
-            childObs.observe(newEle.shadowRoot, ChildObsOptions);
-            styleObs.observe(newEle.shadowRoot, StyleObsOptions);
+      requestIdleCallback(() => {
+        for (const mutation of mutations) {
+          for (const newEle of mutation.addedNodes) {
+            if (!(newEle instanceof Element)) continue;
+            if (!newEle.isConnected) continue;
 
-            for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
-              interObs.observe(shadowChild);
+            interObs.observe(newEle);
+            interObs.takeRecords();
+
+            if (newEle.shadowRoot) {
+              childObs.observe(newEle.shadowRoot, ChildObsOptions);
+              styleObs.observe(newEle.shadowRoot, StyleObsOptions);
+
+              for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
+                interObs.observe(shadowChild);
+                interObs.takeRecords();
+              }
             }
           }
-        }
 
-        for (const oldEle of mutation.removedNodes) {
-          if (!(oldEle instanceof Element)) continue;
-          if (!oldEle.isConnected) continue;
-          interObs.unobserve(oldEle);
+          for (const oldEle of mutation.removedNodes) {
+            if (!(oldEle instanceof Element)) continue;
+            if (!oldEle.isConnected) continue;
+            interObs.unobserve(oldEle);
+          }
         }
-      }
-      //});
+      });
     });
 
     childObs.observe(ele, ChildObsOptions);
-    styleObs.observe(ele, StyleObsOptions);
+    requestIdleCallback(() => {
+      styleObs.observe(ele, StyleObsOptions);
 
-    for (const child of getChildrenDeep(ele)) {
-      interObs.observe(child);
+      interObs.observe(ele);
+      interObs.takeRecords();
 
-      if (child.shadowRoot) {
-        childObs.observe(child.shadowRoot, ChildObsOptions);
-        styleObs.observe(child.shadowRoot, StyleObsOptions);
+      for (const child of getChildrenDeep(ele)) {
+        interObs.observe(child);
+        interObs.takeRecords();
+
+        if (child.shadowRoot) {
+          childObs.observe(child.shadowRoot, ChildObsOptions);
+          styleObs.observe(child.shadowRoot, StyleObsOptions);
+        }
       }
-    }
+    });
   });
 }
 

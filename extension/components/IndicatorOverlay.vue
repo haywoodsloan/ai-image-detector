@@ -4,7 +4,11 @@ import { useResizeObserver } from '@vueuse/core';
 import DetectorSvg from '@/assets/detector.svg';
 import { useAuth } from '@/utilities/auth.js';
 import { DefaultIndicatorColor, getIndicatorColor } from '@/utilities/color';
-import { checkImage, useImageAnalysis } from '@/utilities/image.js';
+import {
+  checkImage,
+  getImageSrc,
+  useImageAnalysis,
+} from '@/utilities/image.js';
 import { debugError, debugWarn } from '@/utilities/log.js';
 import { useSettings } from '@/utilities/settings.js';
 
@@ -36,7 +40,7 @@ onMounted(() => {
 /** @type {Ref<'small' | 'medium' | 'large'>} */
 const size = ref('small');
 
-const imageSrc = image.currentSrc || image.src;
+const imageSrc = getImageSrc(image);
 if (!imageSrc) throw new Error('Missing image source');
 
 const settings = useSettings();

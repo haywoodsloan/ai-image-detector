@@ -12,6 +12,17 @@ const SenderAddress = isProd
   ? 'DoNotReply@ai-image-detector.com'
   : 'DoNotReply@ai-image-detector-dev.com';
 
+const DateTimeFormatter = new Intl.DateTimeFormat('default', {
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: 'numeric',
+  second: 'numeric',
+  timeZoneName: 'short',
+  timeZone: 'UTC',
+});
+
 export const getEmailClient = memoize(() => {
   const endpoint = process.env.COMM_ENDPOINT;
   const creds = new DefaultAzureCredential();
@@ -24,7 +35,10 @@ export const getEmailClient = memoize(() => {
  */
 export async function sendVerificationMail(email, code) {
   const emailTemplate = await getTemplateHtml(VerifyRequestHtml);
-  const emailContent = emailTemplate({ link: buildVerificationLink(code) });
+  const emailContent = emailTemplate({
+    link: buildVerificationLink(code),
+    date: DateTimeFormatter.format(new Date()),
+  });
 
   /** @type {EmailMessage} */
   const message = {

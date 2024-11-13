@@ -22,7 +22,7 @@ export default defineContentScript({
   async main(ctx) {
     const MinVis = 0.2;
 
-    const UpdateDebounce = TimeSpan.fromMilliseconds(250);
+    const UpdateDebounce = TimeSpan.fromMilliseconds(175);
     const InitTimeout = TimeSpan.fromSeconds(5);
 
     // Make sure the extension has been initialized
@@ -87,7 +87,9 @@ export default defineContentScript({
         requestAnimationFrame(function addUis() {
           if (signal.aborted) return;
           attachIndicator(add.value, signal);
-          if (!(add = addIt.next()).done) requestAnimationFrame(addUis);
+
+          if (!(add = addIt.next()).done && !signal.aborted)
+            requestAnimationFrame(addUis);
         });
       }
     }

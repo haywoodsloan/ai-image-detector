@@ -9,7 +9,7 @@ import { l } from 'common/utilities/string.js';
 // Use the detector version for db lookups
 export const DetectorVersion = '1';
 export const DetectorModels = [
-  'haywoodsloan/autotrain-ai-image-detect-20241101-0044',
+  'haywoodsloan/autotrain-ai-image-detect-20241109-0141',
 ];
 
 const DetectorErrorDelay = TimeSpan.fromMilliseconds(100);
