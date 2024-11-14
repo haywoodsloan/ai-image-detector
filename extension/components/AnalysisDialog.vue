@@ -66,7 +66,7 @@ onMounted(async () => {
   <v-dialog
     :model-value="pending !== null"
     max-width="max-content"
-    @after-leave="emit('close')"
+    @after-leave="pending !== null && emit('close')"
   >
     <template #default="{ isActive }">
       <StyleProvider>
