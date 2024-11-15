@@ -50,6 +50,8 @@ The process for analyzing an image is as follows:
   </li>
 </ol>
 
+The detector's classification model is fine-tuned from Microsoft's Swin v2 vision transformer. It has been trained on a set of +100k images collected from various AI art/image social media pages. The model has been tested using an independent set of +10k images, with an accuracy of +96%. The model is continuously being trained on new images which will continue to improve its accuracy over time, but there will always be some misses. This is why the community feedback is so important!
+
 <b>Data Privacy</b>
 The AI Image Detector stores both usage and training data. Separate privacy policies are provided for either type of data:
 
