@@ -78,7 +78,7 @@ app.http('imageAnalysis', {
     }
 
     // Get the AI classification score
-    const artificial = await classifyIfAi(data);
+    const artificial = await classifyIfAi(data, hash);
     console.log(l`Detector result ${{ artificial }}`);
     return { jsonBody: { artificial, scoreType: DetectorScoreType } };
   },
