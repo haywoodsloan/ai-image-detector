@@ -43,7 +43,7 @@ resource "azurerm_cdn_frontdoor_origin_group" "origin_group" {
 }
 
 resource "azurerm_cdn_frontdoor_endpoint" "endpoint" {
-  name                     = "ai-image-detector"
+  name                     = "ai-image-detector-${var.env_name}"
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.frontdoor.id
   enabled                  = true
 }
@@ -242,12 +242,6 @@ resource "azurerm_cdn_frontdoor_route" "default" {
   patterns_to_match               = ["/*"]
   enabled                         = true
 }
-
-resource "azurerm_cdn_frontdoor_custom_domain_association" "custom_domain_association" {
-  cdn_frontdoor_custom_domain_id = azurerm_cdn_frontdoor_custom_domain.custom_domain.id
-  cdn_frontdoor_route_ids        = [azurerm_cdn_frontdoor_route.default.id]
-}
-
 resource "azurerm_dns_cname_record" "frontdoor_cname" {
   depends_on          = [azurerm_cdn_frontdoor_route.default]
   name                = local.sub_domain
@@ -266,4 +260,18 @@ resource "azurerm_dns_txt_record" "frontdoor_txt" {
   record {
     value = azurerm_cdn_frontdoor_custom_domain.custom_domain.validation_token
   }
+}
+
+resource "time_sleep" "wait_for_records" {
+  create_duration = "60s"
+  triggers = {
+    cname_id = azurerm_dns_cname_record.frontdoor_cname.id
+    txt_id   = azurerm_dns_txt_record.frontdoor_txt.id
+  }
+}
+
+resource "azurerm_cdn_frontdoor_custom_domain_association" "custom_domain_association" {
+  depends_on                     = [time_sleep.wait_for_records]
+  cdn_frontdoor_custom_domain_id = azurerm_cdn_frontdoor_custom_domain.custom_domain.id
+  cdn_frontdoor_route_ids        = [azurerm_cdn_frontdoor_route.default.id]
 }

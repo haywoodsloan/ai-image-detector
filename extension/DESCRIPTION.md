@@ -80,6 +80,9 @@ You can browse and contribute to the project here:
   <li>
     <a href="https://huggingface.co/datasets/haywoodsloan/ai-images">Hugging Face: Training Data</a>
   </li>
+  <li>
+    <a href="https://huggingface.co/haywoodsloan/ai-image-detector-prod-deploy">Hugging Face: Classification Model</a>
+  </li>
 </ul>
 
 <i>Feedback</i>

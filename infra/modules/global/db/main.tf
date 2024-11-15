@@ -5,7 +5,7 @@ resource "random_string" "resource_code" {
 }
 
 resource "azurerm_role_definition" "cosmos_role" {
-  name              = "CosmosDB Connection String Reader"
+  name              = "CosmosDB Connection String Reader (${upper(var.env_name)})"
   scope             = azurerm_cosmosdb_account.cosmos_account.id
   assignable_scopes = [azurerm_cosmosdb_account.cosmos_account.id]
 
@@ -18,7 +18,7 @@ resource "azurerm_cosmosdb_account" "cosmos_account" {
   name                             = "cosmos-db-${random_string.resource_code.result}"
   location                         = var.region_names[0]
   resource_group_name              = var.rg_name
-  free_tier_enabled                = true
+  free_tier_enabled                = var.env_name == "prod"
   offer_type                       = "Standard"
   kind                             = "MongoDB"
   mongo_server_version             = "7.0"

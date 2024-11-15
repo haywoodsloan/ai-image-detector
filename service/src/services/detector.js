@@ -1,4 +1,5 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
+import { isProd } from 'common/utilities/environment.js';
 import {
   AiLabel,
   getImageClassification,
@@ -10,8 +11,9 @@ import ExpiryMap from 'expiry-map';
 
 const DetectorErrorDelay = TimeSpan.fromMilliseconds(100);
 const DetectorRetryLimit = 3;
-const DetectorEndpoint =
-  'https://scaqan9pa30cnlu4.us-east-1.aws.endpoints.huggingface.cloud';
+const DetectorEndpoint = isProd
+  ? 'https://f7gnzr5j8ly3qe4l.us-east-1.aws.endpoints.huggingface.cloud'
+  : 'https://bfl6qjch444kashs.us-east-1.aws.endpoints.huggingface.cloud';
 
 /** @type {ExpiryMap<string, number>} */
 const AnalysisCache = new ExpiryMap(TimeSpan.fromMinutes(15).valueOf());

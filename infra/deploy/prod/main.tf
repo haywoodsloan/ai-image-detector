@@ -9,8 +9,8 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "tfstate-dev"
-    storage_account_name = "tfstatew2uar"
+    resource_group_name  = "tfstate-prod"
+    storage_account_name = "tfstatepkq7e"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
   }
@@ -18,7 +18,6 @@ terraform {
 
 provider "azurerm" {
   subscription_id = "fd507e5f-043c-4851-b882-8ac289a4c5a4"
-
   features {
     resource_group {
       prevent_deletion_if_contains_resources = false
@@ -29,9 +28,9 @@ provider "azurerm" {
 data "azurerm_subscription" "current" {}
 
 locals {
-  env_name     = "dev"
+  env_name     = "prod"
   region_names = ["eastus2"]
-  domain_name  = "ai-image-detector-dev.com"
+  domain_name  = "ai-image-detector.com"
 }
 
 module "rg" {
