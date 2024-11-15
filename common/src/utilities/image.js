@@ -110,3 +110,10 @@ export async function getExt(imgData) {
     throw new Error('Could not determine extension from image data');
   } else return type.ext;
 }
+
+export async function getMime(imgData) {
+  const type = await fileTypeFromBuffer(imgData);
+  if (!type?.mime) {
+    throw new Error('Could not determine MIME from image data');
+  } else return type.mime;
+}

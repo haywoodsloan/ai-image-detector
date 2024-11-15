@@ -100,7 +100,7 @@ export async function deleteImage(image, branch = MainBranch) {
       // If there isn't an existing file skip retries and throw
       const oldPath = await getFullImagePath(fileName, head.oid);
       if (!oldPath) {
-        const error = new Error('Image to delete missing from HF')
+        const error = new Error('Image to delete missing from HF');
         console.warn(y`${error.message}`);
         throw new NonRetryableError(error);
       }
