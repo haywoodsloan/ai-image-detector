@@ -10,7 +10,7 @@ import { getAnalysisStorage, useStorage, userSettings } from './storage.js';
 
 /** @type {Set<Promise>} */
 const fullUploadQueue = new Set();
-const fullUploadLimit = 3;
+const fullUploadLimit = 5;
 
 /**
  * @param {string} url
