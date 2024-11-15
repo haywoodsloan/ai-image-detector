@@ -28,7 +28,7 @@ export async function checkImage(src, { force = false, signal } = {}) {
     if (isHttpUrl(src)) return await analyzeImage(src, { signal });
 
     await waitForUploadSlot();
-    signal.throwIfAborted();
+    signal?.throwIfAborted();
 
     const hardCheck = (async () => {
       try {
@@ -42,19 +42,19 @@ export async function checkImage(src, { force = false, signal } = {}) {
     return await hardCheck;
   } catch (error) {
     if (error.name === 'AbortError') throw error;
-    signal.throwIfAborted();
+    signal?.throwIfAborted();
 
     const { autoCheck, autoCheckPrivate } = await userSettings.getValue();
     const checkPrivate = force || (autoCheck && autoCheckPrivate);
     if (error?.status !== 404 || !checkPrivate) throw error;
 
     await waitForUploadSlot();
-    signal.throwIfAborted();
+    signal?.throwIfAborted();
 
     const hardCheck = (async () => {
       try {
         const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
-        signal.throwIfAborted();
+        signal?.throwIfAborted();
         return await analyzeImage(dataUrl, { signal });
       } finally {
         fullUploadQueue.delete(hardCheck);
@@ -82,7 +82,7 @@ export async function reportImage(src, label, { signal } = {}) {
     }
 
     await waitForUploadSlot();
-    signal.throwIfAborted();
+    signal?.throwIfAborted();
 
     const hardCheck = (async () => {
       try {
@@ -99,18 +99,18 @@ export async function reportImage(src, label, { signal } = {}) {
     return await hardCheck;
   } catch (error) {
     if (error.name === 'AbortError') throw error;
-    signal.throwIfAborted();
+    signal?.throwIfAborted();
 
     if (error?.status !== 404) throw error;
     const skipUpload = !(uploadImagesPrivate && uploadImages);
 
     await waitForUploadSlot();
-    signal.throwIfAborted();
+    signal?.throwIfAborted();
 
     const hardReport = (async () => {
       try {
         const dataUrl = await invokeBackgroundTask(DataUrlAction, { src });
-        signal.throwIfAborted();
+        signal?.throwIfAborted();
         return await voteImageLabel(dataUrl, label, { skipUpload, signal });
       } finally {
         fullUploadQueue.delete(hardReport);

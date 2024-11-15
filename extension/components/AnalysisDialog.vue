@@ -1,5 +1,6 @@
 <script setup>
 import { mdiCloseCircle } from '@mdi/js';
+import cloneDeep from 'clone-deep';
 
 import { AiIndicatorColor, PrimaryColor } from '@/utilities/color.js';
 import { checkImage } from '@/utilities/image.js';
@@ -12,7 +13,7 @@ import StyleProvider from './StyleProvider.vue';
 const SignInError = 'Please sign in to check for AI generated images.';
 const AnalysisError = 'Failed to check image, please try again.';
 
-const emit = defineEmits(['close', 'error']);
+const emit = defineEmits(['close']);
 const { image } = defineProps({
   image: {
     type: String,
@@ -31,15 +32,19 @@ const pending = ref(null);
 
 watch(analysis, async (newAnalysis) => {
   const stored = await getAnalysisStorage(image);
-  await stored.setValue(newAnalysis);
+  await stored.setValue(cloneDeep(newAnalysis));
 });
 
+const controller = new AbortController();
 onMounted(async () => {
   const storedAuth = await userAuth.getValue();
   if (storedAuth?.verification === 'verified') {
     try {
       pending.value = true;
-      analysis.value = await checkImage(image, true);
+      analysis.value = await checkImage(image, {
+        signal: controller.signal,
+        force: true,
+      });
       pending.value = false;
     } catch (err) {
       pending.value = null;
@@ -49,6 +54,10 @@ onMounted(async () => {
   } else {
     error.value = SignInError;
   }
+});
+
+onUnmounted(() => {
+  controller.abort();
 });
 </script>
 
