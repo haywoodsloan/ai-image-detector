@@ -51,7 +51,7 @@ The process for analyzing an image is as follows:
 </ol>
 
 <b>Data Privacy</b>
-The AI Image Detector
+The AI Image Detector stores both usage and training data. Separate privacy policies are provided for either type of data:
 
 <i>Usage Data</i>
 The image data used during analysis is never store, and there are no logs kept of what images (including their URLs) a user has analyzed. Image data is only stored when a user reports an image and they have enabled the option for uploading reported images. The images reported by a user are tracked by their data signature and not the image itself. The data signature cannot be used to recreate the original image.
