@@ -3,6 +3,7 @@ import('common/types.d.ts');
 declare type HttpResponseInit = import('@azure/functions').HttpResponseInit;
 declare type InvocationContext = import('@azure/functions').InvocationContext;
 declare type HttpRequest = import('@azure/functions').HttpRequest;
+declare type HttpHandler = import('@azure/functions').HttpHandler;
 declare type EmailMessage = import('@azure/communication-email').EmailMessage;
 
 declare type ObjectId = import('mongodb').ObjectId;

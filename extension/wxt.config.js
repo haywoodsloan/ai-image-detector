@@ -18,7 +18,7 @@ export default defineConfig({
       'activeTab',
       'http://*/*',
       'https://*/*',
-      'file://*/*',
+      'file:///*',
     ],
     browser_specific_settings: {
       gecko: { id: 'DoNotReply@ai-image-detector.com' },
