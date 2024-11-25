@@ -293,6 +293,7 @@ try {
 if (validationQueue.size) {
   const results = await Promise.all([...validationQueue]);
   const uploads = results.filter(Boolean);
+  console.log(y`Partial batch of ${uploads.length} image(s) in queue`);
   pendingUploads.add(uploadImages(uploads));
 }
 
