@@ -53,7 +53,10 @@ resource "azurerm_cosmosdb_mongo_database" "mongo_db" {
   name                = "service"
   resource_group_name = var.rg_name
   account_name        = azurerm_cosmosdb_account.cosmos_account.name
-  throughput          = 1000
+
+  autoscale_settings {
+    max_throughput = 1000
+  }
 }
 
 resource "azurerm_cosmosdb_mongo_collection" "auths" {
