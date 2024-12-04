@@ -3,7 +3,7 @@ import TimeSpan from 'common/utilities/TimeSpan.js';
 import { getImageSrc } from './image.js';
 
 const GridSize = 2;
-const ExcludeRegex = /\.(gif|svg)$/i;
+const ExcludeRegex = /\.(gif|svg|avif)$/i;
 
 /** @type {IntersectionObserverInit} */
 const IntersectObsOptions = {

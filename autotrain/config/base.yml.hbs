@@ -23,7 +23,7 @@ params:
   warmup_ratio: 0
   weight_decay: 1e-3
   mixed_precision: bf16
-  save_total_limit: 10
+  eval_strategy: no
 
 hub:
   username: ${HF_USERNAME}
