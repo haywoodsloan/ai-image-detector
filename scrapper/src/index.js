@@ -48,14 +48,18 @@ const AiSubReddits = [
   'https://www.reddit.com/r/AiArtLounge/',
   'https://www.reddit.com/r/midjourney',
   'https://www.reddit.com/r/dalle2',
+  'https://www.reddit.com/r/ImagenAI/',
 ];
+
 const RealSubReddits = [
   'https://www.reddit.com/r/Art/',
   'https://www.reddit.com/r/pics/',
   'https://www.reddit.com/r/BookCovers/',
   'https://www.reddit.com/r/Illustration/',
   'https://www.reddit.com/r/magazinecovers/',
-  'https://www.reddit.com/r/graphic_design/'
+  'https://www.reddit.com/r/graphic_design/',
+  'https://www.reddit.com/r/museum/',
+  'https://www.reddit.com/r/ArtHistory/',
 ];
 
 const SubReddits = {
