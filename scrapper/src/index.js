@@ -115,7 +115,7 @@ const browser = await launch({
   args: [`--window-size=${WindowWidth},${WindowHeight}`],
 });
 
-const page = await browser.newPage();
+const [page] = await browser.pages()
 await page.setUserAgent(ChromeUA);
 
 const urls = await fetchKnownUrls();
