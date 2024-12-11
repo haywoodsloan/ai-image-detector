@@ -565,17 +565,35 @@ async function getFullImagePath(fileName, branch = MainBranch) {
       return await firstResult(AllLabels, async (label) => {
         const filePath = `${subset.path}/${label}/${fileName}`;
 
-        const found = await fileExists({
-          path: filePath,
-          repo: DatasetRepo,
-          revision: branch,
-          credentials,
-          fetch: (input, init) =>
-            fetch(input, {
-              ...init,
-              signal: abort.signal,
-            }),
-        });
+        const found = await retry(
+          async () => {
+            try {
+              return await fileExists({
+                path: filePath,
+                repo: DatasetRepo,
+                revision: branch,
+                credentials,
+                fetch: (input, init) =>
+                  fetch(input, {
+                    ...init,
+                    signal: abort.signal,
+                  }),
+              });
+            } catch (error) {
+              if (error?.name === 'AbortError')
+                throw new NonRetryableError(error);
+              throw error;
+            }
+          },
+          async (error, retryCount) => {
+            if (isRateLimitError(error)) {
+              // Warn about rate limiting and wait a few minutes
+              const delay = RateLimitDelay / 60 / 1000;
+              console.warn(r`Rate-limited, waiting ${delay} mins`);
+              await wait(RateLimitDelay - HuggingFaceErrorDelay * retryCount);
+            } else console.warn(rl`Retrying check if image exists ${error}`);
+          }
+        );
 
         if (found) return filePath;
       });

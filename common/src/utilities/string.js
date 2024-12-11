@@ -61,16 +61,12 @@ function stringify(val) {
       if (val instanceof AggregateError) {
         const errors = flattenAggregateError(val);
         return `[\n${errors
-          .map(({ stack }) => {
-            const [errMsg, errLoc] = stack.split(/\r?\n\s*/);
-            return `    ${errMsg} ${errLoc}`;
-          })
+          .map((val) => `    ${val?.cause || val}`)
           .join(',\n')}\n]`;
       }
 
       if (val instanceof Error) {
-        const [errMsg, errLoc] = val.stack.split(/\r?\n\s*/);
-        return `(${errMsg} ${errLoc})`;
+        return `(${val?.cause || val})`;
       }
 
       return `(${Object.entries(val)
