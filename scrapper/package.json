@@ -21,6 +21,7 @@
   "license": "ISC",
   "dependencies": {
     "common": "file:../common",
+    "csv-parse": "^5.6.0",
     "puppeteer": "^22.15.0",
     "user-agents": "^1.1.378",
     "yargs": "^17.7.2"

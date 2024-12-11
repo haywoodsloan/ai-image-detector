@@ -16,9 +16,11 @@ import { getExt, sanitizeImage } from 'common/utilities/image.js';
 import { withRetry } from 'common/utilities/retry.js';
 import { loadSettings } from 'common/utilities/settings.js';
 import { wait } from 'common/utilities/sleep.js';
+import { parse } from 'csv-parse';
 import { mkdir, writeFile } from 'fs/promises';
 import { basename, join } from 'path';
 import { launch } from 'puppeteer';
+import { pipeline } from 'stream';
 import UserAgent from 'user-agents';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -41,6 +43,9 @@ const args = await yargs(hideBin(process.argv))
 // #endregion
 
 // #region Constants
+const NgaImagesCsv =
+  'https://raw.githubusercontent.com/NationalGalleryOfArt/opendata/refs/heads/main/data/published_images.csv';
+
 const AiSubReddits = [
   'https://www.reddit.com/r/aiArt',
   'https://www.reddit.com/r/deepdream',
@@ -108,6 +113,40 @@ const scrappedUrls = new Set();
 const { HF_KEY } = await loadSettings();
 setHfAccessToken(HF_KEY);
 
+const urls = await fetchKnownUrls();
+for (const url of urls) scrappedUrls.add(url);
+
+// Track the total number of images scrapped
+let count = 0;
+
+// Fetch the list of images from the National Gallery of Art
+const csvRequest = await fetch(NgaImagesCsv);
+const parser = parse({ columns: true });
+
+// Pipe the NGoA request through the CSV parser
+const mediaPipeline = pipeline(csvRequest.body, parser, (err) => {
+  if (err) console.error(r`Failed to parse National Gallery of Art media list`);
+});
+
+// Iterate over each image from the NGoA
+for await (const media of mediaPipeline) {
+  if (count >= args.count) break;
+  const imageUrl = new URL(`${media.iiifurl}/full/max/0/default.jpg`);
+
+  // Skip urls to images that have already been scrapped
+  if (scrappedUrls.has(imageUrl.toString())) continue;
+  scrappedUrls.add(imageUrl.toString());
+
+  queueValidation(imageUrl, RealLabel);
+  if (validationQueue.size >= UploadBatchSize) {
+    await queueUpload();
+  }
+
+  if (pendingUploads.size >= MaxPendingUploads) {
+    await throttleUploads();
+  }
+}
+
 // Launch Puppeteer
 const browser = await launch({
   headless: !args.debug,
@@ -115,14 +154,10 @@ const browser = await launch({
   args: [`--window-size=${WindowWidth},${WindowHeight}`],
 });
 
-const [page] = await browser.pages()
+const [page] = await browser.pages();
 await page.setUserAgent(ChromeUA);
 
-const urls = await fetchKnownUrls();
-for await (const url of urls) scrappedUrls.add(url);
-
 // Browse to multiple Subreddits and scrape files
-let count = 0;
 try {
   for (const [label, scrapeUrls] of Object.entries(SubReddits)) {
     for (let i = 0; i < scrapeUrls.length && count < args.count; i++) {
@@ -169,63 +204,13 @@ try {
           if (scrappedUrls.has(origin.toString())) continue;
           scrappedUrls.add(origin.toString());
 
-          /** @type {Promise<HfImage?>} */
-          const validation = (async () => {
-            // Fetch the image, validate it, then determine where to upload it
-            let data;
-            try {
-              // Get the sanitized version of the image
-              data = await sanitizeImage(origin);
-            } catch (error) {
-              // If the image couldn't be sanitized skip it
-              console.log(r`Skipping ${origin} [${error}]`);
-              validationQueue.delete(validation);
-              return;
-            }
-
-            // Build the file name from the hash of the data
-            const hash = createHash(data);
-            const ext = await getExt(data);
-            const fileName = sanitizeFileName(`${hash}.${ext}`);
-
-            // Get a split to add the image to
-            console.log(b`Found ${fileName} at ${origin}`);
-            const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
-
-            // Increase the total count and return an image object
-            count++;
-            const content = new Blob([data]);
-            return { split, label, fileName, origin, content };
-          })();
-
-          validationQueue.add(validation);
+          queueValidation(origin, label);
           if (validationQueue.size >= UploadBatchSize) {
-            /** @type {Map<string, HfImage>} */
-            const unique = new Map();
-
-            for (const validation of validationQueue) {
-              const result = await validation;
-              if (result && !unique.has(result.fileName))
-                unique.set(result.fileName, result);
-              else validationQueue.delete(validation);
-            }
-
-            // Skip uploading if less than the batch size after validation
-            if (unique.size < UploadBatchSize) continue;
-
-            const pendingUpload = uploadImages([...unique.values()]).finally(
-              () => pendingUploads.delete(pendingUpload)
-            );
-
-            pendingUploads.add(pendingUpload);
-            validationQueue.clear();
+            await queueUpload();
           }
 
           if (pendingUploads.size >= MaxPendingUploads) {
-            console.log(y`Waiting for one or more uploads to complete`);
-            while (pendingUploads.size >= MaxPendingUploads)
-              await Promise.race([...pendingUploads]).catch();
-            console.log(y`Resuming scrapping`);
+            await throttleUploads();
           }
         }
 
@@ -307,3 +292,70 @@ await Promise.all([...pendingUploads]);
 // Close browser and finish
 await browser.close();
 console.log(g`Done!`);
+
+/**
+ * @param {URL} origin
+ * @param {LabelType} label
+ */
+function queueValidation(origin, label) {
+  /** @type {Promise<HfImage?>} */
+  const validation = (async () => {
+    // Fetch the image, validate it, then determine where to upload it
+    let data;
+    try {
+      // Get the sanitized version of the image
+      data = await sanitizeImage(origin);
+    } catch (error) {
+      // If the image couldn't be sanitized skip it
+      console.log(r`Skipping ${origin} [${error}]`);
+      validationQueue.delete(validation);
+      return;
+    }
+
+    // Build the file name from the hash of the data
+    const hash = createHash(data);
+    const ext = await getExt(data);
+    const fileName = sanitizeFileName(`${hash}.${ext}`);
+
+    // Get a split to add the image to
+    console.log(b`Found ${fileName} at ${origin}`);
+    const split = Math.random() < TestRatio ? TestSplit : TrainSplit;
+
+    // Increase the total count and return an image object
+    count++;
+    const content = new Blob([data]);
+    return { split, label, fileName, origin, content };
+  })();
+
+  // Add the validation promise to the queue
+  validationQueue.add(validation);
+}
+
+async function queueUpload() {
+  /** @type {Map<string, HfImage>} */
+  const unique = new Map();
+
+  for (const validation of validationQueue) {
+    const result = await validation;
+    if (result && !unique.has(result.fileName))
+      unique.set(result.fileName, result);
+    else validationQueue.delete(validation);
+  }
+
+  // Skip uploading if less than the batch size after validation
+  if (unique.size < UploadBatchSize) return;
+
+  const pendingUpload = uploadImages([...unique.values()]).finally(() =>
+    pendingUploads.delete(pendingUpload)
+  );
+
+  pendingUploads.add(pendingUpload);
+  validationQueue.clear();
+}
+
+async function throttleUploads() {
+  console.log(y`Waiting for one or more uploads to complete`);
+  while (pendingUploads.size >= MaxPendingUploads)
+    await Promise.race([...pendingUploads]).catch();
+  console.log(y`Resuming scrapping`);
+}
