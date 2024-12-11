@@ -43,6 +43,12 @@ onMounted(() => {
     display: contents !important;
   }
 
+  &.v-overlay-container {
+    display: contents !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
   * {
     font-family: 'Roboto', sans-serif !important;
     text-transform: unset;
