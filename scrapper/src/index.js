@@ -120,15 +120,19 @@ for (const url of urls) scrappedUrls.add(url);
 let count = 0;
 
 // Fetch the list of images from the National Gallery of Art
+console.log(y`Fetching image list from the National Gallery of Art`);
 const csvRequest = await fetch(NgaImagesCsv);
 const parser = parse({ columns: true });
 
 // Pipe the NGoA request through the CSV parser
 const mediaPipeline = pipeline(csvRequest.body, parser, (err) => {
-  if (err) console.error(r`Failed to parse National Gallery of Art media list`);
+  if (err) {
+    console.error(r`Failed to parse image list from National Gallery of Art`);
+  }
 });
 
 // Iterate over each image from the NGoA
+console.log(g`Finished fetching image list`);
 for await (const media of mediaPipeline) {
   if (count >= args.count) break;
   const imageUrl = new URL(`${media.iiifurl}/full/max/0/default.jpg`);
