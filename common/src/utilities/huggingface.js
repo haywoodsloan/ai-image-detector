@@ -243,46 +243,44 @@ export async function uploadImages(images, branch = MainBranch) {
               // Double check that all the images are new
               // A duplicate image may have been added since validation
               newImages.length = 0;
-              await Promise.all(
-                initialUploads.map(async ({ resolve, image }) => {
-                  const name = image.fileName;
-                  if (await isExistingImage(name, head.oid)) {
-                    console.log(y`Skipping ${name} [image already on HF]`);
-                    pendingUploads.delete(name);
-                    resolve();
-                  } else {
-                    newImages.push(image);
-                  }
-                })
-              );
-
-              const newCt = newImages.length;
-              if (!newCt) return;
-
-              // Create a set of upload for the image
-              // Recreate with each retry incase the folders are now full
-              const uploads = await createUploads(newImages, head.oid);
-
-              // If there are new uploads push them to HF
-              for (const { path } of uploads) pendingPaths.add(path);
-              try {
-                // Upload the images and url update
-                await uploadFiles({
-                  files: uploads,
-                  repo: DatasetRepo,
-                  branch,
-                  credentials,
-                  useWebWorkers: true,
-                  commitTitle: `Add ${newCt} images`,
-                  parentCommit: head.oid,
-                });
-              } finally {
-                // Remove the pending paths either way because we'll get new paths
-                for (const { path } of uploads) pendingPaths.delete(path);
+              for (const { resolve, image } of initialUploads) {
+                const name = image.fileName;
+                if (await isExistingImage(name, head.oid)) {
+                  console.log(y`Skipping ${name} [image already on HF]`);
+                  pendingUploads.delete(name);
+                  resolve();
+                } else {
+                  newImages.push(image);
+                }
               }
 
-              const skippedCt = pendingCt - newCt;
-              console.log(g`${newCt} image(s) uploaded [${skippedCt} skipped]`);
+              const newCt = newImages.length;
+              if (newCt) {
+                // Create a set of upload for the image
+                // Recreate with each retry incase the folders are now full
+                const uploads = await createUploads(newImages, head.oid);
+
+                // If there are new uploads push them to HF
+                for (const { path } of uploads) pendingPaths.add(path);
+                try {
+                  // Upload the images and url update
+                  await uploadFiles({
+                    files: uploads,
+                    repo: DatasetRepo,
+                    branch,
+                    credentials,
+                    useWebWorkers: true,
+                    commitTitle: `Add ${newCt} images`,
+                    parentCommit: head.oid,
+                  });
+                } finally {
+                  // Remove the pending paths either way because we'll get new paths
+                  for (const { path } of uploads) pendingPaths.delete(path);
+                }
+
+                const skipCt = pendingCt - newCt;
+                console.log(g`${newCt} image(s) uploaded [${skipCt} skipped]`);
+              }
 
               // Add all urls to the known list even if we skipped them
               await uploadKnownUrls(
