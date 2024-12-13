@@ -75,6 +75,7 @@ onUnmounted(() => {
   <v-dialog
     :model-value="pending !== null"
     max-width="max-content"
+    z-index="2147483647"
     @after-leave="pending !== null && emit('close')"
   >
     <template #default="{ isActive }">
