@@ -1,6 +1,7 @@
 <script setup>
 import { getParentChain } from '@/utilities/element.js';
 import { OverlayClasses } from '@/utilities/vue.js';
+
 import { ExtensionId } from '../utilities/vue.js';
 
 /** @type {Ref<HTMLElement>} */
@@ -25,15 +26,10 @@ onMounted(() => {
 </template>
 
 <style lang="scss">
+@use '@fontsource/roboto';
+
 @use '~/styles/settings.scss';
 @use 'vuetify';
-
-@use '@fontsource/roboto/scss/mixins' as Roboto;
-@include Roboto.faces(
-  $directory: '@fontsource/roboto/files',
-  $weights: all,
-  $styles: all
-);
 
 [data-aid-3bi9lk5g] {
   @extend :root;
