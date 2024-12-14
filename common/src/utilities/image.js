@@ -46,7 +46,8 @@ export async function getImageData(uri) {
   // If a url was provided, fetch it
   if (isHttpUrl(uri) || isDataUrl(uri)) {
     const req = await fetch(uri);
-    if (!req.ok) throw new Error(`Image fetch failed [${req.statusText}]`);
+    if (!req.ok)
+      throw new Error(`Image fetch failed, ${req.statusText || req.status}`);
 
     // Make sure the content type is correct
     const contentType = req.headers.get('Content-Type');
