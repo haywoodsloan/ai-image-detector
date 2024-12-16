@@ -16,11 +16,10 @@ import { getExt, sanitizeImage } from 'common/utilities/image.js';
 import { withRetry } from 'common/utilities/retry.js';
 import { loadSettings } from 'common/utilities/settings.js';
 import { wait } from 'common/utilities/sleep.js';
-import { parse } from 'csv-parse';
+import { parse } from 'csv-parse/sync';
 import { mkdir, writeFile } from 'fs/promises';
 import { basename, join } from 'path';
 import { launch } from 'puppeteer';
-import { pipeline } from 'stream';
 import UserAgent from 'user-agents';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -122,16 +121,16 @@ let count = 0;
 // Fetch the list of images from the National Gallery of Art
 console.log(y`Fetching image list from the National Gallery of Art`);
 const csvRequest = await fetch(NgaImagesCsv);
-const parser = parse({ columns: true, skip_empty_lines: true });
 
 // Pipe the NGoA request through the CSV parser
-const mediaPipeline = pipeline(await csvRequest.text(), parser, (err) => {
-  if (err) console.error(rl`Failed to parse NGoA image list ${err}`);
+const mediaRecords = parse(await csvRequest.text(), {
+  columns: true,
+  skip_empty_lines: true,
 });
 
 // Iterate over each image from the NGoA
 console.log(g`Finished fetching image list`);
-for await (const media of mediaPipeline) {
+for await (const media of mediaRecords) {
   if (count >= args.count) break;
   const imageUrl = new URL(`${media.iiifurl}/full/max/0/default.jpg`);
 
