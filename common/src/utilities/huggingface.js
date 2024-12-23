@@ -578,8 +578,7 @@ async function getFullImagePath(fileName, branch = MainBranch) {
                   }),
               });
             } catch (error) {
-              if (error?.name === 'AbortError')
-                throw new NonRetryableError(error);
+              if (error?.name === 'AbortError') return;
               throw error;
             }
           },
