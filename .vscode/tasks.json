@@ -247,7 +247,7 @@
     {
       "label": "Prune Service Deps",
       "type": "shell",
-      "command": "npm prune --omit=dev --omit=optional",
+      "command": "npm prune --omit=dev",
       "problemMatcher": [],
       "options": { "cwd": "${workspaceFolder}/service" }
     }
