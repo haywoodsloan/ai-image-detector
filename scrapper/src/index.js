@@ -124,7 +124,8 @@ console.log(y`Fetching image list from the National Gallery of Art`);
 const ngoaRequest = await fetch(NgoaImageCsv);
 
 if (!ngoaRequest.ok) {
-  console.log(r`Failed fetching image list, skipping to next source`);
+  const error = `Status: ${ngoaRequest.statusText || ngoaRequest.status}`;
+  console.log(r`Fetch failed image list, skipping to next source (${error})`);
 } else {
   // Pipe the NGoA request through the CSV parser
   const ngoaRecords = parse(await ngoaRequest.text(), {
@@ -160,7 +161,8 @@ const pexelsRequest = await fetch(PexelsApi, {
 });
 
 if (!pexelsRequest.ok) {
-  console.log(r`Pexels request failed, skipping to next source`);
+  const error = `Status: ${pexelsRequest.statusText || pexelsRequest.status}`;
+  console.log(r`Pexels request failed, skipping to next source (${error})`);
 } else {
   let { photos, next_page } = await pexelsRequest.json();
   console.log(g`Finished fetching first page of images`);
@@ -189,7 +191,8 @@ if (!pexelsRequest.ok) {
       });
 
       if (!nextRequest.ok) {
-        console.log(r`Pexels request failed, skipping to next source`);
+        const error = `Status: ${nextRequest.statusText || nextRequest.status}`;
+        console.log(r`Request failed, skipping to next source (${error})`);
         break;
       }
 
