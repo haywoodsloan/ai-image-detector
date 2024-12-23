@@ -42,9 +42,13 @@ const args = await yargs(hideBin(process.argv))
 // #endregion
 
 // #region Constants
-const PexelsApi = 'https://api.pexels.com/v1/curated?per_page=80';
 const NgoaImageCsv =
   'https://raw.githubusercontent.com/NationalGalleryOfArt/opendata/refs/heads/main/data/published_images.csv';
+
+const PexelsApis = [
+  'https://api.pexels.com/v1/curated?per_page=80',
+  'https://api.pexels.com/v1/search?query=edited&per_page=80',
+];
 
 const AiSubReddits = [
   'https://www.reddit.com/r/aiArt',
@@ -154,16 +158,19 @@ if (!ngoaRequest.ok) {
   }
 }
 
-// Fetch the list of curated images from Pexels
-console.log(y`Fetching curated images from Pexels`);
-const pexelsRequest = await fetch(PexelsApi, {
-  headers: { Authorization: PEXELS_KEY },
-});
+// Fetch the list of images from Pexels for each API endpoint
+for (const pexelsApi of PexelsApis) {
+  console.log(y`Fetching first page of images from Pexels (${pexelsApi})`);
+  const pexelsRequest = await fetch(pexelsApi, {
+    headers: { Authorization: PEXELS_KEY },
+  });
 
-if (!pexelsRequest.ok) {
-  const error = `Status: ${pexelsRequest.statusText || pexelsRequest.status}`;
-  console.log(r`Pexels request failed, skipping to next source (${error})`);
-} else {
+  if (!pexelsRequest.ok) {
+    const error = `Status: ${pexelsRequest.statusText || pexelsRequest.status}`;
+    console.log(r`Pexels request failed, skipping to next source (${error})`);
+    continue;
+  }
+
   let { photos, next_page } = await pexelsRequest.json();
   console.log(g`Finished fetching first page of images`);
 
@@ -172,20 +179,21 @@ if (!pexelsRequest.ok) {
     const photoUrl = new URL(photo.src.original);
 
     // Skip urls to images that have already been scrapped
-    if (scrappedUrls.has(photoUrl.toString())) continue;
-    scrappedUrls.add(photoUrl.toString());
+    if (!scrappedUrls.has(photoUrl.toString())) {
+      scrappedUrls.add(photoUrl.toString());
 
-    queueValidation(photoUrl, RealLabel);
-    if (validationQueue.size >= UploadBatchSize) {
-      await queueUpload();
-    }
+      queueValidation(photoUrl, RealLabel);
+      if (validationQueue.size >= UploadBatchSize) {
+        await queueUpload();
+      }
 
-    if (pendingUploads.size >= MaxPendingUploads) {
-      await throttleUploads();
+      if (pendingUploads.size >= MaxPendingUploads) {
+        await throttleUploads();
+      }
     }
 
     if (!photos.length && next_page) {
-      console.log(y`Fetching next page of images from Pexels`);
+      console.log(y`Fetching next page of images from Pexels (${next_page}`);
       const nextRequest = await fetch(next_page, {
         headers: { Authorization: PEXELS_KEY },
       });
