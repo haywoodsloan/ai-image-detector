@@ -11,7 +11,8 @@
     ```json
     {
       "Values": {
-        "HF_KEY": "<your Hugging Face access token>"
+        "HF_KEY": "<your Hugging Face access token>",
+        "PEXELS_KEY": "<your Pexels access token>"
       }
     }
     ```

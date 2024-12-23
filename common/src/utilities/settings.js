@@ -8,6 +8,7 @@ import { isProd } from './environment.js';
  */
 export async function loadSettings(configPath = './') {
   // Track the accumulated settings
+  /** @type {Record<string, any>} */
   const settings = {};
 
   // Load base settings

@@ -42,7 +42,8 @@ const args = await yargs(hideBin(process.argv))
 // #endregion
 
 // #region Constants
-const NgaImagesCsv =
+const PexelsApi = 'https://api.pexels.com/v1/curated?per_page=80';
+const NgoaImageCsv =
   'https://raw.githubusercontent.com/NationalGalleryOfArt/opendata/refs/heads/main/data/published_images.csv';
 
 const AiSubReddits = [
@@ -109,7 +110,7 @@ const pendingUploads = new Set();
 const scrappedUrls = new Set();
 
 // Parse local settings for Hugging Face credentials
-const { HF_KEY } = await loadSettings();
+const { HF_KEY, PEXELS_KEY } = await loadSettings();
 setHfAccessToken(HF_KEY);
 
 const urls = await fetchKnownUrls();
@@ -120,31 +121,81 @@ let count = 0;
 
 // Fetch the list of images from the National Gallery of Art
 console.log(y`Fetching image list from the National Gallery of Art`);
-const csvRequest = await fetch(NgaImagesCsv);
+const ngoaRequest = await fetch(NgoaImageCsv);
 
-// Pipe the NGoA request through the CSV parser
-const mediaRecords = parse(await csvRequest.text(), {
-  columns: true,
-  skip_empty_lines: true,
+if (!ngoaRequest.ok) {
+  console.log(r`Failed fetching image list, skipping to next source`);
+} else {
+  // Pipe the NGoA request through the CSV parser
+  const ngoaRecords = parse(await ngoaRequest.text(), {
+    columns: true,
+    skip_empty_lines: true,
+  });
+
+  // Iterate over each image from the NGoA
+  console.log(g`Finished fetching image list`);
+  for (const media of ngoaRecords) {
+    if (count >= args.count) break;
+    const imageUrl = new URL(`${media.iiifurl}/full/max/0/default.jpg`);
+
+    // Skip urls to images that have already been scrapped
+    if (scrappedUrls.has(imageUrl.toString())) continue;
+    scrappedUrls.add(imageUrl.toString());
+
+    queueValidation(imageUrl, RealLabel);
+    if (validationQueue.size >= UploadBatchSize) {
+      await queueUpload();
+    }
+
+    if (pendingUploads.size >= MaxPendingUploads) {
+      await throttleUploads();
+    }
+  }
+}
+
+// Fetch the list of curated images from Pexels
+console.log(y`Fetching curated images from Pexels`);
+const pexelsRequest = await fetch(PexelsApi, {
+  headers: { Authorization: PEXELS_KEY },
 });
 
-// Iterate over each image from the NGoA
-console.log(g`Finished fetching image list`);
-for await (const media of mediaRecords) {
-  if (count >= args.count) break;
-  const imageUrl = new URL(`${media.iiifurl}/full/max/0/default.jpg`);
+if (!pexelsRequest.ok) {
+  console.log(r`Pexels request failed, skipping to next source`);
+} else {
+  let { photos, next_page } = await pexelsRequest.json();
+  console.log(g`Finished fetching first page of images`);
 
-  // Skip urls to images that have already been scrapped
-  if (scrappedUrls.has(imageUrl.toString())) continue;
-  scrappedUrls.add(imageUrl.toString());
+  while (photos.length && count < args.count) {
+    const photo = photos.pop();
+    const photoUrl = new URL(photo.src.original);
 
-  queueValidation(imageUrl, RealLabel);
-  if (validationQueue.size >= UploadBatchSize) {
-    await queueUpload();
-  }
+    // Skip urls to images that have already been scrapped
+    if (scrappedUrls.has(photoUrl.toString())) continue;
+    scrappedUrls.add(photoUrl.toString());
 
-  if (pendingUploads.size >= MaxPendingUploads) {
-    await throttleUploads();
+    queueValidation(photoUrl, RealLabel);
+    if (validationQueue.size >= UploadBatchSize) {
+      await queueUpload();
+    }
+
+    if (pendingUploads.size >= MaxPendingUploads) {
+      await throttleUploads();
+    }
+
+    if (!photos.length && next_page) {
+      console.log(y`Fetching next page of images from Pexels`);
+      const nextRequest = await fetch(next_page, {
+        headers: { Authorization: PEXELS_KEY },
+      });
+
+      if (!nextRequest.ok) {
+        console.log(r`Pexels request failed, skipping to next source`);
+        break;
+      }
+
+      ({ photos, next_page } = await nextRequest.json());
+      console.log(g`Finished fetching next page of images`);
+    }
   }
 }
 
@@ -297,15 +348,16 @@ console.log(g`Done!`);
 /**
  * @param {URL} origin
  * @param {LabelType} label
+ * @param {string} [auth]
  */
-function queueValidation(origin, label) {
+function queueValidation(origin, label, auth) {
   /** @type {Promise<HfImage?>} */
   const validation = (async () => {
     // Fetch the image, validate it, then determine where to upload it
     let data;
     try {
       // Get the sanitized version of the image
-      data = await sanitizeImage(origin);
+      data = await sanitizeImage(origin, auth);
     } catch (error) {
       // If the image couldn't be sanitized skip it
       console.log(r`Skipping ${origin} [${error}]`);
