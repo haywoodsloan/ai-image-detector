@@ -21,10 +21,7 @@
       }
     },
     "http": {
-      "routePrefix": "api",
-      "customHeaders": {
-        "Access-Control-Allow-Origin": "*"
-      }
+      "routePrefix": "api"
     }
   }
 }

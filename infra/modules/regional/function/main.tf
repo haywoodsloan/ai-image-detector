@@ -63,6 +63,10 @@ resource "azurerm_windows_function_app" "function_app" {
       node_version = "~20"
     }
 
+    cors {
+      allowed_origins = ["*"]
+    }
+
     ip_restriction_default_action = "Deny"
     ip_restriction {
       service_tag = "AzureFrontDoor.Backend"
