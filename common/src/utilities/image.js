@@ -46,8 +46,9 @@ const getExcludedImages = memoize(async () => {
 export async function getImageData(uri, auth) {
   // If a url was provided, fetch it
   if (isHttpUrl(uri) || isDataUrl(uri)) {
-    const opts = auth ? { headers: { Authorization: auth } } : null;
-    const req = await fetch(uri, opts);
+    const req = auth
+      ? await fetch(uri, { headers: { Authorization: auth } })
+      : await fetch(uri);
 
     if (!req.ok)
       throw new Error(`Image fetch failed, ${req.statusText || req.status}`);
