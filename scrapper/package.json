@@ -23,7 +23,7 @@
     "common": "file:../common",
     "csv-parse": "^5.6.0",
     "puppeteer": "^23.11.1",
-    "user-agents": "^1.1.397",
+    "user-agents": "^1.1.405",
     "yargs": "^17.7.2"
   },
   "devDependencies": {

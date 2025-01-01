@@ -217,11 +217,14 @@ console.log(g`Done fetching images from Pexels`);
     args: [`--window-size=${WindowWidth},${WindowHeight}`],
   });
 
+  /** @type {Page} */
+  let page;
+
   // Browse to multiple Subreddits and scrape files
   try {
     for (const [label, scrapeUrls] of Object.entries(SubReddits)) {
       for (let i = 0; i < scrapeUrls.length && count < args.count; i++) {
-        const page = await browser.newPage();
+        page = await browser.newPage();
         await page.setUserAgent(ChromeUA);
 
         const client = await page.createCDPSession();
@@ -338,7 +341,7 @@ console.log(g`Done fetching images from Pexels`);
 
     // Log the last screenshot
     const errorPng = join(LogPath, 'error.png');
-    await page.screenshot({ path: errorPng });
+    await page?.screenshot({ path: errorPng });
 
     console.error(r`Unexpected failure ${error}`);
     throw error;
