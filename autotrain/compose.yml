@@ -21,6 +21,34 @@ services:
   cli:
     build:
       dockerfile: cli.Dockerfile
+      target: cli
+      shm_size: 1gb
+    environment:
+      HF_TOKEN_FILE: /run/secrets/hf_key
+      HF_USER_FILE: /hf_user
+    volumes:
+      - ./.compiled/config:/workspace/configs:ro
+      - ai-images:/workspace/haywoodsloan:rw
+      - hf-cache:/workspace/.cache:rw
+    configs:
+      - hf_user
+    secrets:
+      - hf_key
+    stdin_open: true
+    tty: true
+    shm_size: 1gb
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+  
+  quick:
+    build:
+      dockerfile: cli.Dockerfile
+      target: quick
       shm_size: 1gb
     environment:
       HF_TOKEN_FILE: /run/secrets/hf_key

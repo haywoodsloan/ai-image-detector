@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-devel
+FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-devel as cli
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV HF_HUB_ENABLE_HF_TRANSFER=1
@@ -39,3 +39,13 @@ CMD export HF_USERNAME=$(cat $HF_USER_FILE) && \
   (git -C haywoodsloan/ai-images fetch && git -C haywoodsloan/ai-images reset origin/main --hard) || \
   git clone https://huggingface.co/datasets/haywoodsloan/ai-images haywoodsloan/ai-images && \
   bash
+
+# Create a secondary image that immediately starts training
+FROM cli as quick
+CMD export HF_USERNAME=$(cat $HF_USER_FILE) && \
+  export HF_TOKEN=$(cat $HF_TOKEN_FILE) && \
+  pip install -U autotrain-advanced && \
+  git config --global url."https://$HF_USERNAME:$HF_TOKEN@huggingface.co/".insteadOf "https://huggingface.co/" && \
+  (git -C haywoodsloan/ai-images fetch && git -C haywoodsloan/ai-images reset origin/main --hard) || \
+  git clone https://huggingface.co/datasets/haywoodsloan/ai-images haywoodsloan/ai-images && \
+  autotrain --config configs/haywoodsloan/ai-image-detector-deploy.yml
