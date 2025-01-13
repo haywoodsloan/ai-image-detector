@@ -17,7 +17,7 @@
     "gen-icon": "icon-gen -i ./assets/detector.svg -o ./public/icon/ -r --favicon --favicon-name / --favicon-png-sizes 16,24,32,48,96,128"
   },
   "dependencies": {
-    "@fontsource/roboto": "^5.1.0",
+    "@fontsource/roboto": "^5.1.1",
     "@mdi/js": "^7.4.47",
     "@vueuse/core": "^10.11.1",
     "clone-deep": "^4.0.1",
@@ -26,27 +26,27 @@
     "email-validator": "^2.0.4",
     "hash-wasm": "^4.12.0",
     "memoize": "^10.0.0",
-    "sass": "^1.82.0",
     "vite-plugin-node-polyfills": "^0.22.0",
     "vite-plugin-vuetify": "^2.0.4",
     "vite-svg-loader": "^5.1.0",
     "vue": "^3.4.31",
-    "vuetify": "^3.7.5"
+    "vuetify": "^3.7.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.7.0",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@wxt-dev/module-vue": "^1.0.2",
-    "eslint": "^9.16.0",
+    "eslint": "^9.18.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-vue": "^9.32.0",
-    "globals": "^15.13.0",
+    "globals": "^15.14.0",
     "icon-gen": "^5.0.0",
     "postcss-prefix-selector": "^1.16.1",
     "postcss-rem-to-pixel": "^4.1.2",
     "prettier": "^3.4.2",
-    "typescript": "^5.7.2",
-    "vue-tsc": "^2.1.10",
-    "wxt": "^0.19.18"
+    "sass": "^1.83.1",
+    "typescript": "^5.7.3",
+    "vue-tsc": "^2.2.0",
+    "wxt": "^0.19.24"
   }
 }

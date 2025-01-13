@@ -34,6 +34,9 @@ export default defineContentScript({
       }
     });
 
+    // TODO: Remove once we can afford infra for auto analysis
+    return;
+
     // Check if we should do the auto check observing
     const site = location.host?.toLowerCase();
     const { autoCheck, disabledSites } = await userSettings.getValue();

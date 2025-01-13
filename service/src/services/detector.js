@@ -11,9 +11,15 @@ import ExpiryMap from 'expiry-map';
 
 const DetectorErrorDelay = TimeSpan.fromMilliseconds(100);
 const DetectorRetryLimit = 3;
-const DetectorEndpoint = isProd
-  ? 'https://l4prxnh8kws35wza.us-east-1.aws.endpoints.huggingface.cloud'
-  : 'https://nse89rlz4y7av5w7.us-east-1.aws.endpoints.huggingface.cloud';
+
+// TODO switch back to dedicated endpoint once we can afford the infra
+// const DetectorEndpoint = isProd
+//   ? 'https://l4prxnh8kws35wza.us-east-1.aws.endpoints.huggingface.cloud'
+//   : 'https://nse89rlz4y7av5w7.us-east-1.aws.endpoints.huggingface.cloud';
+
+const DetectorModel = isProd
+  ? 'haywoodsloan/ai-image-detector-deploy'
+  : 'haywoodsloan/ai-image-detector-dev-deploy';
 
 /** @type {ExpiryMap<string, number>} */
 const AnalysisCache = new ExpiryMap(TimeSpan.fromMinutes(15).valueOf());
@@ -30,7 +36,7 @@ export async function classifyIfAi(data, hash) {
   const results = await retry(
     async () =>
       getImageClassification(
-        { data, endpointUrl: DetectorEndpoint },
+        { data, model: DetectorModel /* endpointUrl: DetectorEndpoint */ },
         { fetch: buildFetch(await getMime(data)) }
       ),
     (error) => console.log(l`Retrying detector request ${error}`)

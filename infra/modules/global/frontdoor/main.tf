@@ -73,7 +73,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
   mode     = "Prevention"
 
   custom_rule {
-    name     = "AuthLimit"
+    name     = "AuthLimitShort"
     action   = "Block"
     type     = "RateLimitRule"
     priority = 1
@@ -93,12 +93,33 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
       operator       = "Equal"
     }
   }
-
   custom_rule {
-    name     = "ImageVoteLimit"
+    name     = "AuthLimitLong"
     action   = "Block"
     type     = "RateLimitRule"
     priority = 2
+
+    rate_limit_duration_in_minutes = 60
+    rate_limit_threshold           = 15
+
+    match_condition {
+      match_variable = "RequestUri"
+      operator       = "RegEx"
+      match_values   = ["(?i)\\/auth"]
+    }
+
+    match_condition {
+      match_variable = "RequestMethod"
+      match_values   = ["POST"]
+      operator       = "Equal"
+    }
+  }
+
+  custom_rule {
+    name     = "ImageVoteLimitShort"
+    action   = "Block"
+    type     = "RateLimitRule"
+    priority = 3
 
     rate_limit_duration_in_minutes = 1
     rate_limit_threshold           = 10
@@ -117,13 +138,79 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
   }
 
   custom_rule {
+    name     = "ImageVoteLimitLong"
+    action   = "Block"
+    type     = "RateLimitRule"
+    priority = 4
+
+    rate_limit_duration_in_minutes = 60
+    rate_limit_threshold           = 50
+
+    match_condition {
+      match_variable = "RequestUri"
+      operator       = "RegEx"
+      match_values   = ["(?i)\\/imageVote"]
+    }
+
+    match_condition {
+      match_variable = "RequestMethod"
+      match_values   = ["POST"]
+      operator       = "Equal"
+    }
+  }
+
+  custom_rule {
+    name     = "ImageAnalyzeLimitShort"
+    action   = "Block"
+    type     = "RateLimitRule"
+    priority = 5
+
+    rate_limit_duration_in_minutes = 1
+    rate_limit_threshold           = 15
+
+    match_condition {
+      match_variable = "RequestUri"
+      operator       = "RegEx"
+      match_values   = ["(?i)\\/imageAnalysis"]
+    }
+
+    match_condition {
+      match_variable = "RequestMethod"
+      match_values   = ["POST"]
+      operator       = "Equal"
+    }
+  }
+
+  custom_rule {
+    name     = "ImageAnalyzeLimitLong"
+    action   = "Block"
+    type     = "RateLimitRule"
+    priority = 6
+
+    rate_limit_duration_in_minutes = 60
+    rate_limit_threshold           = 100
+
+    match_condition {
+      match_variable = "RequestUri"
+      operator       = "RegEx"
+      match_values   = ["(?i)\\/imageAnalysis"]
+    }
+
+    match_condition {
+      match_variable = "RequestMethod"
+      match_values   = ["POST"]
+      operator       = "Equal"
+    }
+  }
+
+  custom_rule {
     name     = "DefaultLimit"
     action   = "Block"
     type     = "RateLimitRule"
     priority = 3
 
     rate_limit_duration_in_minutes = 1
-    rate_limit_threshold           = 200
+    rate_limit_threshold           = 100
 
     match_condition {
       match_variable = "RequestUri"
