@@ -12,6 +12,7 @@ export const IndicatorColors = [
 export const DefaultIndicatorColor = '#858585';
 export const PrimaryColor = '#0085dd';
 export const PrimaryColorLight = '#0099ff';
+export const PrimaryColorDark = '#005c99'
 
 export const RealIndicatorColor = IndicatorColors.at(0);
 export const AiIndicatorColor = IndicatorColors.at(-1);

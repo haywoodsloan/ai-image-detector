@@ -5,7 +5,7 @@ import { isHttpUrl } from 'common/utilities/url.js';
 import SettingsSvg from '@/assets/settings.svg';
 import {
   AiIndicatorColor,
-  PrimaryColor,
+  PrimaryColorDark,
   PrimaryColorLight,
   RealIndicatorColor,
 } from '@/utilities/color.js';
@@ -121,14 +121,13 @@ async function reload() {
 <template>
   <v-card min-width="450" width="min-content" class="d-flex flex-column">
     <v-card-item class="pb-0">
-      <v-card-title> AI Image Detector </v-card-title>
-
-      <v-card-subtitle> Settings </v-card-subtitle>
-
+      <v-card-title>AI Image Detector</v-card-title>
+      <v-card-subtitle>Settings</v-card-subtitle>
       <template #append>
         <v-icon class="settings-icon mb-2" :icon="SettingsSvg" />
       </template>
     </v-card-item>
+
     <v-card-text class="pa-0 d-flex flex-column overflow-hidden">
       <v-fade-transition>
         <div v-if="reloadNeeded" class="text-medium-emphasis d-flex px-4 py-2">
@@ -149,7 +148,11 @@ async function reload() {
       >
         <!-- TODO Restore these once we can afford infra -->
         <div class="position-relative">
-          <v-list-item class="px-4" value="autoCheck" :disabled="true">
+          <v-list-item
+            class="px-4"
+            value="autoCheck (TODO: Remove)"
+            :disabled="true"
+          >
             <v-list-item-title class="d-flex mb-1 gc-2">
               Automatically analyze images
 
@@ -232,7 +235,7 @@ async function reload() {
 
           <v-list-item
             class="pr-4 pl-8"
-            value="autoCheckPrivate"
+            value="autoCheckPrivate (TODO: Remove)"
             :disabled="true /* !toggles.includes('autoCheck') */"
           >
             <v-list-item-title class="d-flex mb-1 gc-2">
@@ -282,10 +285,11 @@ async function reload() {
               close-delay="100"
               :open-on-click="false"
             >
-              <template #activator="{ props }">
+              <template #activator="{ props, isActive }">
                 <v-icon
                   v-bind="props"
                   class="locked-icon"
+                  :class="{ 'menu-open': isActive }"
                   :icon="mdiLockAlert"
                   color="surface"
                 />
@@ -300,7 +304,7 @@ async function reload() {
                   <br />
                   <p>
                     Currently, we cannot afford to cover the cost of this
-                    infrastructure on our own (approximately $300 per month).
+                    infrastructure on our own (roughly $300 per month).
                   </p>
                   <br />
                   <p>
@@ -309,7 +313,7 @@ async function reload() {
                       href="https://patreon.com/ai_image_detector"
                       target="_blank"
                       title="Patreon"
-                      :style="{ color: PrimaryColor }"
+                      :style="{ color: PrimaryColorDark }"
                       >Patreon</a
                     >
                     or
@@ -317,7 +321,7 @@ async function reload() {
                       href="https://ko-fi.com/ai_image_detector"
                       target="_blank"
                       title="Ko-fi"
-                      :style="{ color: PrimaryColor }"
+                      :style="{ color: PrimaryColorDark }"
                       >Ko-fi</a
                     >
                     will first go to funding better infrastructure and
@@ -491,13 +495,12 @@ async function reload() {
   height: 50%;
   width: auto;
 
-  cursor: pointer;
-
   transition: transform 0.3s;
   transform-origin: center;
 
   &:hover,
-  &:focus {
+  &:focus,
+  &.menu-open {
     transform: scale(1.1);
   }
 }
