@@ -100,7 +100,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     priority = 2
 
     rate_limit_duration_in_minutes = 60
-    rate_limit_threshold           = 15
+    rate_limit_threshold           = 10
 
     match_condition {
       match_variable = "RequestUri"
@@ -188,7 +188,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     priority = 6
 
     rate_limit_duration_in_minutes = 60
-    rate_limit_threshold           = 100
+    rate_limit_threshold           = 50
 
     match_condition {
       match_variable = "RequestUri"
