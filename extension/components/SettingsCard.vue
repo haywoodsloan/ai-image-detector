@@ -86,8 +86,9 @@ const reloadNeeded = computed(() => {
   return (
     original.autoCheck !== current.autoCheck ||
     (!original.autoCheckPrivate && current.autoCheckPrivate) ||
-    original.disabledSites.includes(site) !==
-      current.disabledSites.includes(site)
+    (original.autoCheck &&
+      original.disabledSites.includes(site) !==
+        current.disabledSites.includes(site))
   );
 });
 
