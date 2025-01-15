@@ -4,13 +4,6 @@ module "rg" {
   region_name = var.region_name
 }
 
-module "insights" {
-  source      = "../../../modules/regional/insights"
-  env_name    = var.env_name
-  region_name = var.region_name
-  rg_name     = module.rg.region_rg_name
-}
-
 module "pubsub" {
   source      = "../../../modules/regional/pubsub"
   region_name = var.region_name
@@ -22,7 +15,7 @@ module "function" {
   env_name                   = var.env_name
   region_name                = var.region_name
   rg_name                    = module.rg.region_rg_name
-  insights_connection_string = module.insights.insights_connection_string
+  insights_connection_string = var.insights_connection_string
   hf_key                     = var.hf_key
   db_id                      = var.db_id
   db_name                    = var.db_name

@@ -68,19 +68,27 @@ module "frontdoor" {
   env_name           = local.env_name
 }
 
+module "insights" {
+  source      = "../../modules/global/insights"
+  env_name    = local.env_name
+  region_name = local.region_names[0]
+  rg_name     = module.rg.env_rg_name
+}
+
 module "region" {
-  for_each              = toset(local.region_names)
-  source                = "./region"
-  region_name           = each.value
-  env_name              = local.env_name
-  hf_key                = var.hf_key
-  db_id                 = module.db.db_id
-  db_name               = module.db.db_name
-  comm_service_id       = module.comm.comm_service_id
-  comm_service_endpoint = module.comm.comm_service_endpoint
-  frontdoor_guid        = module.frontdoor.frontdoor_guid
-  api_subdomain         = module.frontdoor.api_subdomain
-  domain_name           = local.domain_name
-  env_rg_name           = module.rg.env_rg_name
-  db_role_id            = module.db.db_role_id
+  for_each                   = toset(local.region_names)
+  source                     = "./region"
+  region_name                = each.value
+  env_name                   = local.env_name
+  hf_key                     = var.hf_key
+  db_id                      = module.db.db_id
+  db_name                    = module.db.db_name
+  comm_service_id            = module.comm.comm_service_id
+  comm_service_endpoint      = module.comm.comm_service_endpoint
+  frontdoor_guid             = module.frontdoor.frontdoor_guid
+  api_subdomain              = module.frontdoor.api_subdomain
+  domain_name                = local.domain_name
+  env_rg_name                = module.rg.env_rg_name
+  db_role_id                 = module.db.db_role_id
+  insights_connection_string = module.insights.insights_connection_string
 }

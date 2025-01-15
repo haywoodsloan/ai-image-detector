@@ -56,3 +56,8 @@ variable "env_rg_name" {
   type        = string
   description = "The name of the environemnt resource group"
 }
+
+variable "insights_connection_string" {
+  type        = string
+  description = "The application insights connection string"
+}
