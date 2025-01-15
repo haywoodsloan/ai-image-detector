@@ -1,4 +1,4 @@
-import { ApiError } from '@/api/base.js';
+import { ApiError } from 'common/utilities/error.js';
 
 import * as actions from './actions';
 

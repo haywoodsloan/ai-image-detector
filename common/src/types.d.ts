@@ -2,6 +2,8 @@ declare type Encoding = import('crypto').Encoding;
 
 declare type TimeSpan = import('./utilities/TimeSpan').TimeSpan;
 
+declare type ApiError = import('./utilities/error').ApiError;
+
 declare type ClassificationOptions = import('@huggingface/inference').Options;
 
 declare type ImageClassificationArgs =

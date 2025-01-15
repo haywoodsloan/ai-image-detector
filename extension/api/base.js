@@ -8,6 +8,7 @@ import {
 import { invokeBackgroundTask } from '@/utilities/background.js';
 import { debugWarn } from '@/utilities/log.js';
 import { userAuth } from '@/utilities/storage.js';
+import { ApiError } from 'common/utilities/error.js';
 
 const BaseUrl = import.meta.env.VITE_API_BASE_URL;
 const DevKey = import.meta.env.VITE_API_DEV_KEY;
@@ -16,19 +17,6 @@ const ApiRetryLimit = 3;
 const ApiErrorDelay = TimeSpan.fromMilliseconds(100);
 const retry = withRetry(ApiRetryLimit, ApiErrorDelay);
 const NonRetryStatuses = [401, 404];
-
-export class ApiError extends Error {
-  /** @type {number} */ status;
-
-  /**
-   * @param {number} status
-   * @param {string} message
-   */
-  constructor(status, message) {
-    super(message);
-    this.status = status;
-  }
-}
 
 /**
  * @param {string} endpoint

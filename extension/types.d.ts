@@ -10,8 +10,6 @@ declare type ShadowRootContentScriptUi<T = void> =
 declare type ActionType =
   typeof import('./entrypoints/background/actions/base').BaseAction;
 
-declare type ApiError = import('./api/base').ApiError;
-
 declare type UserAuth = {
   _id: string;
   userId: string;
