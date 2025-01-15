@@ -29,8 +29,8 @@ app.http('auth', {
         // Get an existing auth if one exists
         const auth = await queryAuth(accessToken);
         if (!auth) {
-          console.error(error);
           const error = new Error('Access token has expired');
+          console.error(error);
           return createErrorResponse(401, error);
         }
 
