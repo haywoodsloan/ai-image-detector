@@ -83,8 +83,8 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
 
     match_condition {
       match_variable = "RequestUri"
-      operator       = "RegEx"
-      match_values   = ["(?i)\\/auth"]
+      operator       = "Contains"
+      match_values   = ["${local.host_name}/auth"]
     }
 
     match_condition {
@@ -99,13 +99,13 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     type     = "RateLimitRule"
     priority = 2
 
-    rate_limit_duration_in_minutes = 60
-    rate_limit_threshold           = 10
+    rate_limit_duration_in_minutes = 5
+    rate_limit_threshold           = 6
 
     match_condition {
       match_variable = "RequestUri"
-      operator       = "RegEx"
-      match_values   = ["(?i)\\/auth"]
+      operator       = "Contains"
+      match_values   = ["${local.host_name}/auth"]
     }
 
     match_condition {
@@ -126,8 +126,8 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
 
     match_condition {
       match_variable = "RequestUri"
-      operator       = "RegEx"
-      match_values   = ["(?i)\\/imageVote"]
+      operator       = "Contains"
+      match_values   = ["${local.host_name}/imageVote"]
     }
 
     match_condition {
@@ -143,13 +143,13 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     type     = "RateLimitRule"
     priority = 4
 
-    rate_limit_duration_in_minutes = 60
-    rate_limit_threshold           = 50
+    rate_limit_duration_in_minutes = 5
+    rate_limit_threshold           = 25
 
     match_condition {
       match_variable = "RequestUri"
-      operator       = "RegEx"
-      match_values   = ["(?i)\\/imageVote"]
+      operator       = "Contains"
+      match_values   = ["${local.host_name}/imageVote"]
     }
 
     match_condition {
@@ -170,8 +170,8 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
 
     match_condition {
       match_variable = "RequestUri"
-      operator       = "RegEx"
-      match_values   = ["(?i)\\/imageAnalysis"]
+      operator       = "Contains"
+      match_values   = ["${local.host_name}/imageAnalysis"]
     }
 
     match_condition {
@@ -187,13 +187,13 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     type     = "RateLimitRule"
     priority = 6
 
-    rate_limit_duration_in_minutes = 60
+    rate_limit_duration_in_minutes = 5
     rate_limit_threshold           = 50
 
     match_condition {
       match_variable = "RequestUri"
-      operator       = "RegEx"
-      match_values   = ["(?i)\\/imageAnalysis"]
+      operator       = "Contains"
+      match_values   = ["${local.host_name}/imageAnalysis"]
     }
 
     match_condition {
@@ -207,7 +207,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     name     = "DefaultLimit"
     action   = "Block"
     type     = "RateLimitRule"
-    priority = 3
+    priority = 7
 
     rate_limit_duration_in_minutes = 1
     rate_limit_threshold           = 100
@@ -225,7 +225,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
       name     = "BlockIfMissingKey"
       action   = "Block"
       type     = "MatchRule"
-      priority = 4
+      priority = 8
 
       match_condition {
         match_variable     = "RequestHeader"
@@ -244,9 +244,9 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
 
       match_condition {
         match_variable     = "RequestUri"
-        match_values       = ["(?i)\\/verifyAuth"]
+        match_values       = ["${local.host_name}/verifyAuth"]
         negation_condition = true
-        operator           = "RegEx"
+        operator           = "Contains"
       }
     }
   }
