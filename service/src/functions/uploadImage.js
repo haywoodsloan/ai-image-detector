@@ -55,7 +55,11 @@ df.app.entity(UploadImageEntity, async (context) => {
       console.log(l`Image uploaded to Hugging Face ${{ fileName, label }}`);
     }
   } else {
+    try {
     await deleteImage(image, PendingBranch);
     console.log(l`Image deleted from Hugging Face ${{ fileName }}`);
+    } catch {
+      console.log(l`No change to Hugging Face ${{fileName}}`);
+    }
   }
 });
