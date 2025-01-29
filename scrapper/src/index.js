@@ -36,7 +36,16 @@ const args = await yargs(hideBin(process.argv))
   .option('debug', {
     type: 'boolean',
     description: 'Show the browser for debugging',
-    default: false,
+  })
+  .option('ai', {
+    type: 'boolean',
+    description: 'Scrape only AI images',
+    conflicts: ['real'],
+  })
+  .option('real', {
+    type: 'boolean',
+    description: 'Scrape only real images',
+    conflicts: ['ai'],
   })
   .parse();
 // #endregion
@@ -70,11 +79,6 @@ const RealSubReddits = [
   'https://www.reddit.com/r/museum/',
   'https://www.reddit.com/r/ArtHistory/',
 ];
-
-const SubReddits = {
-  [AiLabel]: AiSubReddits,
-  [RealLabel]: RealSubReddits,
-};
 
 const LogPath = '.log/';
 const WindowHeight = 1250;
@@ -120,7 +124,7 @@ for (const url of urls) scrappedUrls.add(url);
 // Track the total number of images scrapped
 let count = 0;
 
-{
+if (args.all || args.real) {
   // Fetch the list of images from the National Gallery of Art
   console.log(y`Fetching image list from the National Gallery of Art`);
   const ngoaRequest = await fetch(NgoaImageCsv);
@@ -161,53 +165,55 @@ let count = 0;
 }
 
 // Fetch the list of images from Pexels for each API endpoint
-for (const pexelsApi of PexelsApis) {
-  console.log(y`Fetching images from Pexels (${pexelsApi})`);
-  const pexelsRequest = await fetch(pexelsApi, {
-    headers: { Authorization: PEXELS_KEY },
-  });
+if (args.real || args.all) {
+  for (const pexelsApi of PexelsApis) {
+    console.log(y`Fetching images from Pexels (${pexelsApi})`);
+    const pexelsRequest = await fetch(pexelsApi, {
+      headers: { Authorization: PEXELS_KEY },
+    });
 
-  if (!pexelsRequest.ok) {
-    const error = `Status: ${pexelsRequest.statusText || pexelsRequest.status}`;
-    console.log(r`Request failed, skipping to next source (${error})`);
-    continue;
-  }
-
-  let { photos, next_page } = await pexelsRequest.json();
-  while (photos.length && count < args.count) {
-    const photo = photos.pop();
-    const photoUrl = new URL(photo.src.original);
-
-    // Skip urls to images that have already been scrapped
-    if (!scrappedUrls.has(photoUrl.toString())) {
-      scrappedUrls.add(photoUrl.toString());
-
-      queueValidation(photoUrl, RealLabel);
-      if (validationQueue.size >= UploadBatchSize) {
-        await queueUpload();
-      }
-
-      if (pendingUploads.size >= MaxPendingUploads) {
-        await throttleUploads();
-      }
+    if (!pexelsRequest.ok) {
+      const error = `Status: ${pexelsRequest.statusText || pexelsRequest.status}`;
+      console.log(r`Request failed, skipping to next source (${error})`);
+      continue;
     }
 
-    if (!photos.length && next_page) {
-      const nextRequest = await fetch(next_page, {
-        headers: { Authorization: PEXELS_KEY },
-      });
+    let { photos, next_page } = await pexelsRequest.json();
+    while (photos.length && count < args.count) {
+      const photo = photos.pop();
+      const photoUrl = new URL(photo.src.original);
 
-      if (!nextRequest.ok) {
-        const error = `Status: ${nextRequest.statusText || nextRequest.status}`;
-        console.log(r`Request failed, skipping to next source (${error})`);
-        break;
-      } else ({ photos, next_page } = await nextRequest.json());
+      // Skip urls to images that have already been scrapped
+      if (!scrappedUrls.has(photoUrl.toString())) {
+        scrappedUrls.add(photoUrl.toString());
+
+        queueValidation(photoUrl, RealLabel);
+        if (validationQueue.size >= UploadBatchSize) {
+          await queueUpload();
+        }
+
+        if (pendingUploads.size >= MaxPendingUploads) {
+          await throttleUploads();
+        }
+      }
+
+      if (!photos.length && next_page) {
+        const nextRequest = await fetch(next_page, {
+          headers: { Authorization: PEXELS_KEY },
+        });
+
+        if (!nextRequest.ok) {
+          const error = `Status: ${nextRequest.statusText || nextRequest.status}`;
+          console.log(r`Request failed, skipping to next source (${error})`);
+          break;
+        } else ({ photos, next_page } = await nextRequest.json());
+      }
     }
   }
+
+  // Done with this Pexels API
+  console.log(g`Done fetching images from Pexels`);
 }
-
-// Done with this Pexels API
-console.log(g`Done fetching images from Pexels`);
 
 {
   // Launch Puppeteer
@@ -221,8 +227,13 @@ console.log(g`Done fetching images from Pexels`);
   let page;
 
   // Browse to multiple Subreddits and scrape files
+  const toScrape = {
+    ...(args.real && { [RealLabel]: RealSubReddits }),
+    ...(args.ai && { [AiLabel]: AiSubReddits }),
+  };
+
   try {
-    for (const [label, scrapeUrls] of Object.entries(SubReddits)) {
+    for (const [label, scrapeUrls] of Object.entries(toScrape)) {
       for (let i = 0; i < scrapeUrls.length && count < args.count; i++) {
         page = await browser.newPage();
         await page.setUserAgent(ChromeUA);

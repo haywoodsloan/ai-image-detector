@@ -8,6 +8,8 @@
   "scripts": {
     "start": "node src/index.js",
     "loop": "loop --timeout 3600 npm run start",
+    "loop:ai": "loop --timeout 3600 \"npm run start -- --ai\"",
+    "loop:real": "loop --timeout 3600 \"npm run start -- --real\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "eslint --fix ./src && prettier -w ./src"
   },
