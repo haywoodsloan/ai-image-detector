@@ -299,6 +299,13 @@ async function reload() {
               <StyleProvider>
                 <div class="bg-surface-variant rounded py-2 px-4">
                   <p>
+                    <strong>
+                      Automatic analysis is temporarily disabled, but images can
+                      still be individually checked using the right-click menu.
+                    </strong>
+                  </p>
+                  <br />
+                  <p>
                     Unfortunately, automatic analysis requires significantly
                     more infrastructure than manual checks.
                   </p>
