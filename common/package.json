@@ -20,18 +20,18 @@
   "author": "haywoodsloan",
   "license": "ISC",
   "devDependencies": {
-    "@eslint/js": "^9.2.0",
-    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "eslint": "^9.17.0",
-    "eslint-config-prettier": "^9.1.0",
+    "@eslint/js": "^9.20.0",
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "eslint": "^9.20.1",
+    "eslint-config-prettier": "^10.0.1",
     "globals": "^15.14.0",
-    "prettier": "^3.4.2"
+    "prettier": "^3.5.0"
   },
   "dependencies": {
-    "@huggingface/hub": "^1.0.0",
-    "@huggingface/inference": "^2.8.1",
+    "@huggingface/hub": "^1.0.1",
+    "@huggingface/inference": "^3.3.3",
     "cli-color": "^2.0.4",
-    "file-type": "^19.6.0",
+    "file-type": "^20.1.0",
     "looks-same": "^9.0.1",
     "memoize": "^10.0.0",
     "sanitize-filename": "^1.6.3",

@@ -25,6 +25,9 @@ export default defineConfig({
     },
   },
   vite: () => ({
+    legacy: {
+      skipWebSocketTokenCheck: true,
+    },
     plugins: [
       svgLoader({ svgo: false }),
       vuetify({
