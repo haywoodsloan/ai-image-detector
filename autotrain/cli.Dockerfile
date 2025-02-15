@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-devel as cli
+FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-devel as cli
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV HF_HUB_ENABLE_HF_TRANSFER=1
@@ -14,20 +14,18 @@ RUN apt-get autoremove && apt-get autoclean && apt-get clean
 
 RUN git lfs install
 ENV CUTLASS_PATH="$HOME/cutlass"
-RUN git clone --depth 1 --branch v3.5.0 https://github.com/NVIDIA/cutlass.git "$CUTLASS_PATH"
-
-RUN conda install -y nvidia/label/cuda-12.1.1::cuda-nvcc
-RUN conda install -y xformers::xformers
-RUN conda clean -y --all
+RUN git clone --depth 1 --branch v3.7.0 https://github.com/NVIDIA/cutlass.git "$CUTLASS_PATH"
 
 ENV HF_HOME="$HOME/.cache"
+RUN pip install -U nvidia-pyindex
+RUN pip install -U nvidia-cuda-nvcc-cu12
+RUN pip install -U xformers --index-url https://download.pytorch.org/whl/cu126
 RUN pip install -U autotrain-advanced
 RUN python -m nltk.downloader punkt
 RUN pip install -U ninja
 RUN pip install -U flash-attn --no-build-isolation
 RUN pip install -U deepspeed
-RUN pip install --upgrade --force-reinstall --no-cache-dir "unsloth[cu121-ampere-torch230] @ git+https://github.com/unslothai/unsloth.git" --no-deps
-RUN pip cache purge
+RUN pip install --upgrade --force-reinstall --no-cache-dir "unsloth[cu126-ampere-torch260] @ git+https://github.com/unslothai/unsloth.git" --no-deps
 
 RUN echo 'export HF_USERNAME=$(cat $HF_USER_FILE)' >> ~/.bashrc
 RUN echo 'export HF_TOKEN=$(cat $HF_TOKEN_FILE)' >> ~/.bashrc
