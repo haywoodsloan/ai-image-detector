@@ -244,18 +244,18 @@ if (args.real || args.all) {
         // Navigate to the page and wait for network traffic to settle
         const scrapeUrl = scrapeUrls[i];
         console.log(y`Navigating to ${scrapeUrl}`);
-        await page.goto(scrapeUrl, { waitUntil: 'networkidle2' });
 
         // Wait for the loader to appear so we know the posts will load.
         const retry = withRetry(RetryLimit, RedditErrorDelay);
         await retry(
           async () => {
+            await page.goto(scrapeUrl, { waitUntil: 'networkidle2' });
             await page.waitForSelector(LoaderSelector);
             console.log(g`Finished loading ${scrapeUrl}`);
           },
           async () => {
             console.log(r`Subreddit loading failed, refreshing`);
-            await page.reload({ waitUntil: 'networkidle2' });
+            await page.goto(scrapeUrl, { waitUntil: 'networkidle2' });
           }
         );
 

@@ -27,7 +27,7 @@ services:
       HF_TOKEN_FILE: /run/secrets/hf_key
       HF_USER_FILE: /hf_user
     volumes:
-      - ./.compiled/config:/workspace/configs:ro
+      - ./.compiled/configs:/workspace/configs:ro
       - ai-images:/workspace/haywoodsloan:rw
       - hf-cache:/workspace/.cache:rw
     configs:
@@ -54,7 +54,7 @@ services:
       HF_TOKEN_FILE: /run/secrets/hf_key
       HF_USER_FILE: /hf_user
     volumes:
-      - ./.compiled/config:/workspace/configs:ro
+      - ./.compiled/configs:/workspace/configs:ro
       - ai-images:/workspace/haywoodsloan:rw
       - hf-cache:/workspace/.cache:rw
     configs:

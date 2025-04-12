@@ -25,7 +25,7 @@ const AutoRefreshInterval = 5 * 60 * 1000;
 const MaxModTimeDiff = 5000;
 
 const CompilePath = '.compiled/';
-const ConfigPath = 'config/';
+const ConfigPath = 'configs/';
 const OutputConfigPath = join(args.out ?? CompilePath, ConfigPath);
 
 const BasePath = join(ConfigPath, 'base.yml.hbs');
