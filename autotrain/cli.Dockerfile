@@ -80,4 +80,5 @@ CMD pip install -U autotrain-advanced && \
   (git -C haywoodsloan/ai-images fetch && git -C haywoodsloan/ai-images reset origin/main --hard) || \
   git clone https://huggingface.co/datasets/haywoodsloan/ai-images haywoodsloan/ai-images && \
   npm --prefix $CONFIG_TOOL run compile-autotrain-configs -- --out /workspace && \
-  autotrain --config configs/haywoodsloan/ai-image-detector-deploy.yml
+  autotrain --config configs/haywoodsloan/ai-image-detector-deploy.yml && \
+  runpodctl stop pod $RUNPOD_POD_ID
