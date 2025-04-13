@@ -68,9 +68,10 @@ ENV PATH="$NVM_DIR/versions/node/v$NODE_VERSION/bin/:$PATH"
 
 ENV CONFIG_TOOL="$HOME/tools/config"
 COPY package.json $CONFIG_TOOL/
+RUN npm --prefix $CONFIG_TOOL --production install
+
 COPY configs/ $CONFIG_TOOL/configs/
 COPY scripts/compile-configs.js $CONFIG_TOOL/scripts/
-RUN npm --prefix $CONFIG_TOOL --production install
 
 WORKDIR /workspace
 CMD pip install -U autotrain-advanced && \
