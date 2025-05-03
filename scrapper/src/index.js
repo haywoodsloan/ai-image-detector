@@ -124,6 +124,9 @@ for (const url of urls) scrappedUrls.add(url);
 // Track the total number of images scrapped
 let count = 0;
 
+// If neither real or ai is selected default to all
+if (!args.real && !args.ai) args.all = true;
+
 if (args.all || args.real) {
   // Fetch the list of images from the National Gallery of Art
   console.log(y`Fetching image list from the National Gallery of Art`);
