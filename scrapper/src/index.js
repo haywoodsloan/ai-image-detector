@@ -231,8 +231,8 @@ if (args.real || args.all) {
 
   // Browse to multiple Subreddits and scrape files
   const toScrape = {
-    ...(args.real && { [RealLabel]: RealSubReddits }),
-    ...(args.ai && { [AiLabel]: AiSubReddits }),
+    ...(args.real || args.all && { [RealLabel]: RealSubReddits }),
+    ...(args.ai || args.all && { [AiLabel]: AiSubReddits }),
   };
 
   try {
