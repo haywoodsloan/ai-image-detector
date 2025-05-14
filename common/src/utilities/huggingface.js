@@ -8,7 +8,7 @@ import {
   uploadFile,
   uploadFiles,
 } from '@huggingface/hub';
-import { HfInference } from '@huggingface/inference';
+import { InferenceClient } from '@huggingface/inference';
 import { g, r, rl, y } from 'common/utilities/colors.js';
 import { wait } from 'common/utilities/sleep.js';
 import memoize from 'memoize';
@@ -73,7 +73,7 @@ const retry = withRetry(RetryLimit, HuggingFaceErrorDelay);
 
 // Cache the HF interface until the access token changes
 const getHfInterface = memoize(
-  () => new HfInference(credentials?.accessToken),
+  () => new InferenceClient(credentials?.accessToken),
   { cacheKey: () => credentials?.accessToken }
 );
 
@@ -535,10 +535,7 @@ export function setHfAccessToken(hfToken) {
  * @param {ClassificationOptions} options
  */
 export async function getImageClassification(args, options) {
-  return getHfInterface().imageClassification(
-    { ...args, accessToken: credentials?.accessToken },
-    options
-  );
+  return getHfInterface().imageClassification(args, options);
 }
 
 /**

@@ -5,15 +5,19 @@ const ImageVoteEndpoint = '/imageVote';
 /**
  * @param {string} url
  * @param {LabelType} voteLabel
- * @param {{skipUpload?: boolean, signal?: AbortSignal}}
+ * @param {{skipUpload?: boolean, signal?: AbortSignal, referer?: string}}
  * @returns {Promise<ImageVote>}
  */
 export async function voteImageLabel(
   url,
   voteLabel,
-  { skipUpload = false, signal } = {}
+  { skipUpload = false, signal, referer } = {}
 ) {
-  return await post(ImageVoteEndpoint, { url, voteLabel, skipUpload }, signal);
+  return await post(
+    ImageVoteEndpoint,
+    { url, voteLabel, skipUpload, ...(referer && { referer }) },
+    signal
+  );
 }
 
 /**

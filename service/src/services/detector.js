@@ -36,8 +36,12 @@ export async function classifyIfAi(data, hash) {
   const results = await retry(
     async () =>
       getImageClassification(
-        { data, model: DetectorModel /* endpointUrl: DetectorEndpoint */ },
-        { fetch: buildFetch(await getMime(data)) }
+        {
+          data,
+          model: DetectorModel,
+          provider: 'auto' /* endpointUrl: DetectorEndpoint */,
+        }
+        // { fetch: buildFetch(await getMime(data)) }
       ),
     (error) => console.log(l`Retrying detector request ${error}`)
   );

@@ -14,8 +14,8 @@ import {
 } from '../services/db/voteColl.js';
 import { InvalidAuthError, assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
-import { UploadImageEntity } from './uploadImage.js';
 import { getVotedLabel } from '../utilities/vote.js';
+import { UploadImageEntity } from './uploadImage.js';
 
 app.http('imageVote', {
   route: 'imageVote/{voteId?}',
@@ -35,7 +35,12 @@ app.http('imageVote', {
     switch (request.method) {
       case 'POST': {
         /** @type {{url: string, voteLabel: string, skipUpload?: boolean}} */
-        const { url, voteLabel, skipUpload = false } = await request.json();
+        const {
+          url,
+          referer,
+          voteLabel,
+          skipUpload = false,
+        } = await request.json();
 
         // Check the url is valid
         if (!isHttpUrl(url) && !isDataUrl(url)) {
@@ -54,7 +59,7 @@ app.http('imageVote', {
         // Get the image data
         let data;
         try {
-          data = await getImageData(url);
+          data = await getImageData(url, { referer });
         } catch (error) {
           console.error(error);
           return createErrorResponse(404, error);

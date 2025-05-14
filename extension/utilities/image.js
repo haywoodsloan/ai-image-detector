@@ -25,7 +25,12 @@ export function useImageAnalysis(url) {
  */
 export async function checkImage(src, { force = false, signal } = {}) {
   try {
-    if (isHttpUrl(src)) return await analyzeImage(src, { signal });
+    if (isHttpUrl(src)) {
+      return await analyzeImage(src, {
+        referer: document.location.origin,
+        signal,
+      });
+    }
 
     await waitForUploadSlot();
     signal?.throwIfAborted();
@@ -76,6 +81,7 @@ export async function reportImage(src, label, { signal } = {}) {
   try {
     if (isHttpUrl(src)) {
       return await voteImageLabel(src, label, {
+        referer: document.location.origin,
         skipUpload: !uploadImages,
         signal,
       });

@@ -41,15 +41,18 @@ const getExcludedImages = memoize(async () => {
 
 /**
  * @param {string | URL} uri
- * @param {string} [auth]
+ * @param {{auth?: string, referer?: string}}
  */
-export async function getImageData(uri, auth) {
+export async function getImageData(uri, {auth, referer} = {}) {
   // If a url was provided, fetch it
   if (isHttpUrl(uri) || isDataUrl(uri)) {
-    const req = auth
-      ? await fetch(uri, { headers: { Authorization: auth } })
-      : await fetch(uri);
 
+    /** @type {HeadersInit} */
+    const headers = {};
+    if (auth) headers["Authorization"] = auth;
+    if (referer) headers["Referer"] = referer;
+
+    const req = await fetch(uri, { headers })
     if (!req.ok)
       throw new Error(`Image fetch failed, ${req.statusText || req.status}`);
 
@@ -78,9 +81,9 @@ export async function normalizeImage(imgData) {
  * @param {string | URL | Buffer} img
  * @param {string} [auth]
  */
-export async function sanitizeImage(img, auth) {
+export async function sanitizeImage(img, {auth, referer} = {}) {
   // Check if the image matches one of the excluded
-  const imgData = img instanceof Buffer ? img : await getImageData(img, auth);
+  const imgData = img instanceof Buffer ? img : await getImageData(img, {auth, referer});
   for (const exclude of await getExcludedImages()) {
     const { equal } = await looksSame(exclude.data, imgData, {
       stopOnFirstFail: true,

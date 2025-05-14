@@ -18,8 +18,8 @@ const VoteScoreType = 'vote';
 app.http('imageAnalysis', {
   methods: ['POST'],
   async handler(request) {
-    /** @type {{url: string}} */
-    const { url } = await request.json();
+    /** @type {{url: string, referer?: string}} */
+    const { url, referer } = await request.json();
 
     // Check the access token is valid
     let userId;
@@ -42,7 +42,7 @@ app.http('imageAnalysis', {
     // Get the image data
     let data;
     try {
-      data = await getImageData(url);
+      data = await getImageData(url, { referer });
     } catch (error) {
       console.error(error);
       return createErrorResponse(404, error);
