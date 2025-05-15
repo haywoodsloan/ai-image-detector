@@ -1,6 +1,7 @@
 locals {
-  task_type = "image-classification"
-  hf_home   = "/share/hf_cache"
+  task_type  = "image-classification"
+  share_path = "/share"
+  hf_home    = "${local.share_path}/hf_cache"
 }
 resource "random_string" "resource_code" {
   length  = 5
@@ -53,7 +54,7 @@ resource "azurerm_linux_function_app" "function_app" {
     account_name = azurerm_storage_account.function_storage.name
     name         = "hf-cache"
     share_name   = azurerm_storage_share.model_share.name
-    mount_path   = "/share"
+    mount_path   = local.share_path
   }
 
   identity {
@@ -114,7 +115,7 @@ resource "azurerm_linux_function_app_slot" "function_app_slot" {
     account_name = azurerm_storage_account.function_storage.name
     name         = "hf-cache"
     share_name   = azurerm_storage_share.model_share.name
-    mount_path   = "/share"
+    mount_path   = local.share_path
   }
 
   site_config {
