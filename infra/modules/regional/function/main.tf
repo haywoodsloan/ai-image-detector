@@ -44,6 +44,8 @@ resource "azurerm_windows_function_app" "function_app" {
     SUB_ID          = data.azurerm_subscription.current.subscription_id
     COMM_ENDPOINT   = var.comm_service_endpoint
     PUBSUB_HOSTNAME = var.pubsub_hostname
+    INFERENCE_API   = var.inference_api
+    INFERENCE_KEY   = var.inference_key
     HUB_NAME        = "live"
   }
 

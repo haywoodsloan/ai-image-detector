@@ -10,7 +10,11 @@ const VoteCache = new ExpiryMap(TimeSpan.fromMinutes(15).valueOf());
  * @param {string} imageHash
  */
 export async function getVotedLabel(imageHash) {
-  if (VoteCache.has(imageHash)) return VoteCache.get(imageHash);
+  if (VoteCache.has(imageHash)) {
+    const result = VoteCache.get(imageHash);
+    VoteCache.set(imageHash, result);
+    return result;
+  }
 
   const votedLabel = await queryVotedLabel(imageHash);
   VoteCache.set(votedLabel);

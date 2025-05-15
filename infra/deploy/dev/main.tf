@@ -32,6 +32,7 @@ locals {
   env_name     = "dev"
   region_names = ["eastus2"]
   domain_name  = "ai-image-detector-dev.com"
+  model_name   = "haywoodsloan/ai-image-detector-dev-deploy"
 }
 
 module "rg" {
@@ -75,6 +76,15 @@ module "insights" {
   rg_name     = module.rg.env_rg_name
 }
 
+module "function" {
+  source                     = "../../modules/global/function"
+  env_name                   = local.env_name
+  insights_connection_string = module.insights.insights_connection_string
+  model_name                 = local.model_name
+  region_name                = local.region_names[0]
+  rg_name                    = module.rg.env_rg_name
+}
+
 module "region" {
   for_each                   = toset(local.region_names)
   source                     = "./region"
@@ -91,4 +101,6 @@ module "region" {
   env_rg_name                = module.rg.env_rg_name
   db_role_id                 = module.db.db_role_id
   insights_connection_string = module.insights.insights_connection_string
+  inference_api              = "https://${module.function.function_hostname}/api/invoke"
+  inference_key              = module.function.function_key
 }

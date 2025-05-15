@@ -2,6 +2,15 @@ output "api_endpoint" {
   value = "https://${module.frontdoor.api_subdomain}.${local.domain_name}"
 }
 
+output "inference_endpoint" {
+  value = "https://${module.function.function_hostname}/api/invoke"
+}
+
+output "inference_key" {
+  sensitive = true
+  value     = module.function.function_key
+}
+
 output "dns_nameservers" {
   value = module.dns.domain_ns
 }

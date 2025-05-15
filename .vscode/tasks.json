@@ -230,12 +230,21 @@
       ]
     },
     {
+      "label": "Stop Azure Function",
+      "type": "shell",
+      "windows": {
+        "command": "taskkill /f /im func.exe || cmd /c \"exit /b 0\"",
+        "problemMatcher": []
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Start Azure Function",
       "type": "func",
       "command": "start",
       "problemMatcher": "$func-node-watch",
       "isBackground": true,
-      "dependsOn": ["Start Azurite"],
+      "dependsOn": ["Stop Azure Function", "Start Azurite"],
       "options": { "cwd": "${workspaceFolder}/service" }
     },
     {

@@ -8,10 +8,8 @@ import {
   uploadFile,
   uploadFiles,
 } from '@huggingface/hub';
-import { InferenceClient } from '@huggingface/inference';
 import { g, r, rl, y } from 'common/utilities/colors.js';
 import { wait } from 'common/utilities/sleep.js';
-import memoize from 'memoize';
 import { basename, dirname } from 'path';
 
 import TimeSpan from './TimeSpan.js';
@@ -70,12 +68,6 @@ const pendingUploads = new Map();
 
 // Share a retry invoker for all operations
 const retry = withRetry(RetryLimit, HuggingFaceErrorDelay);
-
-// Cache the HF interface until the access token changes
-const getHfInterface = memoize(
-  () => new InferenceClient(credentials?.accessToken),
-  { cacheKey: () => credentials?.accessToken }
-);
 
 /**
  * @param {string} fileName
@@ -527,15 +519,6 @@ export async function uploadKnownUrls(urls, branch = MainBranch) {
 export function setHfAccessToken(hfToken) {
   if (!hfToken) throw new Error('Invalid HF token');
   credentials.accessToken = hfToken;
-}
-
-/**
- *
- * @param {ImageClassificationArgs} args
- * @param {ClassificationOptions} options
- */
-export async function getImageClassification(args, options) {
-  return getHfInterface().imageClassification(args, options);
 }
 
 /**

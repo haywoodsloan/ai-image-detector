@@ -28,8 +28,7 @@
     "prettier": "^3.5.3"
   },
   "dependencies": {
-    "@huggingface/hub": "^2.0.1",
-    "@huggingface/inference": "^3.13.0",
+    "@huggingface/hub": "^2.0.2",
     "cli-color": "^2.0.4",
     "file-type": "^20.5.0",
     "looks-same": "^9.0.1",

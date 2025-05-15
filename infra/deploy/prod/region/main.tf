@@ -28,4 +28,6 @@ module "function" {
   env_rg_name                = var.env_rg_name
   pubsub_hostname            = module.pubsub.pubsub_hostname
   pubsub_id                  = module.pubsub.pubsub_id
+  inference_api              = var.inference_api
+  inference_key              = var.inference_key
 }

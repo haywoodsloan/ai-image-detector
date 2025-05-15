@@ -61,3 +61,13 @@ variable "insights_connection_string" {
   type        = string
   description = "The application insights connection string"
 }
+
+variable "inference_api" {
+  type        = string
+  description = "The API for model inference"
+}
+
+variable "inference_key" {
+  type        = string
+  description = "The API key for model inference"
+}

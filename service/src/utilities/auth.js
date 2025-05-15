@@ -18,11 +18,12 @@ export async function assertValidAuth(request) {
   const accessToken = assertAccessToken(request);
   if (AuthCache.has(accessToken)) {
     const cached = AuthCache.get(accessToken);
+    AuthCache.set(accessToken, cached);
+
     if (cached) {
       await updateUserActivity(cached.userId);
       return cached.userId;
-    }
-    throw new InvalidAuthError('Invalid access token');
+    } else throw new InvalidAuthError('Invalid access token');
   }
 
   const auth = await queryValidAuth(accessToken);
