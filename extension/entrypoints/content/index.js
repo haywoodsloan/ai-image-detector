@@ -22,6 +22,7 @@ export default defineContentScript({
   async main(ctx) {
     const MinVis = 0.2;
 
+    const UpdateTimeout = TimeSpan.fromSeconds(10);
     const UpdateDebounce = TimeSpan.fromMilliseconds(175);
     const InitTimeout = TimeSpan.fromSeconds(5);
 
@@ -33,9 +34,6 @@ export default defineContentScript({
         ui.mount();
       }
     });
-
-    // TODO: Remove once we can afford infra for auto analysis
-    return;
 
     // Check if we should do the auto check observing
     const site = location.host?.toLowerCase();
@@ -52,6 +50,7 @@ export default defineContentScript({
     let aborter = new AbortController();
     watchForViewUpdate(document.body, onViewUpdate, {
       debounce: UpdateDebounce,
+      timeout: UpdateTimeout,
       immediate: true,
     });
 

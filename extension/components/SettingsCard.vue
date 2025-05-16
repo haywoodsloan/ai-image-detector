@@ -1,11 +1,10 @@
 <script setup>
-import { mdiInformationOutline, mdiLockAlert } from '@mdi/js';
+import { mdiInformationOutline } from '@mdi/js';
 import { isHttpUrl } from 'common/utilities/url.js';
 
 import SettingsSvg from '@/assets/settings.svg';
 import {
   AiIndicatorColor,
-  PrimaryColorDark,
   PrimaryColorLight,
   RealIndicatorColor,
 } from '@/utilities/color.js';
@@ -147,201 +146,126 @@ async function reload() {
         density="comfortable"
         select-strategy="leaf"
       >
-        <!-- TODO Restore these once we can afford infra -->
-        <div class="position-relative">
-          <v-list-item
-            class="px-4"
-            value="autoCheck (TODO: Remove)"
-            :disabled="true"
-          >
-            <v-list-item-title class="d-flex mb-1 gc-2">
-              Automatically analyze images
+        <v-list-item class="px-4" value="autoCheck">
+          <v-list-item-title class="d-flex mb-1 gc-2">
+            Automatically analyze images
 
-              <v-tooltip location="top center">
-                <template #activator="{ props }">
-                  <v-icon
-                    v-bind="props"
-                    :icon="mdiInformationOutline"
-                    :color="PrimaryColorLight"
-                  />
-                </template>
-
-                <StyleProvider>
-                  Data used for image analysis is never stored. Requires a page
-                  reload for changes to take effect.
-                </StyleProvider>
-              </v-tooltip>
-            </v-list-item-title>
-
-            <v-list-item-subtitle>
-              Analyze images as you browse and display an icon on the image to
-              indicate if its real or AI.
-            </v-list-item-subtitle>
-
-            <template #append="{ isActive }">
-              <v-list-item-action class="ml-3">
-                <v-switch
-                  :color="PrimaryColorLight"
-                  :model-value="isActive"
-                  inset
-                  hide-details
-                />
-              </v-list-item-action>
-            </template>
-          </v-list-item>
-
-          <v-list-item
-            class="pr-4 pl-8"
-            :disabled="true /* !toggles.includes('autoCheck') */"
-          >
-            <v-list-item-title class="mb-1"> Icon position </v-list-item-title>
-            <v-list-item-subtitle>Where to show the icon.</v-list-item-subtitle>
-
-            <template #append>
-              <v-list-item-action class="ml-3">
-                <v-select
-                  v-model="indicatorPosition"
-                  variant="solo-filled"
-                  density="compact"
-                  min-width="155"
-                  :items="[
-                    {
-                      title: 'Top left',
-                      value: 'top-left',
-                      props: { class: 'overflow-hidden' },
-                    },
-                    {
-                      title: 'Top right',
-                      value: 'top-right',
-                      props: { class: 'overflow-hidden' },
-                    },
-                    {
-                      title: 'Bottom left',
-                      value: 'bottom-left',
-                      props: { class: 'overflow-hidden' },
-                    },
-                    {
-                      title: 'Bottom right',
-                      value: 'bottom-right',
-                      props: { class: 'overflow-hidden' },
-                    },
-                  ]"
-                  hide-details
-                  flat
-                >
-                </v-select>
-              </v-list-item-action>
-            </template>
-          </v-list-item>
-
-          <v-list-item
-            class="pr-4 pl-8"
-            value="autoCheckPrivate (TODO: Remove)"
-            :disabled="true /* !toggles.includes('autoCheck') */"
-          >
-            <v-list-item-title class="d-flex mb-1 gc-2">
-              Analyze private images
-
-              <v-tooltip location="top center">
-                <template #activator="{ props }">
-                  <v-icon
-                    v-bind="props"
-                    :icon="mdiInformationOutline"
-                    :color="PrimaryColorLight"
-                  />
-                </template>
-
-                <StyleProvider>
-                  Metadata (GPS, camera info, etc.) will not be used for image
-                  analysis. May increase bandwidth usage.
-                </StyleProvider>
-              </v-tooltip>
-            </v-list-item-title>
-
-            <v-list-item-subtitle>
-              Also analyze private images (not accessible by a link alone).
-            </v-list-item-subtitle>
-
-            <template #append="{ isActive }">
-              <v-list-item-action class="ml-3">
-                <v-switch
-                  :color="PrimaryColorLight"
-                  :model-value="isActive && toggles.includes('autoCheck')"
-                  inset
-                  hide-details
-                />
-              </v-list-item-action>
-            </template>
-          </v-list-item>
-
-          <div
-            class="position-absolute top-0 left-0 bottom-0 right-0 d-flex align-center justify-center"
-          >
-            <div
-              class="position-absolute top-0 left-0 bottom-0 right-0 bg-surface-variant opacity-40"
-            ></div>
-            <v-menu
-              location="bottom center"
-              open-on-hover
-              close-delay="100"
-              :open-on-click="false"
-            >
-              <template #activator="{ props, isActive }">
+            <v-tooltip location="top center">
+              <template #activator="{ props }">
                 <v-icon
                   v-bind="props"
-                  class="locked-icon"
-                  :class="{ 'menu-open': isActive }"
-                  :icon="mdiLockAlert"
-                  color="surface"
+                  :icon="mdiInformationOutline"
+                  :color="PrimaryColorLight"
                 />
               </template>
 
               <StyleProvider>
-                <div class="bg-surface-variant rounded py-2 px-4">
-                  <p>
-                    <strong>
-                      Automatic analysis is temporarily disabled, but images can
-                      still be individually checked using the right-click menu.
-                    </strong>
-                  </p>
-                  <br />
-                  <p>
-                    Unfortunately, automatic analysis requires significantly
-                    more infrastructure than manual checks.
-                  </p>
-                  <br />
-                  <p>
-                    Currently, we cannot afford to cover the cost of this
-                    infrastructure on our own (roughly $300 per month).
-                  </p>
-                  <br />
-                  <p>
-                    But, all donations made through
-                    <a
-                      href="https://patreon.com/ai_image_detector"
-                      target="_blank"
-                      title="Patreon"
-                      :style="{ color: PrimaryColorDark }"
-                      >Patreon</a
-                    >
-                    or
-                    <a
-                      href="https://ko-fi.com/ai_image_detector"
-                      target="_blank"
-                      title="Ko-fi"
-                      :style="{ color: PrimaryColorDark }"
-                      >Ko-fi</a
-                    >
-                    will first go to funding better infrastructure and
-                    re-enabling this feature.
-                  </p>
-                  <br />
-                  <p>Thank you for your understanding and continued support!</p>
-                </div>
+                Data used for image analysis is never stored. Requires a page
+                reload for changes to take effect.
               </StyleProvider>
-            </v-menu>
-          </div>
-        </div>
+            </v-tooltip>
+          </v-list-item-title>
+
+          <v-list-item-subtitle>
+            Analyze images as you browse and display an icon on the image to
+            indicate if its real or AI.
+          </v-list-item-subtitle>
+
+          <template #append="{ isActive }">
+            <v-list-item-action class="ml-3">
+              <v-switch
+                :color="PrimaryColorLight"
+                :model-value="isActive"
+                inset
+                hide-details
+              />
+            </v-list-item-action>
+          </template>
+        </v-list-item>
+
+        <v-list-item
+          class="pr-4 pl-8"
+          :disabled="!toggles.includes('autoCheck')"
+        >
+          <v-list-item-title class="mb-1"> Icon position </v-list-item-title>
+          <v-list-item-subtitle>Where to show the icon.</v-list-item-subtitle>
+
+          <template #append>
+            <v-list-item-action class="ml-3">
+              <v-select
+                v-model="indicatorPosition"
+                variant="solo-filled"
+                density="compact"
+                min-width="155"
+                :items="[
+                  {
+                    title: 'Top left',
+                    value: 'top-left',
+                    props: { class: 'overflow-hidden' },
+                  },
+                  {
+                    title: 'Top right',
+                    value: 'top-right',
+                    props: { class: 'overflow-hidden' },
+                  },
+                  {
+                    title: 'Bottom left',
+                    value: 'bottom-left',
+                    props: { class: 'overflow-hidden' },
+                  },
+                  {
+                    title: 'Bottom right',
+                    value: 'bottom-right',
+                    props: { class: 'overflow-hidden' },
+                  },
+                ]"
+                hide-details
+                flat
+              >
+              </v-select>
+            </v-list-item-action>
+          </template>
+        </v-list-item>
+
+        <v-list-item
+          class="pr-4 pl-8"
+          value="autoCheckPrivate"
+          :disabled="!toggles.includes('autoCheck')"
+        >
+          <v-list-item-title class="d-flex mb-1 gc-2">
+            Analyze private images
+
+            <v-tooltip location="top center">
+              <template #activator="{ props }">
+                <v-icon
+                  v-bind="props"
+                  :icon="mdiInformationOutline"
+                  :color="PrimaryColorLight"
+                />
+              </template>
+
+              <StyleProvider>
+                Metadata (GPS, camera info, etc.) will not be used for image
+                analysis. May increase bandwidth usage.
+              </StyleProvider>
+            </v-tooltip>
+          </v-list-item-title>
+
+          <v-list-item-subtitle>
+            Also analyze private images (not accessible by a link alone).
+          </v-list-item-subtitle>
+
+          <template #append="{ isActive }">
+            <v-list-item-action class="ml-3">
+              <v-switch
+                :color="PrimaryColorLight"
+                :model-value="isActive && toggles.includes('autoCheck')"
+                inset
+                hide-details
+              />
+            </v-list-item-action>
+          </template>
+        </v-list-item>
 
         <v-list-item class="px-4" value="uploadImages">
           <v-list-item-title class="d-flex mb-1 gc-2">
