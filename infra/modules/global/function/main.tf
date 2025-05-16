@@ -103,11 +103,7 @@ resource "azurerm_linux_function_app_slot" "function_app_slot" {
   storage_account_name       = azurerm_linux_function_app.function_app.storage_account_name
   https_only                 = azurerm_linux_function_app.function_app.https_only
 
-  app_settings = merge(azurerm_linux_function_app.function_app.app_settings, {})
-
-  identity {
-    type = azurerm_linux_function_app.function_app.identity[0].type
-  }
+  app_settings = azurerm_linux_function_app.function_app.app_settings
 
   storage_account {
     type         = "AzureFiles"
@@ -116,6 +112,10 @@ resource "azurerm_linux_function_app_slot" "function_app_slot" {
     name         = "hf-cache"
     share_name   = azurerm_storage_share.model_share.name
     mount_path   = local.share_path
+  }
+
+  identity {
+    type = azurerm_linux_function_app.function_app.identity[0].type
   }
 
   site_config {
