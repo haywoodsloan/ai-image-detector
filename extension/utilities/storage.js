@@ -10,7 +10,7 @@ const AnalysisTtl = TimeSpan.fromMinutes(10).valueOf();
 
 /** @type {WxtStorageItem<UserSettings>} */
 export const userSettings = storage.defineItem('sync:userSettings', {
-  defaultValue: {
+  fallback: {
     autoCheck: true,
     autoCheckPrivate: false,
 

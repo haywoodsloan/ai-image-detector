@@ -46,7 +46,7 @@ const toggles = computed({
     Object.keys(storedSettings.value ?? {}).filter(
       (key) => storedSettings.value[key] === true
     ),
-  set: async (newVal) =>
+  set: (newVal) =>
     (storedSettings.value = {
       ...Object.fromEntries(newVal.map((key) => [key, true])),
       ...Object.fromEntries(
@@ -59,7 +59,7 @@ const toggles = computed({
 
 const disabledSites = computed({
   get: () => storedSettings.value?.disabledSites ?? [],
-  set: async (newVal) =>
+  set: (newVal) =>
     (storedSettings.value = {
       ...storedSettings.value,
       disabledSites: newVal,
@@ -68,7 +68,7 @@ const disabledSites = computed({
 
 const indicatorPosition = computed({
   get: () => storedSettings.value?.indicatorPosition ?? 'top-left',
-  set: async (newVal) =>
+  set: (newVal) =>
     (storedSettings.value = {
       ...storedSettings.value,
       indicatorPosition: newVal,
@@ -171,13 +171,14 @@ async function reload() {
             indicate if its real or AI.
           </v-list-item-subtitle>
 
-          <template #append="{ isActive }">
+          <template #append="{ isSelected, select }">
             <v-list-item-action class="ml-3">
               <v-switch
                 :color="PrimaryColorLight"
-                :model-value="isActive"
+                :model-value="isSelected"
                 inset
                 hide-details
+                @update:model-value="select"
               />
             </v-list-item-action>
           </template>
@@ -255,13 +256,14 @@ async function reload() {
             Also analyze private images (not accessible by a link alone).
           </v-list-item-subtitle>
 
-          <template #append="{ isActive }">
+          <template #append="{ isSelected, select }">
             <v-list-item-action class="ml-3">
               <v-switch
                 :color="PrimaryColorLight"
-                :model-value="isActive && toggles.includes('autoCheck')"
+                :model-value="isSelected && toggles.includes('autoCheck')"
                 inset
                 hide-details
+                @update:model-value="select"
               />
             </v-list-item-action>
           </template>
@@ -292,13 +294,14 @@ async function reload() {
             real or AI.
           </v-list-item-subtitle>
 
-          <template #append="{ isActive }">
+          <template #append="{ isSelected, select }">
             <v-list-item-action class="ml-3">
               <v-switch
                 :color="PrimaryColorLight"
-                :model-value="isActive"
+                :model-value="isSelected"
                 inset
                 hide-details
+                @update:model-value="select"
               />
             </v-list-item-action>
           </template>
@@ -332,13 +335,14 @@ async function reload() {
             Also upload private images when reporting them.
           </v-list-item-subtitle>
 
-          <template #append="{ isActive }">
+          <template #append="{ isSelected, select }">
             <v-list-item-action class="ml-3">
               <v-switch
                 :color="PrimaryColorLight"
-                :model-value="isActive && toggles.includes('uploadImages')"
+                :model-value="isSelected && toggles.includes('uploadImages')"
                 inset
                 hide-details
+                @update:model-value="select"
               />
             </v-list-item-action>
           </template>
@@ -363,13 +367,14 @@ async function reload() {
             </span>
           </v-list-item-subtitle>
 
-          <template #append="{ isActive }">
+          <template #append="{ isSelected, select }">
             <v-list-item-action class="ml-3">
               <v-switch
                 :color="PrimaryColorLight"
-                :model-value="isActive"
+                :model-value="isSelected"
                 inset
                 hide-details
+                @update:model-value="select"
               />
             </v-list-item-action>
           </template>
