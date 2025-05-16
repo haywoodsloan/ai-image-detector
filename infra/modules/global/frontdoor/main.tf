@@ -160,35 +160,13 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
   }
 
   custom_rule {
-    name     = "ImageAnalyzeLimitShort"
-    action   = "Block"
-    type     = "RateLimitRule"
-    priority = 5
-
-    rate_limit_duration_in_minutes = 1
-    rate_limit_threshold           = 200
-
-    match_condition {
-      match_variable = "RequestUri"
-      operator       = "Contains"
-      match_values   = ["${local.host_name}/imageAnalysis"]
-    }
-
-    match_condition {
-      match_variable = "RequestMethod"
-      match_values   = ["POST"]
-      operator       = "Equal"
-    }
-  }
-
-  custom_rule {
     name     = "ImageAnalyzeLimitLong"
     action   = "Block"
     type     = "RateLimitRule"
     priority = 6
 
     rate_limit_duration_in_minutes = 5
-    rate_limit_threshold           = 750
+    rate_limit_threshold           = 800
 
     match_condition {
       match_variable = "RequestUri"
@@ -210,7 +188,7 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "firewall_policy" {
     priority = 7
 
     rate_limit_duration_in_minutes = 1
-    rate_limit_threshold           = 100
+    rate_limit_threshold           = 200
 
     match_condition {
       match_variable = "RequestUri"
