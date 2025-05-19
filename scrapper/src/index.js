@@ -340,6 +340,8 @@ if (args.real || args.all) {
       // Close the page to return the used memory
       await page.close();
     }
+
+    console.log(g`Done with all subreddits`);
   } catch (error) {
     // Make sure the log directory exists
     await mkdir(LogPath, { recursive: true });
@@ -353,12 +355,10 @@ if (args.real || args.all) {
     await page?.screenshot({ path: errorPng });
 
     console.error(r`Unexpected failure ${error}`);
-    throw error;
+  } finally {
+    // Close the browser to release some memory
+    await browser.close();
   }
-
-  // Close the browser to release some memory
-  console.log(g`Done with all subreddits`);
-  await browser.close();
 }
 
 // Upload the remaining files to Hugging Face
