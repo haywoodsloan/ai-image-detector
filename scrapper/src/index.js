@@ -13,6 +13,7 @@ import {
   uploadImages,
 } from 'common/utilities/huggingface.js';
 import { getExt, sanitizeImage } from 'common/utilities/image.js';
+import { shuffle } from 'common/utilities/iterable.js';
 import { withRetry } from 'common/utilities/retry.js';
 import { loadSettings } from 'common/utilities/settings.js';
 import { wait } from 'common/utilities/sleep.js';
@@ -230,117 +231,114 @@ if (args.real || args.all) {
   let page;
 
   // Browse to multiple Subreddits and scrape files
-  const toScrape = {
-    ...(args.real || (args.all && { [RealLabel]: RealSubReddits })),
-    ...(args.ai || (args.all && { [AiLabel]: AiSubReddits })),
-  };
+  const toScrape = shuffle([
+    ...((args.real || args.all) && RealSubReddits.map((s) => [RealLabel, s])),
+    ...((args.ai || args.all) && AiSubReddits.map((s) => [AiLabel, s])),
+  ]);
 
   try {
-    for (const [label, scrapeUrls] of Object.entries(toScrape)) {
-      for (let i = 0; i < scrapeUrls.length && count < args.count; i++) {
-        page = await browser.newPage();
-        await page.setUserAgent(ChromeUA);
+    for (const [label, scrapeUrl] of toScrape) {
+      page = await browser.newPage();
+      await page.setUserAgent(ChromeUA);
 
-        const client = await page.createCDPSession();
-        await client.send('HeapProfiler.enable');
+      const client = await page.createCDPSession();
+      await client.send('HeapProfiler.enable');
 
-        // Navigate to the page and wait for network traffic to settle
-        const scrapeUrl = scrapeUrls[i];
-        console.log(y`Navigating to ${scrapeUrl}`);
+      // Navigate to the page and wait for network traffic to settle
+      console.log(y`Navigating to ${scrapeUrl}`);
 
-        // Wait for the loader to appear so we know the posts will load.
-        const retry = withRetry(RetryLimit, RedditErrorDelay);
-        await retry(
-          async () => {
-            await page.goto(scrapeUrl, { waitUntil: 'networkidle2' });
-            await page.waitForSelector(LoaderSelector);
-            console.log(g`Finished loading ${scrapeUrl}`);
-          },
-          async () => console.log(r`Subreddit loading failed, refreshing`)
+      // Wait for the loader to appear so we know the posts will load.
+      const retry = withRetry(RetryLimit, RedditErrorDelay);
+      await retry(
+        async () => {
+          await page.goto(scrapeUrl, { waitUntil: 'networkidle2' });
+          await page.waitForSelector(LoaderSelector);
+          console.log(g`Finished loading ${scrapeUrl}`);
+        },
+        async () => console.log(r`Subreddit loading failed, refreshing`)
+      );
+
+      // Start scrapping images and scrolling through the page
+      while (true) {
+        // Get the image sources
+        const sources = await page.$$eval(ImageSelector, (images) =>
+          images.map(({ src }) => src)
         );
 
-        // Start scrapping images and scrolling through the page
-        while (true) {
-          // Get the image sources
-          const sources = await page.$$eval(ImageSelector, (images) =>
-            images.map(({ src }) => src)
+        // Replace the preview urls with full image urls
+        const urls = sources.map((src) => {
+          const { pathname } = new URL(src);
+          const fileName = basename(pathname);
+          const shortFileName = fileName.substring(
+            fileName.lastIndexOf('-') + 1
           );
+          return new URL(`https://i.redd.it/${shortFileName}`);
+        });
 
-          // Replace the preview urls with full image urls
-          const urls = sources.map((src) => {
-            const { pathname } = new URL(src);
-            const fileName = basename(pathname);
-            const shortFileName = fileName.substring(
-              fileName.lastIndexOf('-') + 1
-            );
-            return new URL(`https://i.redd.it/${shortFileName}`);
-          });
+        // Queue image uploads to bulk upload to Hugging Face, skip existing files
+        for (let i = 0; i < urls.length && count < args.count; i++) {
+          const origin = urls[i];
 
-          // Queue image uploads to bulk upload to Hugging Face, skip existing files
-          for (let i = 0; i < urls.length && count < args.count; i++) {
-            const origin = urls[i];
+          // Skip urls to images that have already been scrapped
+          if (scrappedUrls.has(origin.toString())) continue;
+          scrappedUrls.add(origin.toString());
 
-            // Skip urls to images that have already been scrapped
-            if (scrappedUrls.has(origin.toString())) continue;
-            scrappedUrls.add(origin.toString());
-
-            queueValidation(origin, label);
-            if (validationQueue.size >= UploadBatchSize) {
-              await queueUpload();
-            }
-
-            if (pendingUploads.size >= MaxPendingUploads) {
-              await throttleUploads();
-            }
+          queueValidation(origin, label);
+          if (validationQueue.size >= UploadBatchSize) {
+            await queueUpload();
           }
 
-          // Break if we've reached the maximum number of images
-          if (count >= args.count) {
-            console.log(y`Reached maximum image count`);
-            break;
-          }
-
-          // Check if the post loader is gone
-          // If so break, we've reached the end of the Subreddit
-          const loader = await page.$(LoaderSelector);
-          if (!loader) {
-            console.log(y`Reached end of ${scrapeUrl}`);
-            break;
-          }
-
-          // Delay a bit before scrolling to avoid rate-limiting
-          await wait(ScrollDelay);
-
-          // Scroll to load more images
-          await page.evaluate(() =>
-            window.scrollBy(0, document.body.scrollHeight)
-          );
-
-          // Click the retry button if an errors has occurred
-          if (await page.$(RetrySelector)) {
-            await wait(RedditErrorDelay);
-            const retryButton = await page.$(RetrySelector);
-            await retryButton?.click();
-          }
-
-          // Force garbage collection after removing extra elements.
-          await client.send('HeapProfiler.collectGarbage');
-
-          // Wait for the loader to disappear and the posts to finish loading
-          const loading = await page.$(LoadingSelector);
-          if (await loading?.isVisible()) {
-            try {
-              await waitForHidden(loading, LoadStuckTimeout);
-            } catch (error) {
-              console.warn(rl`Post loading failed, refreshing ${error}`);
-              await page.reload({ waitUntil: 'networkidle2' });
-            }
+          if (pendingUploads.size >= MaxPendingUploads) {
+            await throttleUploads();
           }
         }
 
-        // Close the page to return the used memory
-        await page.close();
+        // Break if we've reached the maximum number of images
+        if (count >= args.count) {
+          console.log(y`Reached maximum image count`);
+          break;
+        }
+
+        // Check if the post loader is gone
+        // If so break, we've reached the end of the Subreddit
+        const loader = await page.$(LoaderSelector);
+        if (!loader) {
+          console.log(y`Reached end of ${scrapeUrl}`);
+          break;
+        }
+
+        // Delay a bit before scrolling to avoid rate-limiting
+        await wait(ScrollDelay);
+
+        // Scroll to load more images
+        await page.evaluate(() =>
+          window.scrollBy(0, document.body.scrollHeight)
+        );
+
+        // Click the retry button if an errors has occurred
+        if (await page.$(RetrySelector)) {
+          await wait(RedditErrorDelay);
+          const retryButton = await page.$(RetrySelector);
+          await retryButton?.click();
+        }
+
+        // Force garbage collection after removing extra elements.
+        await client.send('HeapProfiler.collectGarbage');
+
+        // Wait for the loader to disappear and the posts to finish loading
+        const loading = await page.$(LoadingSelector);
+        if (await loading?.isVisible()) {
+          try {
+            await waitForHidden(loading, LoadStuckTimeout);
+          } catch (error) {
+            console.warn(rl`Post loading failed, refreshing ${error}`);
+            await page.reload({ waitUntil: 'networkidle2' });
+          }
+        }
       }
+
+      // Close the page to return the used memory
+      await page.close();
     }
   } catch (error) {
     // Make sure the log directory exists
