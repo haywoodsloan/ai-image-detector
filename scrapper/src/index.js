@@ -231,8 +231,8 @@ if (args.real || args.all) {
 
   // Browse to multiple Subreddits and scrape files
   const toScrape = {
-    ...(args.real || args.all && { [RealLabel]: RealSubReddits }),
-    ...(args.ai || args.all && { [AiLabel]: AiSubReddits }),
+    ...(args.real || (args.all && { [RealLabel]: RealSubReddits })),
+    ...(args.ai || (args.all && { [AiLabel]: AiSubReddits })),
   };
 
   try {
@@ -256,10 +256,7 @@ if (args.real || args.all) {
             await page.waitForSelector(LoaderSelector);
             console.log(g`Finished loading ${scrapeUrl}`);
           },
-          async () => {
-            console.log(r`Subreddit loading failed, refreshing`);
-            await page.goto(scrapeUrl, { waitUntil: 'networkidle2' });
-          }
+          async () => console.log(r`Subreddit loading failed, refreshing`)
         );
 
         // Start scrapping images and scrolling through the page
