@@ -1,7 +1,6 @@
 locals {
-  task_type  = "image-classification"
-  share_path = "/share"
-  hf_home    = "${local.share_path}/hf_cache"
+  task_type = "image-classification"
+  hf_home   = "home/hf_cache"
 }
 resource "random_string" "resource_code" {
   length  = 5
@@ -15,12 +14,6 @@ resource "azurerm_storage_account" "function_storage" {
   location                 = var.region_name
   account_tier             = "Standard"
   account_replication_type = "LRS"
-}
-
-resource "azurerm_storage_share" "model_share" {
-  name               = "model-cache"
-  storage_account_id = azurerm_storage_account.function_storage.id
-  quota              = 10
 }
 
 resource "azurerm_service_plan" "function_service_plan" {
@@ -41,20 +34,10 @@ resource "azurerm_linux_function_app" "function_app" {
   service_plan_id            = azurerm_service_plan.function_service_plan.id
   https_only                 = true
 
-
   app_settings = {
     MODEL_NAME = var.model_name
     HF_HOME    = local.hf_home
     TASK_TYPE  = local.task_type
-  }
-
-  storage_account {
-    type         = "AzureFiles"
-    access_key   = azurerm_storage_account.function_storage.primary_access_key
-    account_name = azurerm_storage_account.function_storage.name
-    name         = "hf-cache"
-    share_name   = azurerm_storage_share.model_share.name
-    mount_path   = local.share_path
   }
 
   identity {
@@ -104,15 +87,6 @@ resource "azurerm_linux_function_app_slot" "function_app_slot" {
   https_only                 = azurerm_linux_function_app.function_app.https_only
 
   app_settings = azurerm_linux_function_app.function_app.app_settings
-
-  storage_account {
-    type         = "AzureFiles"
-    access_key   = azurerm_storage_account.function_storage.primary_access_key
-    account_name = azurerm_storage_account.function_storage.name
-    name         = "hf-cache"
-    share_name   = azurerm_storage_share.model_share.name
-    mount_path   = local.share_path
-  }
 
   identity {
     type = azurerm_linux_function_app.function_app.identity[0].type
