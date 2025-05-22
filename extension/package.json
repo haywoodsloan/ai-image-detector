@@ -1,7 +1,7 @@
 {
   "name": "ai-image-detector-extension",
   "description": "Checks for AI generated images and incorporates community feedback",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "types": "./types.d.ts",
   "type": "module",
   "scripts": {
@@ -22,6 +22,7 @@
     "@vueuse/core": "^13.2.0",
     "clone-deep": "^4.0.1",
     "color-interpolate": "^1.0.5",
+    "color-parse": "^2.0.2",
     "common": "file:../common",
     "email-validator": "^2.0.4",
     "hash-wasm": "^4.12.0",

@@ -40,7 +40,11 @@ export default defineConfig({
           prefixer({
             prefix: '[data-aid-3bi9lk5g]',
             ignoreFiles: ['index.html', 'popup.html'],
-            exclude: [/\[data-aid-3bi9lk5g\]/, /\[data-v-[a-z0-9A-Z]+\]/],
+            exclude: [
+              /\[data-aid-3bi9lk5g\]/,
+              /\[data-v-[a-z0-9A-Z]+\]/,
+              /\[data-imgfix-47dh3\]/,
+            ],
 
             transform: (prefix, orig, prefixed) =>
               isOverlay(orig) ? `${prefix}${orig}` : prefixed,

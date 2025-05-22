@@ -1,9 +1,13 @@
+import parse from 'color-parse';
 import TimeSpan from 'common/utilities/TimeSpan.js';
+
+import '@/styles/imgfix.scss';
 
 import { getImageSrc } from './image.js';
 
 const GridSize = 2;
 const ExcludeRegex = /\.(gif|svg|avif)$/i;
+const ImgFixDataName = 'imgfix-47dh3';
 
 /** @type {IntersectionObserverInit} */
 const IntersectObsOptions = {
@@ -24,19 +28,24 @@ const ChildObsOptions = {
 };
 
 /**
- * @param {Element} ele
+ * @param {HTMLElement} ele
  */
 export function isElementCovered(ele, inset = 0) {
   /** @type {Set<Element>} */
   const covering = new Set();
 
   for (const { x, y } of getElementGrid(ele, inset)) {
-    for (const topEle of elementsFromPoint(x, y)) {
-      if (topEle === ele) return null;
-      if (!isStyleHidden(topEle)) {
-        covering.add(topEle);
-        break;
+    try {
+      ele.dataset[ImgFixDataName] = '';
+      for (const topEle of elementsFromPoint(x, y)) {
+        if (topEle === ele) return null;
+        if (!isStyleHidden(topEle)) {
+          covering.add(topEle);
+          break;
+        }
       }
+    } finally {
+      delete ele.dataset[ImgFixDataName];
     }
   }
 
@@ -79,6 +88,15 @@ export function isImageElement(ele) {
  * @param {Element} ele
  */
 export function isStyleHidden(ele) {
+  if (!ele.src) {
+    const compStyle = getComputedStyle(ele);
+
+    const bgColor = parse(compStyle.backgroundColor);
+    const bgImage = compStyle.backgroundImage;
+
+    if (bgColor.alpha <= 0.5 && bgImage === 'none') return true;
+  }
+
   return (
     !ele.offsetParent ||
     ele.offsetWidth <= 1 ||
