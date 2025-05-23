@@ -62,6 +62,7 @@ const PexelsApis = [
   'https://api.pexels.com/v1/search?query=animal&per_page=80',
   'https://api.pexels.com/v1/search?query=landscape&per_page=80',
   'https://api.pexels.com/v1/search?query=city&per_page=80',
+  'https://api.pexels.com/v1/search?query=portrait&per_page=80',
 ];
 
 const AiSubReddits = [
