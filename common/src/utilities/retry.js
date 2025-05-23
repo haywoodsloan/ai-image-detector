@@ -38,7 +38,7 @@ export function withRetry(retryLimit, timeout) {
         retryCount++;
 
         const multiplier = Math.random() * 0.15 + 1;
-        await wait(timeout * retryCount * multiplier);
+        await wait(timeout.valueOf() * retryCount * multiplier);
         await onerror?.(error, retryCount);
       }
     }
