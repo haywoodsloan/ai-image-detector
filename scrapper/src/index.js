@@ -60,6 +60,7 @@ const PexelsApis = [
   'https://api.pexels.com/v1/search?query=edited&per_page=80',
   'https://api.pexels.com/v1/search?query=architecture&per_page=80',
   'https://api.pexels.com/v1/search?query=animal&per_page=80',
+  'https://api.pexels.com/v1/search?query=pets&per_page=80',
   'https://api.pexels.com/v1/search?query=landscape&per_page=80',
   'https://api.pexels.com/v1/search?query=city&per_page=80',
   'https://api.pexels.com/v1/search?query=portrait&per_page=80',
@@ -77,6 +78,7 @@ const AiSubReddits = [
 
 const RealSubReddits = [
   'https://www.reddit.com/r/Art/',
+  'https://www.reddit.com/r/aww/',
   'https://www.reddit.com/r/pics/',
   'https://www.reddit.com/r/BookCovers/',
   'https://www.reddit.com/r/Illustration/',
