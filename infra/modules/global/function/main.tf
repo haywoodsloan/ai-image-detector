@@ -1,6 +1,6 @@
 locals {
   task_type = "image-classification"
-  hf_home   = "home/hf_cache"
+  hf_home   = "/home/hf_cache"
 }
 resource "random_string" "resource_code" {
   length  = 5

@@ -21,11 +21,11 @@
   "author": "haywoodsloan",
   "license": "ISC",
   "dependencies": {
-    "@azure/arm-cosmosdb": "^16.2.0",
+    "@azure/arm-cosmosdb": "^16.3.0",
     "@azure/communication-email": "^1.0.0",
-    "@azure/functions": "^4.7.0",
+    "@azure/functions": "^4.7.2",
     "@azure/identity": "^4.10.0",
-    "@azure/web-pubsub": "^1.1.4",
+    "@azure/web-pubsub": "^1.2.0",
     "common": "file:../common",
     "durable-functions": "^3.1.0",
     "email-validator": "^2.0.4",
@@ -36,9 +36,9 @@
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
-    "eslint": "^9.26.0",
+    "eslint": "^9.27.0",
     "eslint-config-prettier": "^10.1.5",
-    "globals": "^16.1.0",
+    "globals": "^16.2.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.5.3"
   },
