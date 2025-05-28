@@ -88,7 +88,7 @@ export function isImageElement(ele) {
  * @param {Element} ele
  */
 export function isStyleHidden(ele) {
-  if (!ele.src) {
+  if (!ele.src && ele.tagName !== 'SVG') {
     const compStyle = getComputedStyle(ele);
 
     const bgColor = parse(compStyle.backgroundColor);
