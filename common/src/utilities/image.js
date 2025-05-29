@@ -11,6 +11,8 @@ import { isDataUrl, isHttpUrl } from './url.js';
 
 // Maximum number of pixels Autotrain will handle
 const MaxPixels = 178_956_970;
+const OptimizedWidth = 256;
+const OptimizedHeight = 256;
 
 const getExcludedImages = memoize(async () => {
   // Read each excluded file return the name and data
@@ -81,7 +83,18 @@ export async function normalizeImage(imgData) {
  */
 export async function optimizeImage(data) {
   console.log(l`Optimizing image, pre-size: ${data.byteLength}`);
-  data = await sharp(data).webp().toBuffer();
+  data = await sharp(data)
+    .resize(OptimizedWidth, OptimizedHeight, {
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+    .webp({
+      smartSubsample: true,
+      smartDeblock: true,
+      quality: 90,
+    })
+    .toBuffer();
+
   console.log(l`Optimization complete, post-size: ${data.byteLength}`);
   return data;
 }
