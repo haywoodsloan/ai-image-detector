@@ -12,6 +12,6 @@ resource "azurerm_application_insights" "insights" {
   workspace_id        = azurerm_log_analytics_workspace.workspace.id
   application_type    = "Node.JS"
 
-  daily_data_cap_in_gb = 1
+  daily_data_cap_in_gb = 0.5
   sampling_percentage = 25
 }
