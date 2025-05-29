@@ -1,5 +1,6 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { AiLabel } from 'common/utilities/huggingface.js';
+import { optimizeImage } from 'common/utilities/image.js';
 import { withRetry } from 'common/utilities/retry.js';
 import { l } from 'common/utilities/string.js';
 import ExpiryMap from 'expiry-map';
@@ -23,6 +24,7 @@ export async function classifyIfAi(data, hash) {
   }
 
   // Check several AI related classifications
+  data = await optimizeImage(data);
   const results = await retry(
     async () => invokeModel(data),
     (error) => console.log(l`Retrying detector request ${error}`)

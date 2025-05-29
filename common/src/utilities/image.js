@@ -6,6 +6,7 @@ import { join } from 'path';
 import sharp from 'sharp';
 
 import { bl, yl } from './colors.js';
+import { l } from './string.js';
 import { isDataUrl, isHttpUrl } from './url.js';
 
 // Maximum number of pixels Autotrain will handle
@@ -30,7 +31,6 @@ const getExcludedImages = memoize(async () => {
         // Azure Functions don't have the latest Node v20
         // So we need to also check for the old path prop
         const parent = entry.parentPath ?? entry.path;
-
         return {
           name: entry.name,
           data: await readFile(join(parent, entry.name)),
@@ -43,16 +43,15 @@ const getExcludedImages = memoize(async () => {
  * @param {string | URL} uri
  * @param {{auth?: string, referer?: string}}
  */
-export async function getImageData(uri, {auth, referer} = {}) {
+export async function getImageData(uri, { auth, referer } = {}) {
   // If a url was provided, fetch it
   if (isHttpUrl(uri) || isDataUrl(uri)) {
-
     /** @type {HeadersInit} */
     const headers = {};
-    if (auth) headers["Authorization"] = auth;
-    if (referer) headers["Referer"] = referer;
+    if (auth) headers['Authorization'] = auth;
+    if (referer) headers['Referer'] = referer;
 
-    const req = await fetch(uri, { headers })
+    const req = await fetch(uri, { headers });
     if (!req.ok)
       throw new Error(`Image fetch failed, ${req.statusText || req.status}`);
 
@@ -78,12 +77,24 @@ export async function normalizeImage(imgData) {
 }
 
 /**
+ * @param {Buffer} data
+ */
+export async function optimizeImage(data) {
+  console.log(l`Optimizing image, pre-size: ${data.byteLength}`);
+  data = await sharp(data).webp().toBuffer();
+  console.log(l`Optimization complete, post-size: ${data.byteLength}`);
+  return data;
+}
+
+/**
  * @param {string | URL | Buffer} img
  * @param {string} [auth]
  */
-export async function sanitizeImage(img, {auth, referer} = {}) {
+export async function sanitizeImage(img, { auth, referer } = {}) {
   // Check if the image matches one of the excluded
-  const imgData = img instanceof Buffer ? img : await getImageData(img, {auth, referer});
+  const imgData =
+    img instanceof Buffer ? img : await getImageData(img, { auth, referer });
+
   for (const exclude of await getExcludedImages()) {
     const { equal } = await looksSame(exclude.data, imgData, {
       stopOnFirstFail: true,
