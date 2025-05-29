@@ -7,6 +7,7 @@ export class DataUrlAction extends BaseAction {
 
   /**
    * @param {{src: string}}
+   * @returns {Promise<string>}
    */
   static async invoke({ src }) {
     const response = await fetch(src, { credentials: 'include' });
@@ -18,7 +19,7 @@ export class DataUrlAction extends BaseAction {
     const blob = await response.blob();
     return new Promise((res) => {
       const reader = new FileReader();
-      reader.onload = ({ target: { result } }) => res(result);
+      reader.onload = () => res(reader.result);
       reader.readAsDataURL(blob);
     });
   }

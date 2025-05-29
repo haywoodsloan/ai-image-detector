@@ -1,4 +1,4 @@
-import { isHttpUrl } from 'common/utilities/url.js';
+import { isBlobUrl, isHttpUrl } from 'common/utilities/url.js';
 
 import { analyzeImage } from '@/api/detector.js';
 import { deleteImageVote, voteImageLabel } from '@/api/vote.js';
@@ -34,6 +34,11 @@ export async function checkImage(src, { force = false, signal } = {}) {
 
     await waitForUploadSlot();
     signal?.throwIfAborted();
+
+    if (isBlobUrl(src)) {
+      src = await convertBlobUrl(src);
+      signal?.throwIfAborted();
+    }
 
     const hardCheck = (async () => {
       try {
@@ -148,4 +153,19 @@ async function waitForUploadSlot() {
  */
 export function getImageSrc(img) {
   return img.currentSrc || img.src;
+}
+
+/**
+ * @param {string} url
+ * @returns {Promise<string>}
+ */
+async function convertBlobUrl(url) {
+  const response = await fetch(url);
+  const blob = await response.blob();
+
+  return new Promise((res) => {
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result);
+    reader.readAsDataURL(blob);
+  });
 }

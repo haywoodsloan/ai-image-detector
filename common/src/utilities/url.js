@@ -14,7 +14,7 @@ export function isHttpUrl(url) {
 export function isFileUrl(url) {
   try {
     const { protocol } = new URL(url);
-    return protocol === 'file:'
+    return protocol === 'file:';
   } catch {
     // URL parse error
     return false;
@@ -28,6 +28,19 @@ export function isDataUrl(url) {
   try {
     const { protocol } = new URL(url);
     return protocol === 'data:';
+  } catch {
+    // URL parse error
+    return false;
+  }
+}
+
+/**
+ * @param {string} url
+ */
+export function isBlobUrl(url) {
+  try {
+    const { protocol } = new URL(url);
+    return protocol === 'blob:';
   } catch {
     // URL parse error
     return false;
