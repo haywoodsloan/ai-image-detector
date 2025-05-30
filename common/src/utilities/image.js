@@ -93,7 +93,7 @@ export async function optimizeImage(data) {
     .webp({
       smartSubsample: true,
       smartDeblock: true,
-      quality: 100,
+      quality: 90,
     })
     .toBuffer();
 
