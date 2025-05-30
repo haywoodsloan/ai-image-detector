@@ -6,7 +6,7 @@ import '@/styles/imgfix.scss';
 import { getImageSrc } from './image.js';
 
 const GridSize = 2;
-const ExcludeRegex = /\.(gif|svg|avif)$/i;
+const ExcludeRegex = /(image\/|\.)(gif|svg)(\W|$)/i;
 const ImgFixDataName = 'imgfix-47dh3';
 
 /** @type {IntersectionObserverInit} */
