@@ -82,7 +82,9 @@ export async function normalizeImage(imgData) {
  * @param {Buffer} data
  */
 export async function optimizeImage(data) {
-  console.log(l`Optimizing image, pre-size: ${data.byteLength}`);
+  const preSize = data.byteLength;
+  console.log(l`Optimizing image ${{ preSize }}`);
+
   data = await sharp(data)
     .resize(OptimizedWidth, OptimizedHeight, {
       fit: 'inside',
@@ -91,11 +93,14 @@ export async function optimizeImage(data) {
     .webp({
       smartSubsample: true,
       smartDeblock: true,
-      quality: 90,
+      quality: 100,
     })
     .toBuffer();
 
-  console.log(l`Optimization complete, post-size: ${data.byteLength}`);
+  const postSize = data.byteLength;
+  const sizeDiff = postSize - preSize;
+  console.log(l`Optimization complete ${{ postSize, sizeDiff }}`);
+
   return data;
 }
 
