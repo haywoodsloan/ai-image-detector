@@ -22,7 +22,7 @@ export default defineContentScript({
   async main(ctx) {
     const MinVis = 0.2;
 
-    const UpdateTimeout = TimeSpan.fromSeconds(10);
+    const UpdateTimeout = TimeSpan.fromSeconds(5);
     const UpdateDebounce = TimeSpan.fromMilliseconds(175);
     const InitTimeout = TimeSpan.fromSeconds(5);
 
@@ -62,10 +62,9 @@ export default defineContentScript({
       const toRemove = new Set(uiMap.keys());
       const toAdd = new Set();
 
-      const children = getChildrenDeep(document.body);
+      const children = getChildrenDeep(document.body, isImageElement);
       for (const ele of children) {
         if (signal.aborted) return;
-        if (!isImageElement(ele)) continue;
 
         if (
           isElementMinSize(ele) &&
