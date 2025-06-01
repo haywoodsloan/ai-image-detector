@@ -90,11 +90,14 @@ export function isImageElement(ele) {
 export function isStyleHidden(ele) {
   if (!ele.src && ele.tagName !== 'SVG') {
     const compStyle = getComputedStyle(ele);
-
+    
     const bgColor = parse(compStyle.backgroundColor);
     const bgImage = compStyle.backgroundImage;
 
-    if (bgColor.alpha <= 0.5 && bgImage === 'none') return true;
+    const opacity = Number(compStyle.opacity);
+    const bgOpacity = bgColor.alpha * opacity;
+
+    if (bgOpacity <= 0.5 && bgImage === 'none') return true;
   }
 
   return (
