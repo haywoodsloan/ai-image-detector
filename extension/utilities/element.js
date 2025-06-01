@@ -111,7 +111,7 @@ export function isStyleHidden(ele) {
 
 /**
  * @param {Element | ShadowRoot} ele
- * @param {(ele: Element) => boolean} filter
+ * @param {(ele: Element) => boolean} [filter]
  */
 export function getChildrenDeep(ele, filter) {
   /** @type {Element[]} */
@@ -127,7 +127,7 @@ export function getChildrenDeep(ele, filter) {
         ? [...root.getElementsByTagName('*')]
         : [...root.querySelectorAll('*')];
 
-    elements.push(...children.filter(filter));
+    elements.push(...(filter ? children.filter(filter) : children));
     roots.push(
       ...children.filter((e) => e.shadowRoot).map((e) => e.shadowRoot)
     );
