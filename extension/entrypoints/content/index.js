@@ -54,7 +54,7 @@ export default defineContentScript({
       immediate: true,
     });
 
-    function onViewUpdate() {
+    async function onViewUpdate() {
       aborter.abort();
       aborter = new AbortController();
       const signal = aborter.signal;
@@ -62,7 +62,7 @@ export default defineContentScript({
       const toRemove = new Set(uiMap.keys());
       const toAdd = new Set();
 
-      const children = getChildrenDeep(document.body, isImageElement);
+      const children = await getChildrenDeep(document.body, isImageElement);
       for (const ele of children) {
         if (signal.aborted) return;
 
@@ -96,10 +96,15 @@ export default defineContentScript({
     }
 
     /**
-     * @param {Element} ele
+     * @param {HTMLImageElement} ele
      */
     function isElementMinSize(ele) {
-      return ele.clientWidth > 100 && ele.clientHeight > 50;
+      return (
+        ele.clientWidth > 100 &&
+        ele.naturalWidth > 100 &&
+        ele.clientHeight > 50 &&
+        ele.naturalHeight > 50
+      );
     }
 
     /**

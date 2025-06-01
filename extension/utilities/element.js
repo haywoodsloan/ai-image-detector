@@ -1,5 +1,6 @@
 import parse from 'color-parse';
 import TimeSpan from 'common/utilities/TimeSpan.js';
+import { isBlobUrl } from 'common/utilities/url.js';
 
 import '@/styles/imgfix.scss';
 
@@ -74,11 +75,17 @@ export async function waitForStablePosition(ele, signal) {
 /**
  * @param {Element} ele
  */
-export function isImageElement(ele) {
+export async function isImageElement(ele) {
   if (ele.nodeName !== 'IMG') return false;
 
   const src = getImageSrc(ele);
   if (!src) return false;
+
+  if (isBlobUrl(src)) {
+    const response = await fetch(src);
+    const contentType = response.headers.get('Content-Type');
+    return !ExcludeRegex.test(contentType);
+  }
 
   const { pathname } = new URL(src);
   return !ExcludeRegex.test(pathname);
@@ -90,7 +97,7 @@ export function isImageElement(ele) {
 export function isStyleHidden(ele) {
   if (!ele.src && ele.tagName !== 'SVG') {
     const compStyle = getComputedStyle(ele);
-    
+
     const bgColor = parse(compStyle.backgroundColor);
     const bgImage = compStyle.backgroundImage;
 
@@ -114,9 +121,9 @@ export function isStyleHidden(ele) {
 
 /**
  * @param {Element | ShadowRoot} ele
- * @param {(ele: Element) => boolean} [filter]
+ * @param {(ele: Element) => boolean | Promise<boolean>} [filter]
  */
-export function getChildrenDeep(ele, filter) {
+export async function getChildrenDeep(ele, filter) {
   /** @type {Element[]} */
   const elements = [];
   const roots = [ele];
@@ -127,13 +134,13 @@ export function getChildrenDeep(ele, filter) {
   while ((root = roots.pop())) {
     const children =
       root instanceof Element
-        ? [...root.getElementsByTagName('*')]
-        : [...root.querySelectorAll('*')];
+        ? root.getElementsByTagName('*')
+        : root.querySelectorAll('*');
 
-    elements.push(...(filter ? children.filter(filter) : children));
-    roots.push(
-      ...children.filter((e) => e.shadowRoot).map((e) => e.shadowRoot)
-    );
+    for (const child of children) {
+      if (!filter || (await filter(child))) elements.push(child);
+      if (child.shadowRoot) roots.push(child.shadowRoot);
+    }
   }
 
   return elements;
@@ -221,7 +228,7 @@ export async function watchForViewUpdate(
   const childObs = new MutationObserver((mutations) => {
     reset();
 
-    requestIdleCallback(() => {
+    requestIdleCallback(async () => {
       for (const mutation of mutations) {
         for (const newEle of mutation.addedNodes) {
           if (!(newEle instanceof Element)) continue;
@@ -234,7 +241,8 @@ export async function watchForViewUpdate(
             childObs.observe(newEle.shadowRoot, ChildObsOptions);
             styleObs.observe(newEle.shadowRoot, StyleObsOptions);
 
-            for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
+            const children = await getChildrenDeep(newEle.shadowRoot);
+            for (const shadowChild of children) {
               interObs.observe(shadowChild);
               interObs.takeRecords();
             }
@@ -251,13 +259,14 @@ export async function watchForViewUpdate(
   });
 
   childObs.observe(ele, ChildObsOptions);
-  requestIdleCallback(() => {
+  requestIdleCallback(async () => {
     styleObs.observe(ele, StyleObsOptions);
 
     interObs.observe(ele);
     interObs.takeRecords();
 
-    for (const child of getChildrenDeep(ele)) {
+    const children = await getChildrenDeep(ele);
+    for (const child of children) {
       interObs.observe(child);
       interObs.takeRecords();
 
@@ -330,7 +339,7 @@ export async function waitForStableView(
     const childObs = new MutationObserver((mutations) => {
       reset();
 
-      requestIdleCallback(() => {
+      requestIdleCallback(async () => {
         for (const mutation of mutations) {
           for (const newEle of mutation.addedNodes) {
             if (!(newEle instanceof Element)) continue;
@@ -343,7 +352,8 @@ export async function waitForStableView(
               childObs.observe(newEle.shadowRoot, ChildObsOptions);
               styleObs.observe(newEle.shadowRoot, StyleObsOptions);
 
-              for (const shadowChild of getChildrenDeep(newEle.shadowRoot)) {
+              const children = await getChildrenDeep(newEle.shadowRoot);
+              for (const shadowChild of children) {
                 interObs.observe(shadowChild);
                 interObs.takeRecords();
               }
@@ -360,13 +370,14 @@ export async function waitForStableView(
     });
 
     childObs.observe(ele, ChildObsOptions);
-    requestIdleCallback(() => {
+    requestIdleCallback(async () => {
       styleObs.observe(ele, StyleObsOptions);
 
       interObs.observe(ele);
       interObs.takeRecords();
 
-      for (const child of getChildrenDeep(ele)) {
+      const children = await getChildrenDeep(ele);
+      for (const child of children) {
         interObs.observe(child);
         interObs.takeRecords();
 
