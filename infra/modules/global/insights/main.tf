@@ -1,3 +1,12 @@
+locals {
+  api_endpoints = [
+    "auth",
+    "imageAnalysis",
+    "imageVote",
+    "uploadImage",
+    "verifyAuth"
+  ]
+}
 resource "azurerm_log_analytics_workspace" "workspace" {
   name                = "analytics-workspace"
   resource_group_name = var.rg_name
@@ -9,9 +18,56 @@ resource "azurerm_application_insights" "insights" {
   resource_group_name = var.rg_name
   location            = var.region_name
 
-  workspace_id        = azurerm_log_analytics_workspace.workspace.id
-  application_type    = "Node.JS"
+  workspace_id     = azurerm_log_analytics_workspace.workspace.id
+  application_type = "Node.JS"
 
   daily_data_cap_in_gb = 0.5
-  sampling_percentage = 25
+  sampling_percentage  = 15
+}
+
+resource "azurerm_application_insights_standard_web_test" "model_test" {
+  name    = "invoke"
+  enabled = true
+
+  resource_group_name = var.rg_name
+  location            = var.region_name
+
+  application_insights_id = azurerm_application_insights.insights.id
+
+  geo_locations = [
+    "us-va-ash-azr",
+    "us-ca-sjc-azr",
+    "emea-nl-ams-azr",
+    "emea-gb-db3-azr",
+    "apac-sg-sin-azr"
+  ]
+
+  request {
+    url       = "${var.inference_api}?code=${var.inference_key}"
+    http_verb = "OPTIONS"
+  }
+}
+resource "azurerm_application_insights_standard_web_test" "api_test" {
+  for_each = toset(local.api_endpoints)
+
+  name    = each.value
+  enabled = true
+
+  resource_group_name = var.rg_name
+  location            = var.region_name
+
+  application_insights_id = azurerm_application_insights.insights.id
+
+  geo_locations = [
+    "us-va-ash-azr",
+    "us-ca-sjc-azr",
+    "emea-nl-ams-azr",
+    "emea-gb-db3-azr",
+    "apac-sg-sin-azr"
+  ]
+
+  request {
+    url       = "${var.service_api}/${each.value}"
+    http_verb = "OPTIONS"
+  }
 }

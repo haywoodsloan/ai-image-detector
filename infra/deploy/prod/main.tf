@@ -69,10 +69,13 @@ module "frontdoor" {
 }
 
 module "insights" {
-  source      = "../../modules/global/insights"
-  env_name    = local.env_name
-  region_name = local.region_names[0]
-  rg_name     = module.rg.env_rg_name
+  source        = "../../modules/global/insights"
+  env_name      = local.env_name
+  region_name   = local.region_names[0]
+  rg_name       = module.rg.env_rg_name
+  service_api   = "https://${module.frontdoor.api_subdomain}.${local.domain_name}"
+  inference_api = "https://${module.function.function_hostname}/api/invoke"
+  inference_key = module.function.function_key
 }
 
 module "function" {

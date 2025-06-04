@@ -1,4 +1,4 @@
-output "api_endpoint" {
+output "service_endpoint" {
   value = "https://${module.frontdoor.api_subdomain}.${local.domain_name}"
 }
 
