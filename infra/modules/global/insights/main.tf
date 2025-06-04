@@ -3,7 +3,6 @@ locals {
     "auth",
     "imageAnalysis",
     "imageVote",
-    "uploadImage",
     "verifyAuth"
   ]
 }
