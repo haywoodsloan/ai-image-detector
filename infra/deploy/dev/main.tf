@@ -80,9 +80,10 @@ module "insights" {
   env_name      = local.env_name
   region_name   = local.region_names[0]
   rg_name       = module.rg.env_rg_name
-  service_api   = local.service_api
-  inference_api = local.inference_api
-  inference_key = module.function.function_key
+  # TODO: add once we can afford the extra cost
+  # service_api   = local.service_api
+  # inference_api = local.inference_api
+  # inference_key = module.function.function_key
 }
 
 module "function" {

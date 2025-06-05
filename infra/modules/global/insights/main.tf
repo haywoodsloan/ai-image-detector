@@ -24,37 +24,38 @@ resource "azurerm_application_insights" "insights" {
   sampling_percentage  = 10
 }
 
-resource "azurerm_application_insights_standard_web_test" "model_test" {
-  name    = "invoke"
-  enabled = false
+# TODO: add once we can afford the extra cost
+# resource "azurerm_application_insights_standard_web_test" "model_test" {
+#   name    = "invoke"
+#   enabled = true
 
-  resource_group_name = var.rg_name
-  location            = var.region_name
+#   resource_group_name = var.rg_name
+#   location            = var.region_name
 
-  application_insights_id = azurerm_application_insights.insights.id
-  frequency               = 900
-  geo_locations           = ["us-va-ash-azr"]
+#   application_insights_id = azurerm_application_insights.insights.id
+#   frequency               = 900
+#   geo_locations           = ["us-va-ash-azr"]
 
-  request {
-    url       = "${var.inference_api}?code=${var.inference_key}"
-    http_verb = "OPTIONS"
-  }
-}
-resource "azurerm_application_insights_standard_web_test" "api_test" {
-  for_each = toset(local.api_endpoints)
+#   request {
+#     url       = "${var.inference_api}?code=${var.inference_key}"
+#     http_verb = "OPTIONS"
+#   }
+# }
+# resource "azurerm_application_insights_standard_web_test" "api_test" {
+#   for_each = toset(local.api_endpoints)
 
-  name    = each.value
-  enabled = false
+#   name    = each.value
+#   enabled = true
 
-  resource_group_name = var.rg_name
-  location            = var.region_name
+#   resource_group_name = var.rg_name
+#   location            = var.region_name
 
-  application_insights_id = azurerm_application_insights.insights.id
-  frequency               = 900
-  geo_locations           = ["us-va-ash-azr"]
+#   application_insights_id = azurerm_application_insights.insights.id
+#   frequency               = 900
+#   geo_locations           = ["us-va-ash-azr"]
 
-  request {
-    url       = "${var.service_api}/${each.value}"
-    http_verb = "OPTIONS"
-  }
-}
+#   request {
+#     url       = "${var.service_api}/${each.value}"
+#     http_verb = "OPTIONS"
+#   }
+# }

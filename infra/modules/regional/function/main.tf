@@ -78,6 +78,13 @@ resource "azurerm_windows_function_app" "function_app" {
     #   }
     # }
   }
+
+  lifecycle {
+    ignore_changes = [
+      app_settings["WEBSITE_RUN_FROM_PACKAGE"],
+      tags["hidden-link: /app-insights-resource-id"]
+    ]
+  }
 }
 
 resource "azurerm_role_assignment" "function_email_role" {
