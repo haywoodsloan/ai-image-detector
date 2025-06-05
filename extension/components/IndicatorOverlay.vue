@@ -32,7 +32,11 @@ const { image, host } = defineProps({
 
 // Reset the host element positioning
 onMounted(() => {
+  const imgIdx = Number(getComputedStyle(image).zIndex);
+  host.style.zIndex = Math.min(imgIdx + 1, 2147483647);
+
   host.style.position = 'absolute';
+  
   host.style.height = null;
   host.style.width = null;
 });
