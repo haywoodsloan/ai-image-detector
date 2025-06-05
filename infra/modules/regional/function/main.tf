@@ -69,24 +69,14 @@ resource "azurerm_windows_function_app" "function_app" {
       allowed_origins = ["*"]
     }
 
-    ip_restriction_default_action = "Deny"
-    ip_restriction {
-      service_tag = "AzureFrontDoor.Backend"
-      headers {
-        x_azure_fdid = [var.frontdoor_guid]
-      }
-    }
-  }
-
-  lifecycle {
-    ignore_changes = [
-      app_settings["WEBSITE_RUN_FROM_PACKAGE"],
-      app_settings["AzureWebJobsFeatureFlags"],
-
-      tags["hidden-link: /app-insights-conn-string"],
-      tags["hidden-link: /app-insights-instrumentation-key"],
-      tags["hidden-link: /app-insights-resource-id"]
-    ]
+    # TODO: restore once frontdoor is back
+    # ip_restriction_default_action = "Deny"
+    # ip_restriction {
+    #   service_tag = "AzureFrontDoor.Backend"
+    #   headers {
+    #     x_azure_fdid = [var.frontdoor_guid]
+    #   }
+    # }
   }
 }
 
@@ -108,6 +98,15 @@ resource "azurerm_role_assignment" "function_cosmos_role" {
   principal_id       = azurerm_windows_function_app.function_app.identity[0].principal_id
 }
 
+# TODO: remove this CNAME record in favor of frontdoor once we can afford it
+resource "azurerm_dns_cname_record" "function_cname" {
+  name                = var.api_subdomain
+  zone_name           = var.domain_name
+  resource_group_name = var.env_rg_name
+  ttl                 = 3600
+  record              = azurerm_windows_function_app.function_app.default_hostname
+}
+
 resource "azurerm_dns_txt_record" "function_txt" {
   name                = "asuid.${var.api_subdomain}"
   zone_name           = var.domain_name
@@ -119,18 +118,38 @@ resource "azurerm_dns_txt_record" "function_txt" {
   }
 }
 
-resource "time_sleep" "wait_for_txt" {
+resource "time_sleep" "wait_for_records" {
   create_duration = "60s"
   triggers = {
-    txt_id = azurerm_dns_txt_record.function_txt.id
+    txt_id   = azurerm_dns_txt_record.function_txt.id
+    cname_id = azurerm_dns_cname_record.function_cname.id
   }
 }
 
 resource "azurerm_app_service_custom_hostname_binding" "custom_domain" {
-  depends_on          = [time_sleep.wait_for_txt]
+  depends_on          = [time_sleep.wait_for_records]
   hostname            = "${var.api_subdomain}.${var.domain_name}"
   app_service_name    = azurerm_windows_function_app.function_app.name
   resource_group_name = var.rg_name
+
+  # TODO: remove once we are using frontdoor again
+  # Ignore ssl_state and thumbprint as they are managed using
+  # azurerm_app_service_certificate_binding.example
+  lifecycle {
+    ignore_changes = [ssl_state, thumbprint]
+  }
+}
+
+# TODO: remove once we are using frontdoor again
+resource "azurerm_app_service_managed_certificate" "domain_cert" {
+  custom_hostname_binding_id = azurerm_app_service_custom_hostname_binding.custom_domain.id
+}
+
+# TODO: remove once we are using frontdoor again
+resource "azurerm_app_service_certificate_binding" "cert_binding" {
+  hostname_binding_id = azurerm_app_service_custom_hostname_binding.custom_domain.id
+  certificate_id      = azurerm_app_service_managed_certificate.domain_cert.id
+  ssl_state           = "SniEnabled"
 }
 
 resource "azurerm_windows_function_app_slot" "function_app_slot" {
@@ -161,17 +180,6 @@ resource "azurerm_windows_function_app_slot" "function_app_slot" {
     application_stack {
       node_version = azurerm_windows_function_app.function_app.site_config[0].application_stack[0].node_version
     }
-  }
-
-  lifecycle {
-    ignore_changes = [
-      app_settings["WEBSITE_RUN_FROM_PACKAGE"],
-      app_settings["AzureWebJobsFeatureFlags"],
-
-      tags["hidden-link: /app-insights-conn-string"],
-      tags["hidden-link: /app-insights-instrumentation-key"],
-      tags["hidden-link: /app-insights-resource-id"]
-    ]
   }
 }
 

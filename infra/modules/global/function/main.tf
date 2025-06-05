@@ -60,17 +60,6 @@ resource "azurerm_linux_function_app" "function_app" {
       allowed_origins = ["*"]
     }
   }
-
-  lifecycle {
-    ignore_changes = [
-      app_settings["WEBSITE_RUN_FROM_PACKAGE"],
-      app_settings["AzureWebJobsFeatureFlags"],
-
-      tags["hidden-link: /app-insights-conn-string"],
-      tags["hidden-link: /app-insights-instrumentation-key"],
-      tags["hidden-link: /app-insights-resource-id"]
-    ]
-  }
 }
 
 data "azurerm_function_app_host_keys" "function_keys" {
@@ -104,16 +93,5 @@ resource "azurerm_linux_function_app_slot" "function_app_slot" {
     application_stack {
       python_version = azurerm_linux_function_app.function_app.site_config[0].application_stack[0].python_version
     }
-  }
-
-  lifecycle {
-    ignore_changes = [
-      app_settings["WEBSITE_RUN_FROM_PACKAGE"],
-      app_settings["AzureWebJobsFeatureFlags"],
-
-      tags["hidden-link: /app-insights-conn-string"],
-      tags["hidden-link: /app-insights-instrumentation-key"],
-      tags["hidden-link: /app-insights-resource-id"]
-    ]
   }
 }

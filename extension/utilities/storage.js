@@ -1,6 +1,6 @@
 import cloneDeep from 'clone-deep';
 import TimeSpan from 'common/utilities/TimeSpan.js';
-import { sha1 } from 'hash-wasm';
+import { sha1 } from 'object-hash';
 
 import { TtlAction } from '@/entrypoints/background/actions/ttl.js';
 
@@ -28,8 +28,8 @@ export const userAuth = storage.defineItem('sync:userAuth');
 /**
  * @param {string} url
  */
-export async function getAnalysisStorage(url) {
-  const hash = await sha1(url);
+export function getAnalysisStorage(url) {
+  const hash = sha1(url);
   const storageKey = `local:analysis-${hash}`;
 
   /** @type {WxtStorageItem<ImageAnalysis>} */

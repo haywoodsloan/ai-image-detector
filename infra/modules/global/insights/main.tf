@@ -20,26 +20,20 @@ resource "azurerm_application_insights" "insights" {
   workspace_id     = azurerm_log_analytics_workspace.workspace.id
   application_type = "Node.JS"
 
-  daily_data_cap_in_gb = 0.5
-  sampling_percentage  = 15
+  daily_data_cap_in_gb = 0.4
+  sampling_percentage  = 10
 }
 
 resource "azurerm_application_insights_standard_web_test" "model_test" {
   name    = "invoke"
-  enabled = true
+  enabled = false
 
   resource_group_name = var.rg_name
   location            = var.region_name
 
   application_insights_id = azurerm_application_insights.insights.id
-
-  geo_locations = [
-    "us-va-ash-azr",
-    "us-ca-sjc-azr",
-    "emea-nl-ams-azr",
-    "emea-gb-db3-azr",
-    "apac-sg-sin-azr"
-  ]
+  frequency               = 900
+  geo_locations           = ["us-va-ash-azr"]
 
   request {
     url       = "${var.inference_api}?code=${var.inference_key}"
@@ -50,20 +44,14 @@ resource "azurerm_application_insights_standard_web_test" "api_test" {
   for_each = toset(local.api_endpoints)
 
   name    = each.value
-  enabled = true
+  enabled = false
 
   resource_group_name = var.rg_name
   location            = var.region_name
 
   application_insights_id = azurerm_application_insights.insights.id
-
-  geo_locations = [
-    "us-va-ash-azr",
-    "us-ca-sjc-azr",
-    "emea-nl-ams-azr",
-    "emea-gb-db3-azr",
-    "apac-sg-sin-azr"
-  ]
+  frequency               = 900
+  geo_locations           = ["us-va-ash-azr"]
 
   request {
     url       = "${var.service_api}/${each.value}"

@@ -10,6 +10,7 @@ import { classifyIfAi } from '../services/detector.js';
 import { InvalidAuthError, assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { getVotedLabel } from '../utilities/vote.js';
+import { isDev } from 'common/utilities/environment.js';
 
 const DetectorScoreType = 'detector';
 const UserScoreType = 'user';
@@ -17,6 +18,7 @@ const VoteScoreType = 'vote';
 
 app.http('imageAnalysis', {
   methods: ['POST'],
+  authLevel: isDev ? 'function' : 'anonymous', // TODO: remove once frontdoor is back
   async handler(request) {
     /** @type {{url: string, referer?: string}} */
     const { url, referer } = await request.json();

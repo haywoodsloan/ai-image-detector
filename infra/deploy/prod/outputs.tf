@@ -1,9 +1,9 @@
 output "service_endpoint" {
-  value = "https://${module.frontdoor.api_subdomain}.${local.domain_name}"
+  value = "https://${local.api_subdomain}.${local.domain_name}"
 }
 
 output "inference_endpoint" {
-  value = "https://${module.function.function_hostname}/api/invoke"
+  value = "https://${module.function.function_hostname}/invoke"
 }
 
 output "inference_key" {
@@ -13,11 +13,6 @@ output "inference_key" {
 
 output "dns_nameservers" {
   value = module.dns.domain_ns
-}
-
-output "dev_keys" {
-  sensitive = true
-  value     = module.frontdoor.dev_keys
 }
 
 output "sub_id" {

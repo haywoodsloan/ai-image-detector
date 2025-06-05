@@ -1,7 +1,6 @@
 
 locals {
-  sub_domain = "api"
-  host_name  = "${local.sub_domain}.${var.domain_name}"
+  host_name = "${var.api_subdomain}.${var.domain_name}"
 }
 
 resource "time_rotating" "dev_key_refresh" {
@@ -254,22 +253,6 @@ resource "azurerm_cdn_frontdoor_rule_set" "default" {
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.frontdoor.id
 }
 
-resource "azurerm_cdn_frontdoor_rule" "url_rewrite" {
-  depends_on = [azurerm_cdn_frontdoor_origin.origin, azurerm_cdn_frontdoor_origin_group.origin_group]
-
-  name                      = "UrlRewrite"
-  cdn_frontdoor_rule_set_id = azurerm_cdn_frontdoor_rule_set.default.id
-  order                     = 1
-
-  actions {
-    url_rewrite_action {
-      source_pattern          = "/"
-      destination             = "/api/"
-      preserve_unmatched_path = true
-    }
-  }
-}
-
 resource "azurerm_cdn_frontdoor_rule" "preflight_headers" {
   count      = var.env_name != "prod" ? 1 : 0
   depends_on = [azurerm_cdn_frontdoor_origin.origin, azurerm_cdn_frontdoor_origin_group.origin_group]
@@ -309,7 +292,7 @@ resource "azurerm_cdn_frontdoor_route" "default" {
 }
 resource "azurerm_dns_cname_record" "frontdoor_cname" {
   depends_on          = [azurerm_cdn_frontdoor_route.default]
-  name                = local.sub_domain
+  name                = var.api_subdomain
   zone_name           = var.domain_name
   resource_group_name = var.rg_name
   ttl                 = 3600
@@ -317,7 +300,7 @@ resource "azurerm_dns_cname_record" "frontdoor_cname" {
 }
 
 resource "azurerm_dns_txt_record" "frontdoor_txt" {
-  name                = "_dnsauth.${local.sub_domain}"
+  name                = "_dnsauth.${var.api_subdomain}"
   zone_name           = var.domain_name
   resource_group_name = var.rg_name
   ttl                 = 3600

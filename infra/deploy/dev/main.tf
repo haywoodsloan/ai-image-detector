@@ -31,8 +31,13 @@ data "azurerm_subscription" "current" {}
 locals {
   env_name     = "dev"
   region_names = ["eastus2"]
-  domain_name  = "ai-image-detector-dev.com"
-  model_name   = "haywoodsloan/ai-image-detector-dev-deploy"
+
+  domain_name   = "ai-image-detector-dev.com"
+  api_subdomain = "api"
+
+  model_name    = "haywoodsloan/ai-image-detector-dev-deploy"
+  inference_api = "https://${module.function.function_hostname}/invoke"
+  service_api   = "https://${local.api_subdomain}.${local.domain_name}"
 }
 
 module "rg" {
@@ -67,13 +72,17 @@ module "frontdoor" {
   function_hostnames = { for name, region in module.region : name => region.function_hostname }
   domain_name        = local.domain_name
   env_name           = local.env_name
+  api_subdomain      = local.api_subdomain
 }
 
 module "insights" {
-  source      = "../../modules/global/insights"
-  env_name    = local.env_name
-  region_name = local.region_names[0]
-  rg_name     = module.rg.env_rg_name
+  source        = "../../modules/global/insights"
+  env_name      = local.env_name
+  region_name   = local.region_names[0]
+  rg_name       = module.rg.env_rg_name
+  service_api   = local.service_api
+  inference_api = local.inference_api
+  inference_key = module.function.function_key
 }
 
 module "function" {
@@ -96,11 +105,11 @@ module "region" {
   comm_service_id            = module.comm.comm_service_id
   comm_service_endpoint      = module.comm.comm_service_endpoint
   frontdoor_guid             = module.frontdoor.frontdoor_guid
-  api_subdomain              = module.frontdoor.api_subdomain
+  api_subdomain              = local.api_subdomain
   domain_name                = local.domain_name
   env_rg_name                = module.rg.env_rg_name
   db_role_id                 = module.db.db_role_id
   insights_connection_string = module.insights.insights_connection_string
-  inference_api              = "https://${module.function.function_hostname}/api/invoke"
+  inference_api              = local.inference_api
   inference_key              = module.function.function_key
 }

@@ -31,7 +31,7 @@ const error = ref(null);
 const pending = ref(null);
 
 watch(analysis, async (newAnalysis) => {
-  const stored = await getAnalysisStorage(image);
+  const stored = getAnalysisStorage(image);
   await stored.setValue(cloneDeep(newAnalysis));
 });
 

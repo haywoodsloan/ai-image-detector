@@ -47,10 +47,11 @@ variable "comm_service_id" {
   description = "The communication service ID"
 }
 
-variable "frontdoor_guid" {
-  type        = string
-  description = "The ID of the frontdoor for the function"
-}
+# TODO: restore once frontdoor is back
+# variable "frontdoor_guid" {
+#   type        = string
+#   description = "The ID of the frontdoor for the function"
+# }
 
 variable "api_subdomain" {
   type        = string

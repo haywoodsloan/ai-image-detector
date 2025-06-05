@@ -29,9 +29,14 @@ data "azurerm_subscription" "current" {}
 
 locals {
   env_name     = "prod"
-  region_names = ["eastus2"]
-  domain_name  = "ai-image-detector.com"
-  model_name   = "haywoodsloan/ai-image-detector-deploy"
+  region_names = ["eastus2"] # Don't add more regions until frontdoor is back
+
+  api_subdomain = "api"
+  domain_name   = "ai-image-detector.com"
+
+  model_name    = "haywoodsloan/ai-image-detector-deploy"
+  inference_api = "https://${module.function.function_hostname}/invoke"
+  service_api   = "https://${local.api_subdomain}.${local.domain_name}"
 }
 
 module "rg" {
@@ -60,21 +65,23 @@ module "comm" {
   domain_name = local.domain_name
 }
 
-module "frontdoor" {
-  source             = "../../modules/global/frontdoor"
-  rg_name            = module.rg.env_rg_name
-  function_hostnames = { for name, region in module.region : name => region.function_hostname }
-  domain_name        = local.domain_name
-  env_name           = local.env_name
-}
+# TODO: restore this once we can afford frontdoor
+# module "frontdoor" {
+#   source             = "../../modules/global/frontdoor"
+#   rg_name            = module.rg.env_rg_name
+#   function_hostnames = { for name, region in module.region : name => region.function_hostname }
+#   domain_name        = local.domain_name
+#   api_subdomain      = local.api_subdomain
+#   env_name           = local.env_name
+# }
 
 module "insights" {
   source        = "../../modules/global/insights"
   env_name      = local.env_name
   region_name   = local.region_names[0]
   rg_name       = module.rg.env_rg_name
-  service_api   = "https://${module.frontdoor.api_subdomain}.${local.domain_name}"
-  inference_api = "https://${module.function.function_hostname}/api/invoke"
+  service_api   = local.service_api
+  inference_api = local.inference_api
   inference_key = module.function.function_key
 }
 
@@ -88,21 +95,22 @@ module "function" {
 }
 
 module "region" {
-  for_each                   = toset(local.region_names)
-  source                     = "./region"
-  region_name                = each.value
-  env_name                   = local.env_name
-  hf_key                     = var.hf_key
-  db_id                      = module.db.db_id
-  db_name                    = module.db.db_name
-  comm_service_id            = module.comm.comm_service_id
-  comm_service_endpoint      = module.comm.comm_service_endpoint
-  frontdoor_guid             = module.frontdoor.frontdoor_guid
-  api_subdomain              = module.frontdoor.api_subdomain
+  for_each              = toset(local.region_names)
+  source                = "./region"
+  region_name           = each.value
+  env_name              = local.env_name
+  hf_key                = var.hf_key
+  db_id                 = module.db.db_id
+  db_name               = module.db.db_name
+  comm_service_id       = module.comm.comm_service_id
+  comm_service_endpoint = module.comm.comm_service_endpoint
+  # TODO: restore once frontdoor is back
+  # frontdoor_guid             = module.frontdoor.frontdoor_guid
+  api_subdomain              = local.api_subdomain
   domain_name                = local.domain_name
   env_rg_name                = module.rg.env_rg_name
   db_role_id                 = module.db.db_role_id
   insights_connection_string = module.insights.insights_connection_string
-  inference_api              = "https://${module.function.function_hostname}/api/invoke"
+  inference_api              = local.inference_api
   inference_key              = module.function.function_key
 }

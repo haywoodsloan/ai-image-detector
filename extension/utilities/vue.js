@@ -4,7 +4,8 @@ import { aliases, mdi } from 'vuetify/iconsets/mdi-svg';
 export const OverlayClasses = ['v-overlay-container'];
 export const ExtensionId = 'aid-3bi9lk5g';
 
-const RootRegex = /(\s|^):root(\s*{)/g;
+const RuleRegex = /(\s|^)([^\s]+\s*{)/g;
+const RootRegex = /(\s|^):root\s*{/g;
 
 const Vuetify = createVuetify({
   theme: {
@@ -39,7 +40,9 @@ function modThemeCss() {
   const theme = [...styles].find(({ nonce }) => nonce === ExtensionId);
 
   const original = theme.innerHTML;
-  const modified = original.replace(RootRegex, `$1[data-${ExtensionId}]$2`);
+  const modified = original
+    .replace(RuleRegex, `$1[data-${ExtensionId}] $2`)
+    .replace(RootRegex, '$1{');
 
   theme.innerHTML = modified;
 }

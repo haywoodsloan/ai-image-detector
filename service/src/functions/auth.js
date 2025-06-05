@@ -14,6 +14,7 @@ import { createErrorResponse } from '../utilities/error.js';
 
 app.http('auth', {
   methods: ['GET', 'POST'],
+  authLevel: isDev ? 'function' : 'anonymous', // TODO: remove once frontdoor is back
   async handler(request) {
     switch (request.method) {
       case 'GET': {

@@ -16,10 +16,12 @@ import { InvalidAuthError, assertValidAuth } from '../utilities/auth.js';
 import { createErrorResponse } from '../utilities/error.js';
 import { getVotedLabel } from '../utilities/vote.js';
 import { UploadImageEntity } from './uploadImage.js';
+import { isDev } from 'common/utilities/environment.js';
 
 app.http('imageVote', {
   route: 'imageVote/{voteId?}',
   methods: ['POST', 'GET', 'DELETE'],
+  authLevel: isDev ? 'function' : 'anonymous', // TODO: remove once frontdoor is back
   extraInputs: [input.durableClient()],
   async handler(request, context) {
     // Check the access token is valid
