@@ -44,3 +44,19 @@ export function shuffle(values) {
 
   return array;
 }
+
+/**
+ * @template T
+ * @param {AsyncGenerator<T>} values
+ * @param {(val: T) => boolean | Promise<boolean>} [check]
+ */
+export async function countAsync(values, check) {
+  let count = 0;
+
+  for await (const value of values) {
+    if (check && !(await check(value))) continue;
+    count++;
+  }
+
+  return count;
+}

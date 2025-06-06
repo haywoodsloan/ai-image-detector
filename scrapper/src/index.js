@@ -9,6 +9,7 @@ import {
   TrainSplit,
   UploadBatchSize,
   fetchKnownUrls,
+  getImageCount,
   setHfAccessToken,
   uploadImages,
 } from 'common/utilities/huggingface.js';
@@ -128,6 +129,9 @@ const scrappedUrls = new Set();
 const { HF_KEY, PEXELS_KEY } = await loadSettings();
 setHfAccessToken(HF_KEY);
 
+const totalImageCount = await getImageCount();
+console.log(y`Starting image count: ${totalImageCount}`);
+
 const urls = await fetchKnownUrls();
 for (const url of urls) scrappedUrls.add(url);
 
@@ -241,8 +245,8 @@ if (args.real || args.all) {
 
   // Browse to multiple Subreddits and scrape files
   const toScrape = shuffle([
-    ...((args.real || args.all) && RealSubReddits.map((s) => [RealLabel, s])),
-    ...((args.ai || args.all) && AiSubReddits.map((s) => [AiLabel, s])),
+    ...(args.real || args.all ? RealSubReddits.map((s) => [RealLabel, s]) : []),
+    ...(args.ai || args.all ? AiSubReddits.map((s) => [AiLabel, s]) : []),
   ]);
 
   try {

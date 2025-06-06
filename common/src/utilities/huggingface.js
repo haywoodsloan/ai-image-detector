@@ -13,9 +13,9 @@ import { wait } from 'common/utilities/sleep.js';
 import { basename, dirname } from 'path';
 
 import TimeSpan from './TimeSpan.js';
-import { firstResult } from './async.js';
+import { firstResult, parallel } from './async.js';
 import { isRateLimitError } from './error.js';
-import { take } from './iterable.js';
+import { countAsync, take } from './iterable.js';
 import { NonRetryableError, withRetry } from './retry.js';
 import { isHttpUrl } from './url.js';
 
@@ -581,6 +581,40 @@ async function getFullImagePath(fileName, branch = MainBranch) {
   return result;
 }
 
+export async function getImageCount(branch = MainBranch) {
+  let count = 0;
+  for (const split of AllSplits) {
+    const sets = listFiles({
+      path: `${DataPath}/${split}`,
+      repo: DatasetRepo,
+      revision: branch,
+      credentials,
+    });
+
+    await parallel(sets, async (set) => {
+      if (set.type !== 'directory') return;
+      for (const label of AllLabels) {
+        try {
+          const images = listFiles({
+            path: `${set.path}/${label}`,
+            repo: DatasetRepo,
+            revision: branch,
+            credentials,
+          });
+
+          while (!(await images.next()).done) count++;
+        } catch (error) {
+          // If it's a 404 error then there
+          // isn't a set for that label yet
+          if (error.statusCode !== 404) throw error;
+        }
+      }
+    });
+  }
+
+  return count;
+}
+
 /**
  * @param {string} path
  */
@@ -614,28 +648,51 @@ function buildPath(split, label, subsetIdx, fileName = '') {
  * @param {HfImage[]} uploads
  */
 async function createUploads(uploads, branch = MainBranch) {
-  /** @type {{[key: string]: {[key: string]: number[]}}} */
-  const subsetCounts = {
-    [TrainSplit]: { [AiLabel]: [], [RealLabel]: [] },
-    [TestSplit]: { [AiLabel]: [], [RealLabel]: [] },
+  /**
+   * @type {{[key: string]: {
+   *    [key: string]: {idx: number, cnt: number},
+   *    setCnt: number
+   * }}}
+   */
+  const subsets = {
+    [TrainSplit]: {
+      [AiLabel]: { idx: -1, cnt: 0 },
+      [RealLabel]: { idx: -1, cnt: 0 },
+      setCnt: -1,
+    },
+    [TestSplit]: {
+      [AiLabel]: { idx: -1, cnt: 0 },
+      [RealLabel]: { idx: -1, cnt: 0 },
+      setCnt: -1,
+    },
   };
 
   /** @type {HfUpload[]} */
   const uploadsWithPath = [];
   for (const upload of uploads) {
     const { fileName, split, label } = upload;
-    const subsets = subsetCounts[split][label];
 
-    let subsetIdx = subsets.findIndex((count) => count < MaxSubsetSize);
-    if (subsetIdx === -1) {
-      for (subsetIdx = subsets.length; ; subsetIdx++) {
-        // Start the subset count based on the other pending paths
-        const prefix = buildPath(split, label, subsetIdx);
-        subsets[subsetIdx] = [...pendingPaths].filter((path) =>
-          path.startsWith(prefix)
-        ).length;
+    const splitSets = subsets[split];
+    if (splitSets.setCnt === -1) {
+      const sets = listFiles({
+        path: `${DataPath}/${split}`,
+        repo: DatasetRepo,
+        revision: branch,
+        credentials,
+      });
 
-        // Check how many images are in the folder
+      splitSets.setCnt = await countAsync(
+        sets,
+        ({ type }) => type === 'directory'
+      );
+    }
+
+    // If we haven't figured out the current
+    // subset for this split and label find it
+    const subset = subsets[split][label];
+    if (subset.idx === -1) {
+      for (let i = splitSets.setCnt - 1; i >= 0; i--) {
+        const prefix = buildPath(split, label, i);
         try {
           const images = listFiles({
             path: prefix,
@@ -644,26 +701,42 @@ async function createUploads(uploads, branch = MainBranch) {
             credentials,
           });
 
-          // Add any found images to the count
-          for await (const image of images) {
-            if (image.type === 'file') subsets[subsetIdx]++;
+          const existingCnt = await countAsync(
+            images,
+            ({ type }) => type === 'file'
+          );
+
+          const pendingCnt = [...pendingPaths].filter((path) =>
+            path.startsWith(prefix)
+          ).length;
+
+          const imgCnt = existingCnt + pendingCnt;
+          if (imgCnt < MaxSubsetSize) {
+            subset.cnt = imgCnt;
+            subset.idx = i;
+          } else {
+            subset.idx = i + 1;
           }
+
+          break;
         } catch (error) {
-          // If a 404 the subset is new
-          if (error?.statusCode === 404) break;
+          // If a 404 the subset doesn't have any images for that label
+          if (error?.statusCode === 404) continue;
           throw error;
         }
-
-        // Use this subset if the count isn't at max
-        if (subsets[subsetIdx] < MaxSubsetSize) break;
       }
     }
 
     // Add the path to the open subset to the upload
-    // Also track the subset count
-    subsets[subsetIdx]++;
-    const path = buildPath(split, label, subsetIdx, fileName);
+    const path = buildPath(split, label, subset.idx, fileName);
     uploadsWithPath.push({ ...upload, path });
+
+    // Also track the subset count
+    subset.cnt++;
+    if (subset.cnt >= MaxSubsetSize) {
+      subset.idx++;
+      subset.cnt = 0;
+    }
   }
 
   return uploadsWithPath;
