@@ -591,25 +591,29 @@ export async function getImageCount(branch = MainBranch) {
       credentials,
     });
 
-    await parallel(sets, async (set) => {
-      if (set.type !== 'directory') return;
-      for (const label of AllLabels) {
-        try {
-          const images = listFiles({
-            path: `${set.path}/${label}`,
-            repo: DatasetRepo,
-            revision: branch,
-            credentials,
-          });
+    await parallel(
+      sets,
+      async (set) => {
+        if (set.type !== 'directory') return;
+        for (const label of AllLabels) {
+          try {
+            const images = listFiles({
+              path: `${set.path}/${label}`,
+              repo: DatasetRepo,
+              revision: branch,
+              credentials,
+            });
 
-          while (!(await images.next()).done) count++;
-        } catch (error) {
-          // If it's a 404 error then there
-          // isn't a set for that label yet
-          if (error.statusCode !== 404) throw error;
+            while (!(await images.next()).done) count++;
+          } catch (error) {
+            // If it's a 404 error then there
+            // isn't a set for that label yet
+            if (error.statusCode !== 404) throw error;
+          }
         }
-      }
-    });
+      },
+      8
+    );
   }
 
   return count;
