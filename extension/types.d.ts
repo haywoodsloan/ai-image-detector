@@ -1,6 +1,7 @@
 import('common/types.d.ts');
 
 declare type ModelRef<T> = import('vue').ModelRef<T>;
+declare type VuePlugin = import('vue').Plugin;
 
 declare type ActionType =
   typeof import('./entrypoints/background/actions/base').BaseAction;
