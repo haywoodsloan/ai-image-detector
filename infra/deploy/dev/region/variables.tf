@@ -71,3 +71,8 @@ variable "inference_key" {
   type        = string
   description = "The API key for model inference"
 }
+
+variable "app_registration_id" {
+  type        = string
+  description = "The application registration ID for the app service"
+}

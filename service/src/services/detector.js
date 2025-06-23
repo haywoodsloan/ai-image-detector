@@ -1,10 +1,13 @@
+import { DefaultAzureCredential } from '@azure/identity';
 import TimeSpan from 'common/utilities/TimeSpan.js';
 import { AiLabel } from 'common/utilities/huggingface.js';
 import { optimizeImage } from 'common/utilities/image.js';
 import { withRetry } from 'common/utilities/retry.js';
 import { l } from 'common/utilities/string.js';
 import ExpiryMap from 'expiry-map';
+import memoize from 'memoize';
 
+const DetectorCreds = new DefaultAzureCredential();
 const DetectorErrorDelay = TimeSpan.fromMilliseconds(100);
 const DetectorRetryLimit = 3;
 
@@ -48,11 +51,20 @@ export async function classifyIfAi(data, hash) {
  * @returns {ImageClassificationOutput}
  */
 async function invokeModel(data) {
-  const response = await fetch(
-    `${process.env.INFERENCE_API}?code=${process.env.INFERENCE_KEY}`,
-    { method: 'POST', body: data }
-  );
+  const response = await fetch(`${process.env.INFERENCE_API}`, {
+    method: 'POST',
+    body: data,
+    headers: { Authorization: `Bearer ${await getDetectorToken()}` },
+  });
 
   if (!response.ok) throw new Error(await response.text());
   return await response.json();
 }
+
+const getDetectorToken = memoize(
+  async () => {
+    const scope = `api://${process.env.INFERENCE_REG_ID}/.default`;
+    return (await DetectorCreds.getToken(scope)).token;
+  },
+  { maxAge: TimeSpan.fromMinutes(45) }
+);

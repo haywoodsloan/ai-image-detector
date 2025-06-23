@@ -31,4 +31,5 @@ module "function" {
   pubsub_id                  = module.pubsub.pubsub_id
   inference_api              = var.inference_api
   inference_key              = var.inference_key
+  inference_reg_id           = var.app_registration_id
 }

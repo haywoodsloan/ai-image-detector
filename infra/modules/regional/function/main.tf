@@ -37,16 +37,17 @@ resource "azurerm_windows_function_app" "function_app" {
   }
 
   app_settings = {
-    NODE_ENV        = var.env_name
-    HF_KEY          = var.hf_key
-    DB_NAME         = var.db_name
-    DB_RG_NAME      = var.env_rg_name
-    SUB_ID          = data.azurerm_subscription.current.subscription_id
-    COMM_ENDPOINT   = var.comm_service_endpoint
-    PUBSUB_HOSTNAME = var.pubsub_hostname
-    INFERENCE_API   = var.inference_api
-    INFERENCE_KEY   = var.inference_key
-    HUB_NAME        = "live"
+    NODE_ENV         = var.env_name
+    HF_KEY           = var.hf_key
+    DB_NAME          = var.db_name
+    DB_RG_NAME       = var.env_rg_name
+    SUB_ID           = data.azurerm_subscription.current.subscription_id
+    COMM_ENDPOINT    = var.comm_service_endpoint
+    PUBSUB_HOSTNAME  = var.pubsub_hostname
+    INFERENCE_API    = var.inference_api
+    INFERENCE_REG_ID = var.inference_reg_id
+    INFERENCE_KEY    = var.inference_key
+    HUB_NAME         = "live"
   }
 
   identity {

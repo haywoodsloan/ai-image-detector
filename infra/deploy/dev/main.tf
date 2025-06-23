@@ -6,6 +6,11 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 3.116.0"
     }
+
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = ">= 3.4.0"
+    }
   }
 
   backend "azurerm" {
@@ -14,6 +19,10 @@ terraform {
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
   }
+}
+
+provider "azuread" {
+  tenant_id = "27793ea1-7070-4e9b-bd38-47e1f441395f"
 }
 
 provider "azurerm" {
@@ -66,24 +75,29 @@ module "comm" {
   domain_name = local.domain_name
 }
 
-module "frontdoor" {
-  source             = "../../modules/global/frontdoor"
-  rg_name            = module.rg.env_rg_name
-  function_hostnames = { for name, region in module.region : name => region.function_hostname }
-  domain_name        = local.domain_name
-  env_name           = local.env_name
-  api_subdomain      = local.api_subdomain
-}
+# TODO: restore this once we can afford frontdoor
+# module "frontdoor" {
+#   source             = "../../modules/global/frontdoor"
+#   rg_name            = module.rg.env_rg_name
+#   function_hostnames = { for name, region in module.region : name => region.function_hostname }
+#   domain_name        = local.domain_name
+#   env_name           = local.env_name
+#   api_subdomain      = local.api_subdomain
+# }
 
 module "insights" {
-  source        = "../../modules/global/insights"
-  env_name      = local.env_name
-  region_name   = local.region_names[0]
-  rg_name       = module.rg.env_rg_name
+  source      = "../../modules/global/insights"
+  env_name    = local.env_name
+  region_name = local.region_names[0]
+  rg_name     = module.rg.env_rg_name
   # TODO: add once we can afford the extra cost
   # service_api   = local.service_api
   # inference_api = local.inference_api
   # inference_key = module.function.function_key
+}
+
+module "ad" {
+  source = "../../modules/global/ad"
 }
 
 module "function" {
@@ -113,4 +127,5 @@ module "region" {
   insights_connection_string = module.insights.insights_connection_string
   inference_api              = local.inference_api
   inference_key              = module.function.function_key
+  app_registration_id        = module.ad.app_registration_id
 }

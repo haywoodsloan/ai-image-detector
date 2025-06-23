@@ -87,3 +87,8 @@ variable "inference_key" {
   type        = string
   description = "The API key for model inference"
 }
+
+variable "inference_reg_id" {
+  type        = string
+  description = "The API registration ID for model inference"
+}

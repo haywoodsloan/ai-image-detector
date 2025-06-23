@@ -6,6 +6,11 @@ terraform {
       source  = "hashicorp/azurerm"
       version = ">= 3.116.0"
     }
+
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = ">= 3.4.0"
+    }
   }
 
   backend "azurerm" {
@@ -14,6 +19,10 @@ terraform {
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
   }
+}
+
+provider "azuread" {
+  tenant_id = "27793ea1-7070-4e9b-bd38-47e1f441395f"
 }
 
 provider "azurerm" {
@@ -76,14 +85,28 @@ module "comm" {
 # }
 
 module "insights" {
-  source        = "../../modules/global/insights"
-  env_name      = local.env_name
-  region_name   = local.region_names[0]
-  rg_name       = module.rg.env_rg_name
+  source      = "../../modules/global/insights"
+  env_name    = local.env_name
+  region_name = local.region_names[0]
+  rg_name     = module.rg.env_rg_name
   # TODO: add once we can afford the extra cost
   # service_api   = local.service_api
   # inference_api = local.inference_api
   # inference_key = module.function.function_key
+}
+
+module "ad" {
+  source = "../../modules/global/ad"
+}
+
+module "appservice" {
+  source                     = "../../modules/global/appservice"
+  env_name                   = local.env_name
+  insights_connection_string = module.insights.insights_connection_string
+  app_registration_id        = module.ad.app_registration_id
+  model_name                 = local.model_name
+  region_name                = local.region_names[0]
+  rg_name                    = module.rg.env_rg_name
 }
 
 module "function" {
@@ -114,4 +137,5 @@ module "region" {
   insights_connection_string = module.insights.insights_connection_string
   inference_api              = local.inference_api
   inference_key              = module.function.function_key
+  app_registration_id        = module.ad.app_registration_id
 }
