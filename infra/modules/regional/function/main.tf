@@ -106,6 +106,12 @@ resource "azurerm_role_assignment" "function_cosmos_role" {
   principal_id       = azurerm_windows_function_app.function_app.identity[0].principal_id
 }
 
+resource "azuread_app_role_assignment" "function_inference_role" {
+  app_role_id         = "00000000-0000-0000-0000-000000000000"
+  principal_object_id = azurerm_windows_function_app.function_app.identity[0].principal_id
+  resource_object_id  = var.inference_sp_id
+}
+
 # TODO: remove this CNAME record in favor of frontdoor once we can afford it
 resource "azurerm_dns_cname_record" "function_cname" {
   name                = var.api_subdomain
@@ -207,4 +213,10 @@ resource "azurerm_role_assignment" "function_slot_cosmos_role" {
   scope              = azurerm_role_assignment.function_cosmos_role.scope
   role_definition_id = azurerm_role_assignment.function_cosmos_role.role_definition_id
   principal_id       = azurerm_windows_function_app_slot.function_app_slot.identity[0].principal_id
+}
+
+resource "azuread_app_role_assignment" "function_slot_inference_role" {
+  app_role_id         = "00000000-0000-0000-0000-000000000000"
+  principal_object_id = azurerm_windows_function_app_slot.function_app_slot.identity[0].principal_id
+  resource_object_id  = var.inference_sp_id
 }

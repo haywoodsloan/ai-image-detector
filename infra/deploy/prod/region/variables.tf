@@ -77,3 +77,8 @@ variable "app_registration_id" {
   type        = string
   description = "The application registration ID for the app service"
 }
+
+variable "app_service_principal_id" {
+  type        = string
+  description = "The application registration service principal ID for the app service"
+}

@@ -128,4 +128,5 @@ module "region" {
   inference_api              = local.inference_api
   inference_key              = module.function.function_key
   app_registration_id        = module.ad.app_registration_id
+  app_service_principal_id   = module.ad.app_service_principal_id
 }

@@ -51,10 +51,11 @@ export async function classifyIfAi(data, hash) {
  * @returns {ImageClassificationOutput}
  */
 async function invokeModel(data) {
+  const token = await getDetectorToken();
   const response = await fetch(`${process.env.INFERENCE_API}`, {
     method: 'POST',
     body: data,
-    headers: { Authorization: `Bearer ${await getDetectorToken()}` },
+    headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!response.ok) throw new Error(await response.text());
@@ -63,7 +64,7 @@ async function invokeModel(data) {
 
 const getDetectorToken = memoize(
   async () => {
-    const scope = `api://${process.env.INFERENCE_REG_ID}/.default`;
+    const scope = `${process.env.INFERENCE_REG_ID}/.default`;
     return (await DetectorCreds.getToken(scope)).token;
   },
   { maxAge: TimeSpan.fromMinutes(45) }

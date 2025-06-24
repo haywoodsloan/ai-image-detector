@@ -92,3 +92,9 @@ variable "inference_reg_id" {
   type        = string
   description = "The API registration ID for model inference"
 }
+
+
+variable "inference_sp_id" {
+  type        = string
+  description = "The ID of the service prinicipal for the inference service"
+}
