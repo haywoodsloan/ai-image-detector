@@ -1,7 +1,3 @@
-locals {
-  task_type = "image-classification"
-}
-
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_service_plan" "container_service_plan" {
@@ -23,7 +19,6 @@ resource "azurerm_linux_web_app" "service_app" {
 
   app_settings = {
     MODEL_NAME                            = var.model_name
-    TASK_TYPE                             = local.task_type
     APPLICATIONINSIGHTS_CONNECTION_STRING = var.insights_connection_string
   }
 
