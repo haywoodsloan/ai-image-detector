@@ -55,7 +55,11 @@ async function invokeModel(data) {
   const response = await fetch(`${process.env.INFERENCE_API}`, {
     method: 'POST',
     body: data,
-    headers: { Authorization: `Bearer ${token}` },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'image/webp',
+      'Content-Length': data.length,
+    },
   });
 
   if (!response.ok) throw new Error(await response.text());

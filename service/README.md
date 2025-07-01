@@ -21,6 +21,8 @@
         "COMM_ENDPOINT": "<from terraform deployment>",
         "PUBSUB_HOSTNAME": "<from terraform deployment>",
         "HF_KEY": "<your Hugging Face access token>",
+        "INFERENCE_API": "<from terraform deployment>",
+        "INFERENCE_REG_ID": "<from terraform deployment>",
         "HUB_NAME": "local"
       }
     }

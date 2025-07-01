@@ -46,7 +46,6 @@ resource "azurerm_windows_function_app" "function_app" {
     PUBSUB_HOSTNAME  = var.pubsub_hostname
     INFERENCE_API    = var.inference_api
     INFERENCE_REG_ID = var.inference_reg_id
-    INFERENCE_KEY    = var.inference_key
     HUB_NAME         = "live"
   }
 
@@ -107,7 +106,7 @@ resource "azurerm_role_assignment" "function_cosmos_role" {
 }
 
 resource "azuread_app_role_assignment" "function_inference_role" {
-  app_role_id         = "00000000-0000-0000-0000-000000000000"
+  app_role_id         = var.inference_role_id
   principal_object_id = azurerm_windows_function_app.function_app.identity[0].principal_id
   resource_object_id  = var.inference_sp_id
 }
@@ -216,7 +215,7 @@ resource "azurerm_role_assignment" "function_slot_cosmos_role" {
 }
 
 resource "azuread_app_role_assignment" "function_slot_inference_role" {
-  app_role_id         = "00000000-0000-0000-0000-000000000000"
+  app_role_id         = var.inference_role_id
   principal_object_id = azurerm_windows_function_app_slot.function_app_slot.identity[0].principal_id
   resource_object_id  = var.inference_sp_id
 }

@@ -30,7 +30,7 @@ module "function" {
   pubsub_hostname            = module.pubsub.pubsub_hostname
   pubsub_id                  = module.pubsub.pubsub_id
   inference_api              = var.inference_api
-  inference_key              = var.inference_key
+  inference_role_id          = var.app_service_role_id
   inference_reg_id           = var.app_registration_id
   inference_sp_id            = var.app_service_principal_id
 }

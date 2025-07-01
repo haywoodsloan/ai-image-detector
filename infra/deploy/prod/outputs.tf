@@ -3,12 +3,20 @@ output "service_endpoint" {
 }
 
 output "inference_endpoint" {
-  value = "https://${module.function.function_hostname}/invoke"
+  value = "https://${module.appservice.appservice_hostname}/invoke"
 }
 
-output "inference_key" {
+output "inference_tenant_id" {
+  value = data.azurerm_subscription.current.tenant_id
+}
+
+output "inference_reg_id" {
+  value = module.ad.app_registration_id
+}
+
+output "inference_secret" {
+  value = module.ad.app_service_secret
   sensitive = true
-  value     = module.function.function_key
 }
 
 output "dns_nameservers" {

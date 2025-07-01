@@ -44,7 +44,7 @@ locals {
   domain_name   = "ai-image-detector.com"
 
   model_name    = "haywoodsloan/ai-image-detector-deploy"
-  inference_api = "https://${module.function.function_hostname}/invoke"
+  inference_api = "https://${module.appservice.appservice_hostname}/invoke"
   service_api   = "https://${local.api_subdomain}.${local.domain_name}"
 }
 
@@ -89,10 +89,6 @@ module "insights" {
   env_name    = local.env_name
   region_name = local.region_names[0]
   rg_name     = module.rg.env_rg_name
-  # TODO: add once we can afford the extra cost
-  # service_api   = local.service_api
-  # inference_api = local.inference_api
-  # inference_key = module.function.function_key
 }
 
 module "ad" {
@@ -104,15 +100,6 @@ module "appservice" {
   env_name                   = local.env_name
   insights_connection_string = module.insights.insights_connection_string
   app_registration_id        = module.ad.app_registration_id
-  model_name                 = local.model_name
-  region_name                = local.region_names[0]
-  rg_name                    = module.rg.env_rg_name
-}
-
-module "function" {
-  source                     = "../../modules/global/function"
-  env_name                   = local.env_name
-  insights_connection_string = module.insights.insights_connection_string
   model_name                 = local.model_name
   region_name                = local.region_names[0]
   rg_name                    = module.rg.env_rg_name
@@ -136,7 +123,7 @@ module "region" {
   db_role_id                 = module.db.db_role_id
   insights_connection_string = module.insights.insights_connection_string
   inference_api              = local.inference_api
-  inference_key              = module.function.function_key
-  app_registration_id        = module.ad.app_registration_id
+  app_service_role_id        = module.ad.app_service_role_id
   app_service_principal_id   = module.ad.app_service_principal_id
+  app_registration_id        =  module.ad.app_registration_id
 }

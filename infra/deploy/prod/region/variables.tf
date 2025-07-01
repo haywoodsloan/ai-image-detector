@@ -68,11 +68,6 @@ variable "inference_api" {
   description = "The API for model inference"
 }
 
-variable "inference_key" {
-  type        = string
-  description = "The API key for model inference"
-}
-
 variable "app_registration_id" {
   type        = string
   description = "The application registration ID for the app service"
@@ -81,4 +76,9 @@ variable "app_registration_id" {
 variable "app_service_principal_id" {
   type        = string
   description = "The application registration service principal ID for the app service"
+}
+
+variable "app_service_role_id" {
+  type        = string
+  description = "The ID of the role for access to the inference service"
 }

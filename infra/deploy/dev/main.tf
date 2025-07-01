@@ -90,43 +90,40 @@ module "insights" {
   env_name    = local.env_name
   region_name = local.region_names[0]
   rg_name     = module.rg.env_rg_name
-  # TODO: add once we can afford the extra cost
-  # service_api   = local.service_api
-  # inference_api = local.inference_api
-  # inference_key = module.function.function_key
 }
 
 module "ad" {
   source = "../../modules/global/ad"
 }
 
-module "function" {
-  source                     = "../../modules/global/function"
+module "appservice" {
+  source                     = "../../modules/global/appservice"
   env_name                   = local.env_name
   insights_connection_string = module.insights.insights_connection_string
+  app_registration_id        = module.ad.app_registration_id
   model_name                 = local.model_name
   region_name                = local.region_names[0]
   rg_name                    = module.rg.env_rg_name
 }
-
 module "region" {
-  for_each                   = toset(local.region_names)
-  source                     = "./region"
-  region_name                = each.value
-  env_name                   = local.env_name
-  hf_key                     = var.hf_key
-  db_id                      = module.db.db_id
-  db_name                    = module.db.db_name
-  comm_service_id            = module.comm.comm_service_id
-  comm_service_endpoint      = module.comm.comm_service_endpoint
-  frontdoor_guid             = module.frontdoor.frontdoor_guid
+  for_each              = toset(local.region_names)
+  source                = "./region"
+  region_name           = each.value
+  env_name              = local.env_name
+  hf_key                = var.hf_key
+  db_id                 = module.db.db_id
+  db_name               = module.db.db_name
+  comm_service_id       = module.comm.comm_service_id
+  comm_service_endpoint = module.comm.comm_service_endpoint
+  # TODO: restore once frontdoor is back
+  # frontdoor_guid             = module.frontdoor.frontdoor_guid
   api_subdomain              = local.api_subdomain
   domain_name                = local.domain_name
   env_rg_name                = module.rg.env_rg_name
   db_role_id                 = module.db.db_role_id
   insights_connection_string = module.insights.insights_connection_string
   inference_api              = local.inference_api
-  inference_key              = module.function.function_key
+  app_service_role_id        = module.ad.app_service_role_id
   app_registration_id        = module.ad.app_registration_id
   app_service_principal_id   = module.ad.app_service_principal_id
 }
