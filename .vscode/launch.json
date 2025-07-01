@@ -22,16 +22,6 @@
       "internalConsoleOptions": "openOnSessionStart"
     },
     {
-      "name": "Run Service Demo",
-      "request": "launch",
-      "runtimeArgs": ["run-script", "demo"],
-      "runtimeExecutable": "npm",
-      "skipFiles": ["<node_internals>/**"],
-      "type": "node",
-      "cwd": "${workspaceFolder}/service",
-      "internalConsoleOptions": "openOnSessionStart"
-    },
-    {
       "name": "Debug Chrome Extension",
       "request": "launch",
       "runtimeArgs": ["run-script", "dev"],
