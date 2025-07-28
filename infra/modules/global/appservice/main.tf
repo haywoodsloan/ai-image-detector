@@ -6,11 +6,11 @@ resource "azurerm_service_plan" "container_service_plan" {
   location            = var.region_name
 
   os_type      = "Linux"
-  sku_name     = "P1v3"
+  sku_name     = "P1mv3"
   worker_count = 1
 
-  # premium_plan_auto_scale_enabled = true
-  # maximum_elastic_worker_count    = 2
+  premium_plan_auto_scale_enabled = true
+  maximum_elastic_worker_count    = 2
 }
 
 resource "azurerm_linux_web_app" "service_app" {
