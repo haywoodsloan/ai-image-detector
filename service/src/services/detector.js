@@ -62,7 +62,14 @@ async function invokeModel(data) {
     },
   });
 
-  if (!response.ok) throw new Error(await response.text());
+  if (!response.ok) {
+    const errorMsg = l`Invoking model failed ${{
+      code: response.status,
+      message: await response.text(),
+    }}`;
+    throw new Error(errorMsg);
+  }
+
   return await response.json();
 }
 
