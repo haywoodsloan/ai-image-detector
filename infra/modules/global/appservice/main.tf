@@ -4,12 +4,13 @@ resource "azurerm_service_plan" "container_service_plan" {
   name                = "container-service-plan"
   resource_group_name = var.rg_name
   location            = var.region_name
-  os_type             = "Linux"
-  sku_name            = "P0v3"
 
-  worker_count                    = 1
-  premium_plan_auto_scale_enabled = true
-  maximum_elastic_worker_count    = 2
+  os_type      = "Linux"
+  sku_name     = "P1v3"
+  worker_count = 1
+
+  # premium_plan_auto_scale_enabled = true
+  # maximum_elastic_worker_count    = 2
 }
 
 resource "azurerm_linux_web_app" "service_app" {
@@ -36,14 +37,10 @@ resource "azurerm_linux_web_app" "service_app" {
     auth_enabled           = true
     unauthenticated_action = "Return401"
 
-    login {
-      token_store_enabled = true
-    }
-
+    login {}
     active_directory_v2 {
       client_id            = var.app_registration_id
       tenant_auth_endpoint = "https://login.microsoftonline.com/${data.azurerm_client_config.current.tenant_id}/v2.0/"
-      allowed_applications = [var.app_registration_id, "04b07795-8ddb-461a-bbee-02f9e1bf7b46"]
     }
   }
 

@@ -1,6 +1,5 @@
 resource "azuread_application_registration" "app_registration" {
   display_name     = "AI Image Detector Model"
-  sign_in_audience = "AzureADandPersonalMicrosoftAccount"
 }
 
 resource "azuread_service_principal" "app_service_principal" {
@@ -12,9 +11,9 @@ resource "azuread_application_app_role" "invoker_role" {
   application_id       = azuread_application_registration.app_registration.id
   role_id              = random_uuid.invoker_role_uuid.result
   allowed_member_types = ["Application", "User"]
-  display_name         = "User"
+  display_name         = "Invoker"
   description          = "Invoke the model"
-  value                = "User"
+  value                = "Invoker"
 }
 
 resource "random_uuid" "invoker_scope_uuid" {}
@@ -23,7 +22,7 @@ resource "azuread_application_permission_scope" "invoker_scope" {
   scope_id       = random_uuid.invoker_scope_uuid.result
 
   value                      = "Invoke"
-  admin_consent_display_name = "User"
+  admin_consent_display_name = "Invoke"
   admin_consent_description  = "Allowed to invoke the model"
 }
 

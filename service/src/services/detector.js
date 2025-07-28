@@ -5,7 +5,7 @@ import { optimizeImage } from 'common/utilities/image.js';
 import { withRetry } from 'common/utilities/retry.js';
 import { l } from 'common/utilities/string.js';
 import ExpiryMap from 'expiry-map';
-import memoize from 'memoize';
+import memoize, { memoizeClear } from 'memoize';
 
 const DetectorCreds = new DefaultAzureCredential();
 const DetectorErrorDelay = TimeSpan.fromMilliseconds(100);
@@ -63,6 +63,10 @@ async function invokeModel(data) {
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      memoizeClear(getDetectorToken);
+    }
+
     const errorMsg = l`Invoking model failed ${{
       code: response.status,
       message: await response.text(),
