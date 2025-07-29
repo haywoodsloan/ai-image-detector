@@ -1,7 +1,7 @@
 {
   "name": "ai-image-detector-extension",
   "description": "Checks for AI generated images and incorporates community feedback",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "types": "./types.d.ts",
   "type": "module",
   "scripts": {
@@ -17,37 +17,37 @@
     "gen-icon": "icon-gen -i ./assets/detector.svg -o ./public/icon/ -r --favicon --favicon-name / --favicon-png-sizes 16,24,32,48,96,128"
   },
   "dependencies": {
-    "@fontsource/roboto": "^5.2.5",
+    "@fontsource/roboto": "^5.2.6",
     "@mdi/js": "^7.4.47",
-    "@vueuse/core": "^13.2.0",
+    "@vueuse/core": "^13.6.0",
     "clone-deep": "^4.0.1",
-    "color-interpolate": "^1.0.5",
+    "color-interpolate": "^2.0.0",
     "color-parse": "^2.0.2",
     "common": "file:../common",
     "email-validator": "^2.0.4",
     "memoize": "^10.1.0",
     "object-hash": "^3.0.0",
-    "vite-plugin-node-polyfills": "^0.23.0",
+    "vite-plugin-node-polyfills": "^0.24.0",
     "vite-plugin-vuetify": "^2.1.1",
     "vite-svg-loader": "^5.1.0",
-    "vue": "^3.5.14",
-    "vuetify": "^3.8.5"
+    "vue": "^3.5.18",
+    "vuetify": "^3.9.2"
   },
   "devDependencies": {
-    "@eslint/js": "^9.26.0",
+    "@eslint/js": "^9.32.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@wxt-dev/module-vue": "^1.0.2",
-    "eslint": "^9.26.0",
-    "eslint-config-prettier": "^10.1.5",
-    "eslint-plugin-vue": "^10.1.0",
-    "globals": "^16.1.0",
+    "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.3.0",
+    "globals": "^16.3.0",
     "icon-gen": "^5.0.0",
     "postcss-prefix-selector": "^2.1.1",
     "postcss-rem-to-pixel": "^4.1.2",
-    "prettier": "^3.5.3",
-    "sass": "^1.89.0",
+    "prettier": "^3.6.2",
+    "sass": "^1.89.2",
     "typescript": "^5.8.3",
-    "vue-tsc": "^2.2.10",
-    "wxt": "^0.20.6"
+    "vue-tsc": "^3.0.4",
+    "wxt": "^0.20.7"
   }
 }

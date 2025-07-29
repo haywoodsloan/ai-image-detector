@@ -73,9 +73,9 @@ useResizeObserver([image, image.offsetParent], async () => {
   const width = Math.min(imgRect.width, offsetRect.width);
   const height = Math.min(imgRect.height, offsetRect.height);
 
-  if (width > 300 && height > 200) {
+  if (width > 350 && height > 350) {
     size.value = 'large';
-  } else if (width > 100 && height > 50) {
+  } else if (width > 250 && height > 250) {
     size.value = 'medium';
   } else {
     size.value = 'small';
