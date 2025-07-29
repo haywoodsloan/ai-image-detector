@@ -1,4 +1,5 @@
 import TimeSpan from 'common/utilities/TimeSpan.js';
+import { ApiError } from 'common/utilities/error.js';
 import { NonRetryableError, withRetry } from 'common/utilities/retry.js';
 
 import {
@@ -8,7 +9,6 @@ import {
 import { invokeBackgroundTask } from '@/utilities/background.js';
 import { debugWarn } from '@/utilities/log.js';
 import { userAuth } from '@/utilities/storage.js';
-import { ApiError } from 'common/utilities/error.js';
 
 const BaseUrl = import.meta.env.VITE_API_BASE_URL;
 const DevKey = import.meta.env.VITE_API_DEV_KEY;
@@ -59,8 +59,9 @@ export async function request(endpoint, init = {}) {
       return await invokeBackgroundTask(ApiAction, { endpoint, init });
 
     const id = crypto.randomUUID();
-    init.signal.addEventListener('abort', async () =>
-      await invokeBackgroundTask(AbortApiAction, { id })
+    init.signal.addEventListener(
+      'abort',
+      async () => await invokeBackgroundTask(AbortApiAction, { id })
     );
 
     delete init.signal;
@@ -69,9 +70,13 @@ export async function request(endpoint, init = {}) {
 
   return await retry(
     async () => {
+      if (init.signal?.aborted) {
+        throw new NonRetryableError('Request aborted');
+      }
+      
       const headers = await buildHeaders();
-
       let response;
+
       try {
         response = await fetch(new URL(endpoint, BaseUrl), {
           ...init,
