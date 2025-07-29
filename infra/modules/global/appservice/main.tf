@@ -6,11 +6,11 @@ resource "azurerm_service_plan" "container_service_plan" {
   location            = var.region_name
 
   os_type      = "Linux"
-  sku_name     = "P1mv3"
+  sku_name     = "P1v3"
   worker_count = 1
 
   premium_plan_auto_scale_enabled = true
-  maximum_elastic_worker_count    = 2
+  maximum_elastic_worker_count    = 3
 }
 
 resource "azurerm_linux_web_app" "service_app" {
@@ -48,6 +48,7 @@ resource "azurerm_linux_web_app" "service_app" {
     use_32_bit_worker = false
     ftps_state        = "FtpsOnly"
     http2_enabled     = true
+    worker_count      = 1
 
     application_stack {
       docker_image_name   = "haywoodsloan/hf-inference:latest"
