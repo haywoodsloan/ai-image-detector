@@ -23,18 +23,18 @@
   "license": "ISC",
   "dependencies": {
     "common": "file:../common",
-    "csv-parse": "^5.6.0",
-    "puppeteer": "^24.8.2",
-    "user-agents": "^1.1.539",
-    "yargs": "^17.7.2"
+    "csv-parse": "^6.1.0",
+    "puppeteer": "^24.15.0",
+    "user-agents": "^1.1.616",
+    "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.26.0",
+    "@eslint/js": "^9.32.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
-    "eslint": "^9.26.0",
-    "eslint-config-prettier": "^10.1.5",
-    "globals": "^16.1.0",
-    "prettier": "^3.5.3"
+    "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.3.0",
+    "prettier": "^3.6.2"
   },
   "engines": {
     "node": ">=20"
