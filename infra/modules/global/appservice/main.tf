@@ -6,7 +6,7 @@ resource "azurerm_service_plan" "container_service_plan" {
   location            = var.region_name
 
   os_type      = "Linux"
-  sku_name     = "P1mv3"
+  sku_name     = "P1v3"
   worker_count = 1
 }
 
