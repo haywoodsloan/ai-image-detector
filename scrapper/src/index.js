@@ -365,7 +365,11 @@ if (args.real || args.all) {
 
     // Log the last screenshot
     const errorPng = join(LogPath, 'error.png');
-    if (!page.isClosed()) await page?.screenshot({ path: errorPng });
+    try {
+      await page?.screenshot({ path: errorPng });
+    } catch {
+      /* ignore */
+    }
 
     console.error(r`Unexpected failure ${error}`);
   } finally {
