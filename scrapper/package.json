@@ -24,8 +24,8 @@
   "dependencies": {
     "common": "file:../common",
     "csv-parse": "^6.1.0",
-    "puppeteer": "^24.15.0",
-    "user-agents": "^1.1.616",
+    "puppeteer": "^24.16.0",
+    "user-agents": "^1.1.625",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
