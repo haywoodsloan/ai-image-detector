@@ -243,9 +243,6 @@ if (args.real || args.all) {
   /** @type {Page} */
   let page;
 
-  /** @type {CDPSession} */
-  let client;
-
   // Browse to multiple Subreddits and scrape files
   const toScrape = shuffle([
     ...(args.real || args.all ? RealSubReddits.map((s) => [RealLabel, s]) : []),
@@ -253,23 +250,22 @@ if (args.real || args.all) {
   ]);
 
   try {
-    const retry = withRetry(RetryLimit, RedditErrorDelay);
     for (const [label, scrapeUrl] of toScrape) {
+      page = await browser.newPage();
+      await page.setUserAgent(ChromeUA);
+
+      const client = await page.createCDPSession();
+      await client.send('HeapProfiler.enable');
+
       // Navigate to the page and wait for network traffic to settle
       console.log(y`Navigating to ${scrapeUrl}`);
 
       // Wait for the loader to appear so we know the posts will load.
+      const retry = withRetry(RetryLimit, RedditErrorDelay);
       await retry(
         async () => {
-          page = await browser.newPage();
-          await page.setUserAgent(ChromeUA);
-
-          client = await page.createCDPSession();
-          await client.send('HeapProfiler.enable');
-
           await page.goto(scrapeUrl, { waitUntil: 'networkidle2' });
           await page.waitForSelector(LoaderSelector);
-
           console.log(g`Finished loading ${scrapeUrl}`);
         },
         () => console.log(r`Subreddit loading failed, refreshing`)
