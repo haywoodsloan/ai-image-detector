@@ -272,10 +272,7 @@ if (args.real || args.all) {
 
           console.log(g`Finished loading ${scrapeUrl}`);
         },
-        async () => {
-          console.log(r`Subreddit loading failed, refreshing`);
-          await page.close()
-        }
+        () => console.log(r`Subreddit loading failed, refreshing`)
       );
 
       // Start scrapping images and scrolling through the page
