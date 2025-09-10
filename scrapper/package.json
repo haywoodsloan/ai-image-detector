@@ -24,14 +24,14 @@
   "dependencies": {
     "common": "file:../common",
     "csv-parse": "^6.1.0",
-    "puppeteer": "^24.16.2",
-    "user-agents": "^1.1.634",
+    "puppeteer": "^24.19.0",
+    "user-agents": "^1.1.655",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.33.0",
+    "@eslint/js": "^9.35.0",
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
-    "eslint": "^9.33.0",
+    "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^16.3.0",
     "prettier": "^3.6.2"
