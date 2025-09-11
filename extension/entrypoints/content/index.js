@@ -22,9 +22,9 @@ export default defineContentScript({
   async main(ctx) {
     const MinVis = 0.2;
 
-    const UpdateTimeout = TimeSpan.fromSeconds(5);
-    const UpdateDebounce = TimeSpan.fromMilliseconds(175);
-    const InitTimeout = TimeSpan.fromSeconds(5);
+    const UpdateTimeout = TimeSpan.fromSeconds(10);
+    const UpdateDebounce = TimeSpan.fromMilliseconds(500);
+    const InitTimeout = TimeSpan.fromSeconds(10);
 
     // Make sure the extension has been initialized
     await invokeBackgroundTask(InitAction);
