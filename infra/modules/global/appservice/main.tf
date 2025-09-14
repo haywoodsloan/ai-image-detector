@@ -22,8 +22,8 @@ resource "azurerm_linux_web_app" "service_app" {
     MODEL_NAME                            = var.model_name
     APPLICATIONINSIGHTS_CONNECTION_STRING = var.insights_connection_string
     HF_HOME                               = "/home/hf_cache"
-    BATCH_SIZE                            = "32"
-    MAX_QUEUE                             = "96"
+    BATCH_SIZE                            = "45"
+    MAX_QUEUE                             = "135"
   }
 
   identity {
