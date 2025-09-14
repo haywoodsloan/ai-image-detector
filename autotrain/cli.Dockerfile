@@ -26,7 +26,7 @@ RUN python -m nltk.downloader punkt
 RUN pip install -U ninja
 RUN pip install -U flash-attn --no-build-isolation
 RUN pip install -U deepspeed
-RUN pip install --upgrade --force-reinstall --no-cache-dir "unsloth[cu128-ampere-torch270] @ git+https://github.com/unslothai/unsloth.git" --no-deps
+RUN pip install --upgrade --force-reinstall --no-cache-dir "unsloth[cu128-ampere-torch280] @ git+https://github.com/unslothai/unsloth.git" --no-deps
 
 # Create an image for local training on the command line
 FROM base AS cli
